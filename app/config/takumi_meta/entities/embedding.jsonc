@@ -1,0 +1,9 @@
+{
+  "my-awesome-embedding.pt": {
+    "entity_type": "embedding", // これがEmbeddingであることを明記
+    "takumi_tags": ["optional", "style-modifier"],
+    "description": "Adds a cinematic style to images.",
+    "download_url": "https://civitai.com/...",
+    "target_path": "models/embeddings/"
+  }
+}
