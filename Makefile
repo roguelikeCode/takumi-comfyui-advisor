@@ -10,18 +10,21 @@
 SHELL := /bin/bash
 
 # --- Help Message (Default Target) ---
+.DEFAULT_GOAL := help
+
 .PHONY: help
 help:
 	@echo "Usage: make [target]"
 	@echo ""
-	@echo "Targets:"
-	@echo "  build         Build the Docker image for the development environment."
-	@echo "  help          Show this help message."
+	@echo "Lifecycle Commands:"
+	@echo "  build         Build the Docker image from Dockerfile."
+	@echo "  install       Run the guided installation process inside a new container."
+	@echo "  run           Run the main application (e.g., ComfyUI) in a container."
 	@echo ""
-	@echo "Example:"
-	@echo "  make build"
-
-.DEFAULT_GOAL := help
+	@echo "Development Commands:"
+	@echo "  shell         Start an interactive shell inside a new container for debugging."
+	@echo "  test          Run automated tests to verify the environment and scripts."
+	@echo "  clean         Remove built images and cached files."
 
 # ==============================================================================
 # Shell Color Codes
@@ -36,7 +39,7 @@ RESET  := \033[0m
 # Configuration
 # ==============================================================================
 
-# --- Variables (Main Execution Engine) ---
+# --- Variables ---
 MANAGER_LIST_URL := https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/custom-node-list.json
 CACHE_DIR := ./cache
 CUSTOM_NODE_LIST_CACHE := $(CACHE_DIR)/custom-node-list.json
@@ -45,79 +48,57 @@ CUSTOM_NODE_LIST_CACHE := $(CACHE_DIR)/custom-node-list.json
 IMAGE_NAME := takumi-comfyui
 IMAGE_TAG  := latest
 CONTAINER_NAME := takumi-comfyui-dev
-
-# ==============================================================================
-# Main Execution Engine Recipes
-# ==============================================================================
-
-# --- Core Atomic Recipes ---
-# These are the individual, single-purpose building blocks.
-
-.PHONY: dev-install update-node-list install-loop
-dev-install: build
-	@echo ">>> Launching installer in DEV MODE (logs will be saved locally)..."
-    docker run -it --rm \
-        -e TAKUMI_DEV_MODE=true \ # <-- 環境変数を設定
-        -v $(shell pwd)/logs:/app/logs \ # <-- ローカルのlogsフォルダをマウント
-        takumi-comfyui \
-        bash /app/install.sh
-
-update-node-list:
-	@mkdir -p $(CACHE_DIR)
-	@echo ">>> Downloading latest custom node list from ComfyUI-Manager..."
-	@wget -O $(CUSTOM_NODE_LIST_CACHE) $(MANAGER_LIST_URL)
-	@echo "✅ Node list updated successfully."
-
-install-loop:
-	@attempt_history_file=".install_history"; \
-	touch $$attempt_history_file; \
-	while true; do \
-		echo "--- Starting new installation attempt ---"; \
-		docker run -it --rm \
-			--gpus all \
-			-v ./comfyui_models:/app/ComfyUI/models \
-			-v $(shell pwd)/$$attempt_history_file:/app/.install_history \
-			takumi-comfyui \
-			bash /app/install.sh; \
-		
-		exit_code=$$?; \
-		if [ $$exit_code -eq 0 ]; then \
-			echo "✅ Installation successful!"; \
-			rm -f $$attempt_history_file; \
-			break; \
-		elif [ $$exit_code -eq 125 ]; then \
-			# install.shが「takumiに報告」を選択して終了した場合の特殊コード
-			echo "🛑 Reporting to Takumi..."; \
-			rm -f $$attempt_history_file; \
-			break; \
-		else \
-			read -p "Installation failed. Retry with a different strategy? (Y/n): " consent; \
-			if [[ "$$consent" == "n" || "$$consent" == "N" ]]; then \
-				echo "Aborted by user."; \
-				rm -f $$attempt_history_file; \
-				break; \
-			fi; \
-		fi; \
-	done
-
-# `install`レシピは、このループを呼び出すだけ
-.PHONY: install
-install: update-node-list build
-	$(MAKE) install-loop
+DOCKER_RUN_OPTS := --rm \
+	--name $(CONTAINER_NAME) \
+	-v $(shell pwd)/cache:/app/cache \
+	-v $(shell pwd)/logs:/app/logs \
+	-v $(shell pwd)/external:/app/external
 
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
 
 # --- Core Atomic Recipes ---
-# These are the individual, single-purpose building blocks.
-.PHONY: build
+# === Lifecycle Commands ===
 build:
-	@echo "Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
-	docker build \
-		--rm \
-		--tag $(IMAGE_NAME):$(IMAGE_TAG) \
-		.
-	@echo "Build complete. Image '$(IMAGE_NAME):$(IMAGE_TAG)' is ready."
+	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
+	@docker build --rm --tag $(IMAGE_NAME):$(IMAGE_TAG) .
+	@echo "✅ Build complete."
 
-# ... (docker run -it ... のコマンド)
+install: build
+	@echo ">>> Launching installer wrapper..."
+	@bash ./scripts/run_installer.sh
+
+# [未実装] 将来、ComfyUIを起動するコマンドをここに記述する
+run: build
+	@echo ">>> Running the application..."
+	@echo "WARN: 'run' target is not yet implemented."
+# 例: docker run -it -p 8188:8188 $(DOCKER_RUN_OPTS) --gpus all $(IMAGE_NAME):$(IMAGE_TAG) python main.py
+
+# === Development Commands ===
+shell: build
+	@echo ">>> Starting interactive shell in a new container..."
+	@echo "    - Type 'exit' or press Ctrl+D to leave."
+	@echo "    - Your current directory is mounted at /app."
+	@docker run -it $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
+
+test: build
+	@echo ">>> Running tests..."
+	@docker run $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash -c "\
+		set -e; \
+		echo '--- Testing build_merged_catalog ---'; \
+		/app/install.sh; \
+		if [ ! -f /app/cache/catalogs/custom_nodes.jsonc ]; then \
+			echo '🔴 ERROR: Merged catalog was not created.'; \
+			exit 1; \
+		fi; \
+		echo '✅ Catalog created successfully.'; \
+		echo '--- All tests passed ---'; \
+	"
+
+clean:
+	@echo ">>> Cleaning up..."
+	@-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
+	@-docker rmi -f $(IMAGE_NAME):$(IMAGE_TAG) 2>/dev/null || true
+	@-rm -rf ./cache/* ./logs/*
+	@echo "✅ Cleanup complete."
