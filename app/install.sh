@@ -99,7 +99,8 @@ build_merged_catalog() {
     local external_catalog="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
     local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}.jsonc"
     local merged_catalog_dir="${CACHE_DIR}/catalogs"
-    local merged_catalog_path="${merged_catalog_dir}/${entity_name}.jsonc"
+    # The output file is pure JSON that is consumed by the program
+    local merged_catalog_path="${merged_catalog_dir}/${entity_name}.json"
 
     # --- Pre-flight Checks (Safety First) ---
     if [ ! -f "$external_catalog" ]; then
@@ -114,8 +115,10 @@ build_merged_catalog() {
     # Ensure the cache directory exists
     mkdir -p "$merged_catalog_dir"
 
-    # --- The Merge Operation ---
-    if yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' \
+    # --- The Merge & Transform Operation ---
+    if yq eval-all --input-format json --input-format jsonc \
+        --output-format json --prettyPrint \
+        'select(fileIndex == 0) * select(fileIndex == 1)' \
         "$external_catalog" \
         "$takumi_meta_catalog" \
         > "$merged_catalog_path"; then
