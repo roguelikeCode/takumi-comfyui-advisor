@@ -217,7 +217,7 @@ run_concierge() {
     echo "  - Apply special handling for libraries known to cause conflicts."
     echo ""
     read -p "Proceed with this plan? (Y/n): " consent
-    if [[ "$consent" == "n" || "$consent" == "N" ]]; then
+    if [[ "${consent,,}" == "n" ]]; then
         log_warn "Installation aborted by user."
         exit 1 # Exit with a generic failure code
     fi
@@ -238,7 +238,7 @@ run_sommelier() {
     # Placeholder logic for demonstration
     log_warn "This appears to be an unknown issue."
     read -p "Consult a small AI (SLM) for hints (experimental)? (Y/n): " consent
-    if [[ "$consent" != "n" && "$consent" != "N" ]]; then
+    if [[ "${consent,,}" == "y" ]] then
         local slm_suggestion="pip install torch==2.2.0 --force-reinstall"
         
         read -p "The SLM suggests: '$slm_suggestion'. Try this solution? (Y/n): " try_consent
