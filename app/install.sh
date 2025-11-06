@@ -266,8 +266,7 @@ run_sommelier() {
 main() {
     log_info "Takumi Installer Engine v2.2 starting..."
 
-    # [思想] 全てのインストールの前提条件として、まず「知見のカタログ」を構築する。
-    # これが失敗する場合、それ以降の処理は無意味であるため、ここで確実に停止させる。
+    # Safety equipment
     if ! build_merged_catalog "custom_nodes"; then
         log_error "Failed to prepare essential catalogs. Installation cannot proceed."
         exit 1
@@ -276,10 +275,13 @@ main() {
     # Load state from history file if it exists
     if [ -f "$HISTORY_FILE" ]; then
         log_info "Loaded installation history. This is a retry attempt."
-        # --- To be implemented ---
+        # ---
         # A robust parser to load history into the `state` associative array.
-        # For now, we'll just load the use_case as a simple example.
-        state["use_case"]=$(grep "use_case:" "$HISTORY_FILE" | head -n 1 | cut -d':' -f2) || ""
+        while IFS=':' read -r key value; do
+            if [[ -n "$key" && -n "$value" ]]; then
+                state["$key"]="$value"
+            fi
+        done < "$HISTORY_FILE"
         # ---
     fi
 
