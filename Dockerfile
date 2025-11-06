@@ -9,7 +9,7 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: OS Core Environment Setup
+# Stage 1: OS Environment Setup
 # ------------------------------------------------------------------------------
 FROM ubuntu:24.04
 
@@ -51,10 +51,9 @@ ENV ASDF_DIR=/opt/asdf
 ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
 
 # ------------------------------------------------------------------------------
-# Stage 3: Installation & Application Setup (ASDF)
+# Stage 3: Installation & Application Setup (via ASDF)
 # ------------------------------------------------------------------------------
 WORKDIR /app
-COPY app/ .
 
 COPY .tool-versions .
 
@@ -62,29 +61,23 @@ RUN asdf plugin-add miniconda https://github.com/asdf-community/asdf-miniconda.g
     asdf plugin-add yq https://github.com/tennashi/asdf-yq.git && \
     asdf install
 
-# [重要] asdfでインストールしたツールのPATHをシェルに認識させる
-# condaの初期化と有効化を行うための重要なステップ
+# ------------------------------------------------------------------------------
+# Stage 4: Conda Environment Initialization & Base Environment Setup (Python Environment)
+# ------------------------------------------------------------------------------
+COPY app/ .
+
+# condaの初期化とベース環境の構築を、一連の正しい流れで実行する
 RUN . ${ASDF_DIR}/asdf.sh && \
+    # ステップ1: condaを現在のシェルと将来のシェルのために初期化する
     conda init bash && \
-    conda config --set auto_activate_base true
-
-# ------------------------------------------------------------------------------
-# Stage 4: Base Conda Environment Setup (Python Environment)
-# ------------------------------------------------------------------------------
-# シェルをcondaが有効な状態で起動するための `conda run` を使うか、
-# もしくは bash -c 'source ~/.bashrc && command' のようにする。
-# ここでは、将来の requirements.yml ファイルの設置場所を準備する。
-# まず、環境定義ファイル群をコンテナにコピーする
-COPY app/config/environments /app/config/environments
-
-# ハードウェアに応じたベース環境を選択して構築する。
-# ここでは、新しいGPU向けのcuda12をデフォルトとする。
-# 将来的には、ビルド時の引数でこれを変更できるようにする。
-RUN . ${ASDF_DIR}/asdf.sh && \
+    conda config --set auto_activate_base false && \
+    # ステップ2: 初期化した設定を現在のシェルに即時反映させる
+    source ~/.bashrc && \
+    # ステップ3: 初期化が完了したcondaを使って、ベース環境を構築する
     conda env create \
-      --file /app/config/base_components/core-tools.yml \
+      --file /app/config/base_components/accelerator/cuda-12.yml \
       --file /app/config/base_components/python/3.12.yml \
-      --file /app/config/base_components/accelerator/cuda-12.yml
+      --file /app/config/base_components/core-tools.yml
 
 # ------------------------------------------------------------------------------
 # Stage 5: Finalization
@@ -95,4 +88,4 @@ RUN . ${ASDF_DIR}/asdf.sh && \
 # [思想] このイメージのデフォルトの役割は、開発とインストールのための「対話可能な工房」であること。
 # そのため、起動時のコマンドはインタラクティブなシェルとする。
 # コンテナ起動時に、conda環境が有効化されたbashを起動するように設定
-CMD [ "bash", "-c", "source ~/.bashrc && exec bash" ]
+CMD [ "bash", "-c", "source ~/.bashrc && conda activate base && exec bash" ]
