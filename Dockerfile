@@ -50,22 +50,27 @@ RUN apt-get update && \
 ENV CONDA_DIR=/opt/conda
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN echo ">>> Downloading and installing Miniconda..." && \
+    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_DIR && \
-    rm ~/miniconda.sh && \
-    conda clean -afy && \
+    rm ~/miniconda.sh
+
+RUN echo ">>> Initializing Conda and accepting Terms of Service..." && \
+    . ${CONDA_DIR}/etc/profile.d/conda.sh && \
     conda init bash && \
-    conda config --set auto_activate_base false
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda config --set auto_activate false && \
+    conda clean -afy
 
 # ------------------------------------------------------------------------------
 # Stage 3: ASDF Installation & Git Configuration (Auxiliary Tool Manager)
 # ------------------------------------------------------------------------------
-# asdf本体のインストール
 RUN git clone https://github.com/asdf-vm/asdf.git /opt/asdf --branch v0.14.0
 ENV ASDF_DIR=/opt/asdf
 ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
 
-# [修正] gitが対話的な認証を試みないように、ビルド環境全体で永続的に設定する
+# Configure git to not attempt interactive authentication
 ENV GIT_TERMINAL_PROMPT=0
 RUN git config --global url."https://".insteadOf git://
 
@@ -73,8 +78,9 @@ RUN git config --global url."https://".insteadOf git://
 # Stage 4: Application Setup & Tool Installation
 # ------------------------------------------------------------------------------
 WORKDIR /app
-COPY .tool-versions .
-COPY app ./
+COPY ./.tool-versions .
+COPY ./app ./
+COPY ./app/config ./config/
 
 # asdfを使ってyqをインストールする
 # 前のステージでgitの設定が完了しているため、ここではasdfのコマンドに集中できる
@@ -84,9 +90,9 @@ RUN asdf plugin add yq && \
 # Condaのベース環境を構築する
 RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
     conda env create \
-      --file /app/config/base_components/accelerator/cuda-12.yml \
-      --file /app/config/base_components/python/3.12.yml \
-      --file /app/config/base_components/core-tools.yml
+      --file /app/config/base_environments/accelerator/cuda_12.yml \
+      --file /app/config/base_environments/python/3.12.yml \
+      --file /app/config/base_environments/core_tools.yml
 
 # ------------------------------------------------------------------------------
 # Stage 5: Finalization
@@ -97,4 +103,4 @@ RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
 # [思想] このイメージのデフォルトの役割は、開発とインストールのための「対話可能な工房」であること。
 # そのため、起動時のコマンドはインタラクティブなシェルとする。
 # コンテナ起動時に、conda環境が有効化されたbashを起動するように設定
-CMD [ "bash", "-c", "source /opt/conda/etc/profile.d/conda.sh && conda activate base && exec bash" ]
+CMD [ "bash", "-c", "source /opt/conda/etc/profile.d/conda.sh && conda activate foundation && exec bash" ]
