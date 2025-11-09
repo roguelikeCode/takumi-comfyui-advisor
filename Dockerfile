@@ -90,9 +90,9 @@ RUN asdf plugin add yq && \
 # Condaのベース環境を構築する
 RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
     conda env create \
-      --file /app/config/base_environments/accelerator/cuda_12.yml \
-      --file /app/config/base_environments/python/3.12.yml \
-      --file /app/config/base_environments/core_tools.yml
+      --file /app/config/foundation_components/accelerator/cuda_12.yml \
+      --file /app/config/foundation_components/python/3.12.yml \
+      --file /app/config/foundation_components/core_tools.yml
 
 # ------------------------------------------------------------------------------
 # Stage 5: Finalization
