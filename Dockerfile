@@ -103,4 +103,4 @@ RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
 # [思想] このイメージのデフォルトの役割は、開発とインストールのための「対話可能な工房」であること。
 # そのため、起動時のコマンドはインタラクティブなシェルとする。
 # コンテナ起動時に、conda環境が有効化されたbashを起動するように設定
-CMD [ "bash", "-c", "source /opt/conda/etc/profile.d/conda.sh && conda activate foundation && exec bash" ]
+CMD [ "bash", "-c", "source /opt/asdf/asdf.sh && source /opt/conda/etc/profile.d/conda.sh && conda activate foundation && exec bash" ]
