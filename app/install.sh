@@ -165,6 +165,42 @@ node_install_hazardous_libraries() {
     log_success "Hazardous libraries handled."
 }
 
+combine_foundation_environment() {
+    log_info "Combining components to build your 'foundation' environment..."
+    
+    # stateに保存された選択済みのコンポーネントを取得
+    local core_tools_yml="${CONFIG_DIR}/foundation_components/${state[selected_core]}.yml"
+    local python_yml="${CONFIG_DIR}/foundation_components/python/${state[selected_python]}.yml"
+    local accelerator_yml="${CONFIG_DIR}/foundation_components/accelerator/${state[selected_accelerator]}.yml"
+
+    # 全ての部品ファイルが存在するか、最後の安全確認
+    if ! { [ -f "$core_tools_yml" ] && [ -f "$python_yml" ] && [ -f "$accelerator_yml" ]; }; then
+        log_error "One or more required component files are missing. Cannot build environment."
+        echo "Checked paths:"
+        echo "  - $core_tools_yml"
+        echo "  - $python_yml"
+        echo "  - $accelerator_yml"
+        return 1
+    fi
+
+    # conda env createコマンドを動的に組み立てて実行
+    if . ${CONDA_DIR}/etc/profile.d/conda.sh && \
+        conda env create \
+            --file "$core_tools_yml" \
+            --file "$python_yml" \
+            --file "$accelerator_yml"; then
+        
+        log_success "Foundation environment built successfully."
+        # 成功の証として、履歴ファイルに構成を記録
+        echo "foundation_accelerator:${state[selected_accelerator]}" > "$HISTORY_FILE"
+        echo "foundation_python:${state[selected_python]}" >> "$HISTORY_FILE"
+        return 0
+    else
+        log_error "Failed to build the foundation environment."
+        return 1
+    fi
+}
+
 run_install_flow() {
     log_info "Starting installation flow..."
     local log_file="/tmp/install_$(date +%s).log"
@@ -191,12 +227,92 @@ run_install_flow() {
 }
 
 # ==============================================================================
+# Environment Diagnostics Node
+# ==============================================================================
+
+detect_gpu_environment() {
+    log_info "Diagnosing your hardware environment..."
+    
+    # nvidia-smiコマンドが存在し、かつ実行可能かチェック
+    if command -v nvidia-smi &> /dev/null; then
+        # nvidia-smiコマンドを実行し、出力を変数に格納
+        local smi_output
+        smi_output=$(nvidia-smi)
+
+        # 出力からCUDAのバージョンを正規表現で抽出
+        if [[ $smi_output =~ CUDA\ Version:\ ([0-9]+\.[0-9]+) ]]; then
+            # マッチした部分（例: "12.4"）を取得
+            local cuda_version="${BASH_REMATCH[1]}"
+            local cuda_major_version="${cuda_version%%.*}" # ピリオドより前 (例: "12")
+            
+            log_success "NVIDIA GPU detected. CUDA Driver Version: $cuda_version"
+            
+            # 診断結果をグローバルな連想配列 'state' に格納
+            state["detected_cuda_major"]=$cuda_major_version
+            state["detected_accelerator"]="cuda"
+            return 0
+        fi
+    fi
+    
+    # nvidia-smiが見つからない、またはCUDAバージョンを抽出できなかった場合
+    log_warn "No compatible NVIDIA GPU with CUDA drivers found."
+    log_info "Proceeding with CPU-only configuration."
+    state["detected_accelerator"]="cpu"
+    return 0
+}
+
+# ==============================================================================
 # The Takumi's Concierge & Sommelier (The "What" and "Why")
 # ==============================================================================
 
 run_concierge() {
+
     log_info "Welcome to The Takumi's Concierge."
-    log_info "Your base environment is perfect. Let's finalize your workshop."
+    
+    # まず、ハードウェアを診断する
+    if ! detect_gpu_environment; then
+        log_error "Failed to diagnose hardware environment. Cannot proceed."
+        exit 1
+    fi
+
+    # 診断結果に基づいて、提案する環境コンポーネントを決定
+    local accelerator_component="cpu" # デフォルトはCPU
+    if [[ "${state[detected_accelerator]}" == "cuda" ]]; then
+        # CUDAが検出された場合、メジャーバージョンに合ったコンポーネントを選択
+        accelerator_component="cuda-${state[detected_cuda_major]}"
+    fi
+
+    echo ""
+    log_info "Based on our diagnosis, we propose the following foundation:"
+    echo "  - Core Tools:      git, pip, etc."
+    echo "  - Python Version:  3.12 (Official ComfyUI recommendation)"
+    echo "  - Accelerator:     ${accelerator_component} (Optimized for your system)"
+    echo ""
+
+    # 提案したコンポーネントのymlファイルが実際に存在するかをチェック（安全装置）
+    local component_path="${CONFIG_DIR}/foundation_components/accelerator/${accelerator_component}.yml"
+    if [ ! -f "$component_path" ]; then
+        log_error "Configuration for your accelerator ('${accelerator_component}') is not available."
+        log_warn "There is no file yet. Falling back to CPU-only configuration."
+        accelerator_component="cpu"
+    fi
+    
+    read -p "Proceed with building this foundation? [Y/n]: " consent
+    if [[ "${consent,,}" == "n" ]]; then
+        log_warn "Installation aborted by user."
+        exit 1
+    fi
+
+    # ユーザーが同意した最終的な構成を 'state' に保存
+    state["selected_accelerator"]=$accelerator_component
+    state["selected_python"]="3.12"
+    state["selected_core"]="core-tools"
+
+
+    ##########################
+
+    log_info "Welcome to The Takumi's Concierge."
+    log_info "Your base foundation is perfect. Let's finalize your workshop."
     
     echo ""
     echo "Please choose your primary use case:"
@@ -267,7 +383,7 @@ run_sommelier() {
 # ==============================================================================
 
 main() {
-    log_info "Takumi Installer Engine v2.2 starting..."
+    log_info "Takumi Installer Engine v3.0 starting..."
 
     # Safety equipment
     if ! build_merged_catalog "custom_nodes"; then
@@ -277,7 +393,7 @@ main() {
 
     # Load state from history file if it exists
     if [ -f "$HISTORY_FILE" ]; then
-        log_info "Loaded installation history. This is a retry attempt."
+        log_info "Loaded installation history. Foundation seems to be already built."
         # ---
         # A robust parser to load history into the `state` associative array.
         while IFS=':' read -r key value; do
@@ -285,10 +401,20 @@ main() {
                 state["$key"]="$value"
             fi
         done < "$HISTORY_FILE"
-        # ---
+    else
+        # 履歴ファイルがない場合、初回実行とみなし、Conciergeと環境構築を実行
+        run_concierge
+        
+        if ! combine_foundation_environment; then
+            # 環境構築に失敗した場合
+            run_sommelier # Sommelierに助けを求める
+            exit 1
+        fi
     fi
 
+    # --- ここから、ユースケース環境の追加インストールフェーズが始まる---
     # If use_case is not determined yet, run the initial user dialogue
+    log_info "Foundation is ready. Next, let's install your use-case specific tools."
     if [ -z "${state[use_case]}" ]; then
         run_concierge
     fi
@@ -304,6 +430,9 @@ main() {
         # Failure
         run_sommelier
     fi
+
+    log_success "All processes completed successfully!"
+    exit 0
 }
 
 # --- Script Entry Point ---
