@@ -1,5 +1,5 @@
 # ==============================================================================
-# Takumi Foundry - Universal Development Environment v2.0
+# Takumi Foundry - Universal Development Environment v3.4 (Final)
 #
 # Maintainer: Yamato Watase
 # Description: This Dockerfile defines a universal, asdf-based environment.
@@ -64,15 +64,17 @@ RUN echo ">>> Initializing Conda and accepting Terms of Service..." && \
     conda clean -afy
 
 # ------------------------------------------------------------------------------
-# Stage 3: ASDF Installation & Git Configuration (Auxiliary Tool Manager)
+# Stage 3: ASDF Installation & System Integration (Auxiliary Tool Manager)
 # ------------------------------------------------------------------------------
-RUN git clone https://github.com/asdf-vm/asdf.git /opt/asdf --branch v0.14.0
 ENV ASDF_DIR=/opt/asdf
 ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
-
-# Configure git to not attempt interactive authentication
 ENV GIT_TERMINAL_PROMPT=0
-RUN git config --global url."https://".insteadOf git://
+
+# Add the asdf initialization command to `.bashrc`
+RUN echo ">>> Installing and initializing ASDF, configuring Git..." && \
+    git clone https://github.com/asdf-vm/asdf.git ${ASDF_DIR} --branch v0.14.0 && \
+    echo "\n. ${ASDF_DIR}/asdf.sh" >> ~/.bashrc && \
+    git config --global url."https://".insteadOf git://
 
 # ------------------------------------------------------------------------------
 # Stage 4: Application Setup & Tool Installation
@@ -82,17 +84,10 @@ COPY ./.tool-versions .
 COPY ./app ./
 COPY ./app/config ./config/
 
-# asdfを使ってyqをインストールする
-# 前のステージでgitの設定が完了しているため、ここではasdfのコマンドに集中できる
-RUN asdf plugin add yq && \
+RUN echo ">>> Installing tools specified in .tool-versions (e.g., yq)..."
+RUN . ~/.bashrc && \
+    asdf plugin add yq && \
     asdf install yq
-
-# Condaのベース環境を構築する
-RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
-    conda env create \
-      --file /app/config/foundation_components/accelerator/cuda_12.yml \
-      --file /app/config/foundation_components/python/3.12.yml \
-      --file /app/config/foundation_components/core_tools.yml
 
 # ------------------------------------------------------------------------------
 # Stage 5: Finalization
@@ -103,4 +98,4 @@ RUN . ${CONDA_DIR}/etc/profile.d/conda.sh && \
 # [思想] このイメージのデフォルトの役割は、開発とインストールのための「対話可能な工房」であること。
 # そのため、起動時のコマンドはインタラクティブなシェルとする。
 # コンテナ起動時に、conda環境が有効化されたbashを起動するように設定
-CMD [ "bash", "-c", "source /opt/asdf/asdf.sh && source /opt/conda/etc/profile.d/conda.sh && conda activate foundation && exec bash" ]
+CMD [ "bash", "-c", "source ~/.bashrc && exec bash" ]

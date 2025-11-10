@@ -77,10 +77,10 @@ run: build
 
 # === Development Commands ===
 shell: build
-	@echo ">>> Starting interactive shell in a new container..."
+	@echo ">>> Starting interactive shell in a new container (with GPU access)..."
 	@echo "    - Type 'exit' or press Ctrl+D to leave."
 	@echo "    - Your current directory is mounted at /app."
-	@docker run -it $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
+	@docker run -it --gpus all $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
 
 test: build
 	@echo ">>> Running tests..."

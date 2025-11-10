@@ -91,15 +91,39 @@ submit_log_to_takumi() {
 # Catalog Management Nodes
 # ==============================================================================
 
+fetch_external_catalogs() {
+    log_info "Fetching latest external catalogs..."
+    
+    local manager_list_url="https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/custom-node-list.json"
+    local external_catalog_path="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
+    local external_catalog_dir
+    external_catalog_dir=$(dirname "$external_catalog_path")
+
+    # ディレクトリが存在しない場合は作成する
+    mkdir -p "$external_catalog_dir"
+
+    # wgetコマンドでファイルをダウンロードする
+    if wget --quiet -O "$external_catalog_path" "$manager_list_url"; then
+        log_success "Successfully downloaded 'comfyui-manager/custom-node-list.json'."
+        return 0
+    else
+        log_error "Failed to download 'comfyui-manager/custom-node-list.json'."
+        log_warn "If you are offline, please ensure the file exists at: $external_catalog_path"
+        return 1
+    fi
+}
+
 build_merged_catalog() {
     local entity_name="$1"
     log_info "Building the merged catalog for '${entity_name}'..."
 
+    local yq_command="yq"
+
     # Define paths using the global constants
     local external_catalog="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
-    local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}.jsonc"
+    local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}.json"
     local merged_catalog_dir="${CACHE_DIR}/catalogs"
-    # The output file is pure JSON that is consumed by the program
+    
     local merged_catalog_path="${merged_catalog_dir}/${entity_name}.json"
 
     # --- Pre-flight Checks (Safety First) ---
@@ -116,8 +140,7 @@ build_merged_catalog() {
     mkdir -p "$merged_catalog_dir"
 
     # --- The Merge & Transform Operation ---
-    if yq eval-all --input-format json --input-format jsonc \
-        --output-format json --prettyPrint \
+    if "$yq_command" eval-all --output-format json --prettyPrint \
         'select(fileIndex == 0) * select(fileIndex == 1)' \
         "$external_catalog" \
         "$takumi_meta_catalog" \
@@ -265,20 +288,21 @@ detect_gpu_environment() {
 # The Takumi's Concierge & Sommelier (The "What" and "Why")
 # ==============================================================================
 
-run_concierge() {
+run_concierge_foundation() {
 
-    log_info "Welcome to The Takumi's Concierge."
+    log_info "Welcome to The Takumi's Foundation Concierge."
+    log_info "First, we will build the essential 'foundation' for your workshop."
     
-    # まず、ハードウェアを診断する
+    # Hardware diagnostics
     if ! detect_gpu_environment; then
         log_error "Failed to diagnose hardware environment. Cannot proceed."
         exit 1
     fi
 
-    # 診断結果に基づいて、提案する環境コンポーネントを決定
-    local accelerator_component="cpu" # デフォルトはCPU
+    # Environmental component proposals
+    local accelerator_component="cpu"
+    # If CUDA is detected, select the component that matches the major version
     if [[ "${state[detected_accelerator]}" == "cuda" ]]; then
-        # CUDAが検出された場合、メジャーバージョンに合ったコンポーネントを選択
         accelerator_component="cuda-${state[detected_cuda_major]}"
     fi
 
@@ -289,7 +313,7 @@ run_concierge() {
     echo "  - Accelerator:     ${accelerator_component} (Optimized for your system)"
     echo ""
 
-    # 提案したコンポーネントのymlファイルが実際に存在するかをチェック（安全装置）
+    # Safety equipment
     local component_path="${CONFIG_DIR}/foundation_components/accelerator/${accelerator_component}.yml"
     if [ ! -f "$component_path" ]; then
         log_error "Configuration for your accelerator ('${accelerator_component}') is not available."
@@ -303,16 +327,14 @@ run_concierge() {
         exit 1
     fi
 
-    # ユーザーが同意した最終的な構成を 'state' に保存
+    # Save the user's selected configuration in 'state'
     state["selected_accelerator"]=$accelerator_component
     state["selected_python"]="3.12"
     state["selected_core"]="core-tools"
+}
 
-
-    ##########################
-
-    log_info "Welcome to The Takumi's Concierge."
-    log_info "Your base foundation is perfect. Let's finalize your workshop."
+run_concierge_use_case() {
+    log_info "Your foundation is perfect. Now, let's select your specialized tools."
     
     echo ""
     echo "Please choose your primary use case:"
@@ -385,15 +407,21 @@ run_sommelier() {
 main() {
     log_info "Takumi Installer Engine v3.0 starting..."
 
-    # Safety equipment
+    # --- Phase 1: Preparation ---
+    # 取得に失敗しても、ローカルにファイルがあれば続行可能なので、警告に留める
+    if ! fetch_external_catalogs; then
+        log_warn "Could not fetch external catalogs. Proceeding with local files if available."
+    fi
+
     if ! build_merged_catalog "custom_nodes"; then
         log_error "Failed to prepare essential catalogs. Installation cannot proceed."
         exit 1
     fi
 
+    # --- Phase 2: Foundation Installation ---
     # Load state from history file if it exists
     if [ -f "$HISTORY_FILE" ]; then
-        log_info "Loaded installation history. Foundation seems to be already built."
+        log_info "Loaded installation history. Foundation is already built."
         # ---
         # A robust parser to load history into the `state` associative array.
         while IFS=':' read -r key value; do
@@ -403,35 +431,30 @@ main() {
         done < "$HISTORY_FILE"
     else
         # 履歴ファイルがない場合、初回実行とみなし、Conciergeと環境構築を実行
-        run_concierge
-        
+        run_foundation_concierge
+        # 環境構築に失敗した場合、Sommelierに助けを求める
         if ! combine_foundation_environment; then
-            # 環境構築に失敗した場合
-            run_sommelier # Sommelierに助けを求める
+            run_sommelier
             exit 1
         fi
     fi
 
     # --- ここから、ユースケース環境の追加インストールフェーズが始まる---
     # If use_case is not determined yet, run the initial user dialogue
-    log_info "Foundation is ready. Next, let's install your use-case specific tools."
+    log_info "Foundation is ready. Proceeding to use-case selection."
     if [ -z "${state[use_case]}" ]; then
-        run_concierge
+        run_use_case_concierge
     fi
     
     # Attempt the installation
-    if run_install_flow; then
-        # Success
-        log_success "Installation was successful!"
-        # Clean up history file on final success
-        rm -f "$HISTORY_FILE"
-        exit 0
-    else
-        # Failure
-        run_sommelier
+    if ! run_install_flow; then
+        run_sommelier; exit 1;
     fi
 
+    # --- Finalization ---
     log_success "All processes completed successfully!"
+    # 成功したら、次の再実行でPhase 3から始められるように、use_caseの選択だけを履歴に残すなどの高度化も考えられる
+    # rm -f "$HISTORY_FILE"
     exit 0
 }
 
