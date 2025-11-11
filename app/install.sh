@@ -120,11 +120,11 @@ build_merged_catalog() {
     local yq_command="yq"
 
     # Define paths using the global constants
-    local external_catalog="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
-    local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}.json"
     local merged_catalog_dir="${CACHE_DIR}/catalogs"
-    
-    local merged_catalog_path="${merged_catalog_dir}/${entity_name}.json"
+
+    local external_catalog="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
+    local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}_meta.json"
+    local merged_catalog_path="${merged_catalog_dir}/${entity_name}_merged.json"
 
     # --- Pre-flight Checks (Safety First) ---
     if [ ! -f "$external_catalog" ]; then
