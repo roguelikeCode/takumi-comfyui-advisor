@@ -1,0 +1,9 @@
+name: foundation
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly # PyTorchをCPU専用モードでインストールするための指定
