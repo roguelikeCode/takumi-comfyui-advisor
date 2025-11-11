@@ -1,0 +1,7 @@
+{
+  "kornia": {
+    "entity_type": "python_library",
+    "is_hazardous": true,
+    "install_instructions": {  }
+  }
+}

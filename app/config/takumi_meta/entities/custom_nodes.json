@@ -1,0 +1,6 @@
+{
+  "comfyui_ipadapter_plus": {
+    "entity_type": "custom_node",
+    "takumi_tags": ["core", "style-transfer"]
+  }
+}

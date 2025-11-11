@@ -1,7 +1,0 @@
-{
-  "kornia": {
-    "entity_type": "python_library", // これがPythonライブラリであることを明記
-    "is_hazardous": true, // hazardousタグよりも、より具体的なキー名にする
-    "install_instructions": {  }
-  }
-}
