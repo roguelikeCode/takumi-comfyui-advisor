@@ -51,6 +51,8 @@ CONTAINER_NAME := takumi-comfyui-dev
 DOCKER_RUN_OPTS := --rm \
 	--name $(CONTAINER_NAME) \
 	--user $(shell id -u):$(shell id -g) \
+	-v /etc/passwd:/etc/passwd:ro \
+	-v /etc/group:/etc/group:ro \
 	-v $(shell pwd)/cache:/app/cache \
 	-v $(shell pwd)/logs:/app/logs \
 	-v $(shell pwd)/external:/app/external
