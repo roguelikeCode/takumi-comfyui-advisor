@@ -86,8 +86,7 @@ COPY ./app/config ./config/
 
 RUN echo ">>> Installing tools specified in .tool-versions (e.g., yq)..."
 RUN . ~/.bashrc && \
-    asdf plugin add yq && \
-    asdf install yq
+    asdf install
 
 # ------------------------------------------------------------------------------
 # Stage 5: Finalization
