@@ -1,11 +1,11 @@
-#!/bin/bash
-
 # ==============================================================================
 # Takumi Installer Wrapper Script
 #
 # Description: This script orchestrates the installation process, handling the
 #              retry loop and user interaction outside of the Makefile.
 # ==============================================================================
+
+#!/bin/bash
 
 # --- Strict Mode & Safety ---
 set -euo pipefail
