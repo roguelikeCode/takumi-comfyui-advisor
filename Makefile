@@ -29,6 +29,7 @@ help:
 # ==============================================================================
 # Shell Color Codes
 # ==============================================================================
+
 YELLOW := \033[1;33m # Bold
 RED    := \033[0;31m
 GREEN  := \033[0;32m
@@ -61,8 +62,13 @@ DOCKER_RUN_OPTS := --rm \
 # Dockerfile Wrapper Recipes
 # ==============================================================================
 
-# --- Core Atomic Recipes ---
-# === Lifecycle Commands ===
+.PHONY: main dev maintenance
+main:
+dev:
+maintenance:
+
+# --- Main ---
+.PHONY: build install run
 build:
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
 	@docker build --rm --tag $(IMAGE_NAME):$(IMAGE_TAG) .
@@ -78,7 +84,8 @@ run: build
 	@echo "WARN: 'run' target is not yet implemented."
 # 例: docker run -it -p 8188:8188 $(DOCKER_RUN_OPTS) --gpus all $(IMAGE_NAME):$(IMAGE_TAG) python main.py
 
-# === Development Commands ===
+# --- Development ---
+.PHONY: shell test lint
 shell: build
 	@echo ">>> Starting interactive shell in a new container (with GPU access)..."
 	@echo "    - Type 'exit' or press Ctrl+D to leave."
@@ -86,19 +93,16 @@ shell: build
 	@docker run -it --gpus all $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
 
 test: build
-	@echo ">>> Running tests..."
-	@docker run $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash -c "\
-		set -e; \
-		echo '--- Testing build_merged_catalog ---'; \
-		/app/install.sh; \
-		if [ ! -f /app/cache/catalogs/custom_nodes.jsonc ]; then \
-			echo '🔴 ERROR: Merged catalog was not created.'; \
-			exit 1; \
-		fi; \
-		echo '✅ Catalog created successfully.'; \
-		echo '--- All tests passed ---'; \
-	"
+	@echo ">>> Running tests inside a new container..."
+	@docker run $(DOCKER_RUN_OPTS) \
+		-v $(shell pwd)/scripts/run-tests.sh:/app/tests/run.sh \
+		$(IMAGE_NAME):$(IMAGE_TAG) \
+		bash /app/tests/run.sh
 
+lint: 
+
+# --- Maintenance ---
+.PHONY: clean
 clean:
 	@echo ">>> Cleaning up..."
 	@-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
