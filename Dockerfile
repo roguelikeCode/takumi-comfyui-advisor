@@ -12,9 +12,8 @@
 # Stage 1: OS Environment Setup
 # ------------------------------------------------------------------------------
 FROM ubuntu:24.04
-
+SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # --- Core Build System ---
@@ -49,52 +48,54 @@ RUN apt-get update && \
 # ------------------------------------------------------------------------------
 ENV CONDA_DIR=/opt/conda
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
-
-RUN echo ">>> Downloading and installing Miniconda..." && \
+RUN echo ">>> [INFO]  Downloading and installing Miniconda..." && \
     wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_DIR && \
     rm ~/miniconda.sh
 
-RUN echo ">>> Initializing Conda and accepting Terms of Service..." && \
-    . ${CONDA_DIR}/etc/profile.d/conda.sh && \
-    conda init bash && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    conda config --set auto_activate false && \
-    conda clean -afy
-
 # ------------------------------------------------------------------------------
-# Stage 3: ASDF Installation & System Integration (Auxiliary Tool Manager)
+# Stage 3: ASDF Installation (Auxiliary Tool Manager)
 # ------------------------------------------------------------------------------
 ENV ASDF_DIR=/opt/asdf
 ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
-ENV GIT_TERMINAL_PROMPT=0
-
-# Add the asdf initialization command to `.bashrc`
-RUN echo ">>> Installing and initializing ASDF, configuring Git..." && \
-    git clone https://github.com/asdf-vm/asdf.git ${ASDF_DIR} --branch v0.14.0 && \
-    echo "\n. ${ASDF_DIR}/asdf.sh" >> ~/.bashrc && \
-    git config --global url."https://".insteadOf git://
+RUN echo ">>> [INFO]  Installing ASDF..." && \
+    git clone https://github.com/asdf-vm/asdf.git ${ASDF_DIR} --branch v0.14.0
 
 # ------------------------------------------------------------------------------
-# Stage 4: Application Setup & Tool Installation
+# Stage 4: System Integration & Configuration (Shell, Conda, ASDF, Git, TOS, etc.)
+# ------------------------------------------------------------------------------
+ENV GIT_TERMINAL_PROMPT=0
+RUN echo ">>> [INFO]  Initializing shell environment (Conda, ASDF, and Git)..." && \
+    echo ">>> --- [1/4] Initializing Conda..." && \
+    . ${CONDA_DIR}/etc/profile.d/conda.sh && \
+    conda init bash && \
+    echo ">>> --- [2/4] Initializing ASDF..." && \
+    echo "# <<< Initialize ASDF <<<" >> ~/.bashrc && \
+    echo ". ${ASDF_DIR}/asdf.sh" >> ~/.bashrc && \
+    echo ">>> --- [3/4] Setting up Git and Conda (global configuration)..." && \
+    git config --global url."https://".insteadOf git:// && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda config --set auto_activate false && \
+    echo ">>> --- [4/4] Cleaning up Conda cache..." && \
+    conda clean -afy
+
+# ------------------------------------------------------------------------------
+# Stage 5: Application Setup & Tool Installation
 # ------------------------------------------------------------------------------
 WORKDIR /app
-COPY ./.tool-versions .
+COPY ./.asdfrc /root/.asdfrc
+COPY ./.tool-versions /root/.tool-versions
 COPY ./app ./
 COPY ./app/config ./config/
 
-RUN echo ">>> Installing tools specified in .tool-versions (e.g., yq)..."
-RUN . ~/.bashrc && \
+RUN echo ">>> [INFO] Adding asdf plugins..." && \
+    . ~/.bashrc && \
+    asdf plugin add yq https://github.com/sudermanjr/asdf-yq.git && \
+    echo ">>> [INFO] Installing asdf tools..." && \
     asdf install
 
 # ------------------------------------------------------------------------------
-# Stage 5: Finalization
-#
-# - Define the default command to be executed when the container starts.
-# - For development, this will typically be an interactive shell.
+# Stage 6: Finalization
 # ------------------------------------------------------------------------------
-# [思想] このイメージのデフォルトの役割は、開発とインストールのための「対話可能な工房」であること。
-# そのため、起動時のコマンドはインタラクティブなシェルとする。
-# コンテナ起動時に、conda環境が有効化されたbashを起動するように設定
 CMD [ "bash", "-c", "source ~/.bashrc && exec bash" ]

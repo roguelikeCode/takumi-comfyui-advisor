@@ -13,6 +13,15 @@
 
 #!/bin/bash
 
+# ==============================================================================
+# Shell Environment Initialization
+# ==============================================================================
+
+# --- Conda and ASDF wrapper setup ---
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+
 # --- Development Mode ---
 DEV_MODE=${TAKUMI_DEV_MODE:-false}
 

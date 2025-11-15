@@ -1,0 +1,4 @@
+plugin_add_on_install = yes
+disable_plugin_short_name_repository = no
+legacy_version_file = no
+plugin_repository_last_check_duration = 1440
