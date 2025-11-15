@@ -79,7 +79,9 @@ submit_log_to_takumi() {
 
     # --- Production Mode ---
     # Ask user for consent and send to cloud
-    read -p "Contribute this anonymous log to The Takumi's Logbook? (Y/n): " consent
+    echo -n "Contribute this anonymous log to The Takumi's Logbook? (Y/n): "
+    read -n 1 -s consent
+    echo
     if [[ "${consent,,}" != "n" ]]; then
         log_info "Thank you. Submitting log to the collective intelligence..."
 
@@ -330,7 +332,9 @@ run_concierge_foundation() {
         accelerator_component="cpu"
     fi
     
-    read -p "Proceed with building this foundation? [Y/n]: " consent
+    echo -n "Proceed with building this foundation? [Y/n]: "
+    read -n 1 -s consent
+    echo
     if [[ "${consent,,}" == "n" ]]; then
         log_warn "Installation aborted by user."
         exit 1
@@ -352,7 +356,9 @@ run_concierge_use_case() {
     # --- To be implemented ---
     # Dynamically generate options from usecase_recipes.yml
     # ---
-    read -p "Enter number [1]: " choice
+    echo -n "Enter number [1]: "
+    read -n 1 -s choice
+    echo
     local use_case_key="photorealistic" # Placeholder
     if [[ "${choice}" == "2" ]]; then use_case_key="anime"; fi
 
@@ -361,7 +367,9 @@ run_concierge_use_case() {
     echo "  - Install a curated set of Python libraries for your custom nodes."
     echo "  - Apply special handling for libraries known to cause conflicts."
     echo ""
-    read -p "Proceed with this plan? (Y/n): " consent
+    echo -n "Proceed with this plan? (Y/n): "
+    read -n 1 -s consent
+    echo
     if [[ "${consent,,}" == "n" ]]; then
         log_warn "Installation aborted by user."
         exit 1 # Exit with a generic failure code
@@ -382,11 +390,15 @@ run_sommelier() {
 
     # Placeholder logic for demonstration
     log_warn "This appears to be an unknown issue."
-    read -p "Consult a small AI (SLM) for hints (experimental)? (Y/n): " consent
+    echo -n "Consult a small AI (SLM) for hints (experimental)? (Y/n): "
+    read -n 1 -s consent
+    echo
     if [[ "${consent,,}" == "y" ]]; then
         local slm_suggestion="pip install torch==2.2.0 --force-reinstall"
         
-        read -p "The SLM suggests: '$slm_suggestion'. Try this solution? (Y/n): " try_consent
+        echo -n "The SLM suggests: '$slm_suggestion'. Try this solution? (Y/n): "
+        read -n 1 -s try_consent
+        echo
         if [[ "${consent,,}" != "n" ]]; then
             echo "use_case:${state[use_case]}" > "$HISTORY_FILE"
             echo "retry_with:$slm_suggestion" >> "$HISTORY_FILE"
@@ -396,7 +408,9 @@ run_sommelier() {
     fi
 
     # FR-3.6: Escalate to The Takumi
-    read -p "Unable to resolve. Report this issue to The Takumi? (Y/n): " report_consent
+    echo -n "Unable to resolve. Report this issue to The Takumi? (Y/n): "
+    read -n 1 -s report_consent
+    echo
     if [[ "${report_consent,,}" != "n" ]]; then
         # --- To be implemented ---
         # Logic to submit state["last_error_log"] and state["history"]
