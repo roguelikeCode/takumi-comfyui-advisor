@@ -54,46 +54,52 @@ RUN echo ">>> [INFO]  Downloading and installing Miniconda..." && \
     rm ~/miniconda.sh
 
 # ------------------------------------------------------------------------------
-# Stage 3: ASDF Installation (Auxiliary Tool Manager)
+# Stage 3: Tool Installation (yq, Cross-Platform and Secure)
 # ------------------------------------------------------------------------------
-ENV ASDF_DIR=/opt/asdf
-ENV PATH="${ASDF_DIR}/bin:${ASDF_DIR}/shims:${PATH}"
-RUN echo ">>> [INFO]  Installing ASDF..." && \
-    git clone https://github.com/asdf-vm/asdf.git ${ASDF_DIR} --branch v0.14.0
+ARG TARGETARCH
+ENV YQ_VERSION=v4.48.2
+COPY ./app/config/foundation_components/architectures.json /tmp/architectures.json
+RUN echo ">>> --- [1/5] Installing yq ${YQ_VERSION} for arch: ${TARGETARCH} from DB..." && \
+    YQ_BLOCK=$(sed -n "/\"yq\":/,/}/p" /tmp/architectures.json | \
+               sed -n "/\"${YQ_VERSION}\":/,/}/p" | \
+               sed -n "/\"${TARGETARCH}\":/,/}/p") && \
+    echo ">>> --- [2/5] Extract the 'binary' and 'checksum' values..." && \
+    YQ_BINARY=$(echo "${YQ_BLOCK}" | grep '"binary":' | awk -F '"' '{print $4}') && \
+    YQ_CHECKSUM=$(echo "${YQ_BLOCK}" | grep '"checksum":' | awk -F '"' '{print $4}') && \
+    echo ">>> --- [3/5] Ensure safety..." && \
+    if [ -z "${YQ_BINARY}" ] || [ -z "${YQ_CHECKSUM}" ]; then \
+        echo "ERROR: Could not parse yq details from architectures.json for arch '${TARGETARCH}'" >&2; \
+        exit 1; \
+    fi && \
+    echo ">>> --- [4/5] Binary: ${YQ_BINARY}, Checksum: ${YQ_CHECKSUM}" && \
+    wget "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}" -O /usr/local/bin/yq && \
+    echo "${YQ_CHECKSUM}  /usr/local/bin/yq" | sha256sum -c - && \
+    chmod +x /usr/local/bin/yq && \
+    echo ">>> --- [5/5] Cleaning up cache..." && \
+    rm /tmp/architectures.json
 
 # ------------------------------------------------------------------------------
-# Stage 4: System Integration & Configuration (Shell, Conda, ASDF, Git, TOS, etc.)
+# Stage 4: System Integration & Configuration (Shell, Conda, Git, TOS, etc.)
 # ------------------------------------------------------------------------------
 ENV GIT_TERMINAL_PROMPT=0
-RUN echo ">>> [INFO]  Initializing shell environment (Conda, ASDF, and Git)..." && \
-    echo ">>> --- [1/4] Initializing Conda..." && \
+RUN echo ">>> [INFO]  Initializing shell environment (Conda and Git)..." && \
+    echo ">>> --- [1/3] Initializing Conda..." && \
     . ${CONDA_DIR}/etc/profile.d/conda.sh && \
     conda init bash && \
-    echo ">>> --- [2/4] Initializing ASDF..." && \
-    echo "# <<< Initialize ASDF <<<" >> ~/.bashrc && \
-    echo ". ${ASDF_DIR}/asdf.sh" >> ~/.bashrc && \
-    echo ">>> --- [3/4] Setting up Git and Conda (global configuration)..." && \
+    echo ">>> --- [2/3] Setting up Git and Conda (global configuration)..." && \
     git config --global url."https://".insteadOf git:// && \
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     conda config --set auto_activate false && \
-    echo ">>> --- [4/4] Cleaning up Conda cache..." && \
+    echo ">>> --- [3/3] Cleaning up Conda cache..." && \
     conda clean -afy
 
 # ------------------------------------------------------------------------------
-# Stage 5: Application Setup & Tool Installation
+# Stage 5: Application Setup
 # ------------------------------------------------------------------------------
 WORKDIR /app
-COPY ./.asdfrc /root/.asdfrc
-COPY ./.tool-versions /root/.tool-versions
 COPY ./app ./
 COPY ./app/config ./config/
-
-RUN echo ">>> [INFO] Adding asdf plugins..." && \
-    . ~/.bashrc && \
-    asdf plugin add yq https://github.com/sudermanjr/asdf-yq.git && \
-    echo ">>> [INFO] Installing asdf tools..." && \
-    asdf install
 
 # ------------------------------------------------------------------------------
 # Stage 6: Finalization
