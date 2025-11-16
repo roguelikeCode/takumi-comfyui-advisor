@@ -6,7 +6,6 @@
 #              It wraps complex, fragmented node commands with simple, memorable targets
 #              for developers.
 # ==============================================================================
-
 SHELL := /bin/bash
 
 # --- Help Message (Default Target) ---
@@ -29,7 +28,6 @@ help:
 # ==============================================================================
 # Shell Color Codes
 # ==============================================================================
-
 YELLOW := \033[1;33m # Bold
 RED    := \033[0;31m
 GREEN  := \033[0;32m
@@ -39,7 +37,6 @@ RESET  := \033[0m
 # ==============================================================================
 # Configuration
 # ==============================================================================
-
 # --- Variables ---
 MANAGER_LIST_URL := https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/custom-node-list.json
 CACHE_DIR := ./cache
@@ -61,7 +58,6 @@ DOCKER_RUN_OPTS := --rm \
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
-
 .PHONY: main dev maintenance
 main:
 dev:
