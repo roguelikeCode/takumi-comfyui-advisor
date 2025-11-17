@@ -454,7 +454,7 @@ main() {
         done < "$HISTORY_FILE"
     else
         # 履歴ファイルがない場合、初回実行とみなし、Conciergeと環境構築を実行
-        run_foundation_concierge
+        run_concierge_foundation
         # 環境構築に失敗した場合、Sommelierに助けを求める
         if ! combine_foundation_environment; then
             run_sommelier
@@ -466,7 +466,7 @@ main() {
     # If use_case is not determined yet, run the initial user dialogue
     log_info "Foundation is ready. Proceeding to use-case selection."
     if [ -z "${state[use_case]}" ]; then
-        run_use_case_concierge
+        run_concierge_use_case
     fi
     
     # Attempt the installation
