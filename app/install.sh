@@ -167,100 +167,6 @@ build_merged_catalog() {
 }
 
 # ==============================================================================
-# Installation Nodes (The "How")
-# ==============================================================================
-
-node_install_bulk_requirements() {
-    local use_case=$1
-    log_info "Installing bulk Python requirements for use case: '$use_case'..."
-    
-    # --- To be implemented ---
-    # 1. yq '.${use_case}.include_nodes[]' ${RECIPE_DIR}/usecase_recipes.yml
-    # 2. Loop through nodes, find their requirements.txt, concatenate them.
-    # 3. pip install -r combined_requirements.txt
-    # ---
-    
-    # Placeholder
-    echo "Simulating bulk install for '$use_case'..." && sleep 1
-    log_success "Bulk requirements installed."
-}
-
-node_install_hazardous_libraries() {
-    local use_case=$1
-    log_info "Installing hazardous libraries with special care for '$use_case'..."
-
-    # --- To be implemented ---
-    # 1. yq '.${use_case}.hazardous_installs[]' ${RECIPE_DIR}/usecase_recipes.yml
-    # 2. Loop through libraries and pip install them one by one.
-    # ---
-    
-    # Placeholder
-    log_info "-> Installing 'kornia' via pip..." && sleep 1
-    log_success "Hazardous libraries handled."
-}
-
-combine_foundation_environment() {
-    log_info "Combining components to build your 'foundation' environment..."
-    
-    # stateに保存された選択済みのコンポーネントを取得
-    local core_tools_yml="${CONFIG_DIR}/foundation_components/${state[selected_core]}.yml"
-    local python_yml="${CONFIG_DIR}/foundation_components/python/${state[selected_python]}.yml"
-    local accelerator_yml="${CONFIG_DIR}/foundation_components/accelerator/${state[selected_accelerator]}.yml"
-
-    # 全ての部品ファイルが存在するか、最後の安全確認
-    if ! { [ -f "$core_tools_yml" ] && [ -f "$python_yml" ] && [ -f "$accelerator_yml" ]; }; then
-        log_error "One or more required component files are missing. Cannot build environment."
-        echo "Checked paths:"
-        echo "  - $core_tools_yml"
-        echo "  - $python_yml"
-        echo "  - $accelerator_yml"
-        return 1
-    fi
-
-    # conda env createコマンドを動的に組み立てて実行
-    if . ${CONDA_DIR}/etc/profile.d/conda.sh && \
-        conda env create \
-            --file "$core_tools_yml" \
-            --file "$python_yml" \
-            --file "$accelerator_yml"; then
-        
-        log_success "Foundation environment built successfully."
-        # 成功の証として、履歴ファイルに構成を記録
-        echo "foundation_accelerator:${state[selected_accelerator]}" > "$HISTORY_FILE"
-        echo "foundation_python:${state[selected_python]}" >> "$HISTORY_FILE"
-        return 0
-    else
-        log_error "Failed to build the foundation environment."
-        return 1
-    fi
-}
-
-run_install_flow() {
-    log_info "Starting installation flow..."
-    local log_file="/tmp/install_$(date +%s).log"
-
-    # Execute installation nodes, redirecting all output to a log file.
-    if {
-        node_install_bulk_requirements "${state[use_case]}"
-        node_install_hazardous_libraries "${state[use_case]}"
-    } > "$log_file" 2>&1; then
-        # Success Case
-        rm -f "$log_file"
-        return 0
-    else
-        # Failure Case
-        local exit_code=$?
-        log_error "An error occurred during installation (exit code: $exit_code)."
-        log_warn "Full log has been captured for analysis."
-        
-        # Store captured log in the global state
-        state["last_error_log"]=$(cat "$log_file")
-        rm -f "$log_file" # Clean up temporary log file
-        return 1
-    fi
-}
-
-# ==============================================================================
 # Environment Diagnostics Node
 # ==============================================================================
 
@@ -335,7 +241,7 @@ run_concierge_foundation() {
     echo -n "Proceed with building this foundation? [Y/n]: "
     read -n 1 -s consent
     echo
-    if [[ "${consent,,}" == "n" ]]; then
+    if [[ "${consent,,}" != "y" ]]; then
         log_warn "Installation aborted by user."
         exit 1
     fi
@@ -421,6 +327,100 @@ run_sommelier() {
 
     log_error "Resolution process aborted by user."
     exit 1 # Exit with a generic failure code
+}
+
+# ==============================================================================
+# Installation Nodes (The "How")
+# ==============================================================================
+
+node_install_bulk_requirements() {
+    local use_case=$1
+    log_info "Installing bulk Python requirements for use case: '$use_case'..."
+    
+    # --- To be implemented ---
+    # 1. yq '.${use_case}.include_nodes[]' ${RECIPE_DIR}/usecase_recipes.yml
+    # 2. Loop through nodes, find their requirements.txt, concatenate them.
+    # 3. pip install -r combined_requirements.txt
+    # ---
+    
+    # Placeholder
+    echo "Simulating bulk install for '$use_case'..." && sleep 1
+    log_success "Bulk requirements installed."
+}
+
+node_install_hazardous_libraries() {
+    local use_case=$1
+    log_info "Installing hazardous libraries with special care for '$use_case'..."
+
+    # --- To be implemented ---
+    # 1. yq '.${use_case}.hazardous_installs[]' ${RECIPE_DIR}/usecase_recipes.yml
+    # 2. Loop through libraries and pip install them one by one.
+    # ---
+    
+    # Placeholder
+    log_info "-> Installing 'kornia' via pip..." && sleep 1
+    log_success "Hazardous libraries handled."
+}
+
+combine_foundation_environment() {
+    log_info "Combining components to build your 'foundation' environment..."
+    
+    # stateに保存された選択済みのコンポーネントを取得
+    local accelerator_yml="${CONFIG_DIR}/foundation_components/accelerator/${state[selected_accelerator]}.yml"
+    local python_yml="${CONFIG_DIR}/foundation_components/python/${state[selected_python]}.yml"
+    local core_tools_yml="${CONFIG_DIR}/foundation_components/${state[selected_core]}.yml"
+
+    # 全ての部品ファイルが存在するか、最後の安全確認
+    if ! { [ -f "$core_tools_yml" ] && [ -f "$python_yml" ] && [ -f "$accelerator_yml" ]; }; then
+        log_error "One or more required component files are missing. Cannot build environment."
+        echo "Checked paths:"
+        echo "  - $core_tools_yml"
+        echo "  - $python_yml"
+        echo "  - $accelerator_yml"
+        return 1
+    fi
+
+    # conda env createコマンドを動的に組み立てて実行
+    if . ${CONDA_DIR}/etc/profile.d/conda.sh && \
+        conda env create \
+            --file "$core_tools_yml" \
+            --file "$python_yml" \
+            --file "$accelerator_yml"; then
+        
+        log_success "Foundation environment built successfully."
+        # 成功の証として、履歴ファイルに構成を記録
+        echo "foundation_accelerator:${state[selected_accelerator]}" > "$HISTORY_FILE"
+        echo "foundation_python:${state[selected_python]}" >> "$HISTORY_FILE"
+        return 0
+    else
+        log_error "Failed to build the foundation environment."
+        return 1
+    fi
+}
+
+run_install_flow() {
+    log_info "Starting installation flow..."
+    local log_file="/tmp/install_$(date +%s).log"
+
+    # Execute installation nodes, redirecting all output to a log file.
+    if {
+        node_install_bulk_requirements "${state[use_case]}"
+        node_install_hazardous_libraries "${state[use_case]}"
+    } > "$log_file" 2>&1; then
+        # Success Case
+        rm -f "$log_file"
+        return 0
+    else
+        # Failure Case
+        local exit_code=$?
+        log_error "An error occurred during installation (exit code: $exit_code)."
+        log_warn "Full log has been captured for analysis."
+        
+        # Store captured log in the global state
+        state["last_error_log"]=$(cat "$log_file")
+        rm -f "$log_file" # Clean up temporary log file
+        return 1
+    fi
 }
 
 # ==============================================================================
