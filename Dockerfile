@@ -63,15 +63,16 @@ RUN echo ">>> --- [1/5] Installing yq ${YQ_VERSION} for arch: ${TARGETARCH} from
     YQ_BLOCK=$(sed -n "/\"yq\":/,/}/p" /tmp/architectures.json | \
                sed -n "/\"${YQ_VERSION}\":/,/}/p" | \
                sed -n "/\"${TARGETARCH}\":/,/}/p") && \
-    echo ">>> --- [2/5] Extract the 'binary' and 'checksum' values..." && \
+    echo ">>> --- [2/5] Extracting the 'binary' and 'checksum' values..." && \
     YQ_BINARY=$(echo "${YQ_BLOCK}" | grep '"binary":' | awk -F '"' '{print $4}') && \
     YQ_CHECKSUM=$(echo "${YQ_BLOCK}" | grep '"checksum":' | awk -F '"' '{print $4}') && \
-    echo ">>> --- [3/5] Ensure safety..." && \
+    echo ">>> --- [3/5] Ensuring safety..." && \
     if [ -z "${YQ_BINARY}" ] || [ -z "${YQ_CHECKSUM}" ]; then \
         echo "ERROR: Could not parse yq details from architectures.json for arch '${TARGETARCH}'" >&2; \
         exit 1; \
     fi && \
-    echo ">>> --- [4/5] Binary: ${YQ_BINARY}, Checksum: ${YQ_CHECKSUM}" && \
+    echo ">>> --- [4/5] Checking security" && \
+    echo "Binary: ${YQ_BINARY}, Checksum: ${YQ_CHECKSUM}" && \
     wget "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}" -O /usr/local/bin/yq && \
     echo "${YQ_CHECKSUM}  /usr/local/bin/yq" | sha256sum -c - && \
     chmod +x /usr/local/bin/yq && \
