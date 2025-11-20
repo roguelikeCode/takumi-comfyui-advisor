@@ -20,6 +20,8 @@ RUN apt-get update && \
     build-essential \
     cmake \
     golang-go \
+    # --- Python (for uv) ---
+    python3-pip \
     # --- Network & Version Control ---
     curl \
     wget \
@@ -64,6 +66,10 @@ RUN echo ">>> --- [1/3] Installing yq ${YQ_VERSION} for arch: ${TARGETARCH}..." 
     wget "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}" -O /usr/local/bin/yq && \
     echo "${YQ_CHECKSUM}  /usr/local/bin/yq" | sha256sum -c - && \
     chmod +x /usr/local/bin/yq
+
+# --- uv (Fast Python Package Installer) ---
+RUN echo ">>> Installing uv (via pip)..." && \
+    pip install uv --break-system-packages
 
 # --- Miniforge (Core Python Environment) ---
 ENV MINIFORGE_VERSION=25.9.1-0
