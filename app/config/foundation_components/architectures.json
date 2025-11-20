@@ -11,15 +11,15 @@
       }
     }
   },
-  "hadolint": {
-    "v2.12.0": {
+  "miniforge": {
+    "25.9.1-0": {
       "amd64": {
-        "binary": "hadolint-Linux-x86_64",
-        "checksum": "..."
+        "binary": "Miniforge3-25.9.1-0-Linux-x86_64.sh",
+        "checksum": "07f64c1d908ae036e9f6a81f97704899311c0ae677d83980d664b9781d4cc5fc"
       },
       "arm64": {
-        "binary": "hadolint-Linux-arm64",
-        "checksum": "..."
+        "binary": "Miniforge3-25.9.1-0-Linux-aarch64.sh",
+        "checksum": "b2b223680807e8f407b67603f6a5a224452b7f0ce177bc6719f870040c3bfa98"
       }
     }
   }

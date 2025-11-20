@@ -49,8 +49,7 @@ CONTAINER_NAME := takumi-comfyui-dev
 DOCKER_RUN_OPTS := --rm \
 	--name $(CONTAINER_NAME) \
 	--user $(shell id -u):$(shell id -g) \
-	-v /etc/passwd:/etc/passwd:ro \
-	-v /etc/group:/etc/group:ro \
+	-e HOME=/home/takumi \
 	-v $(shell pwd)/cache:/app/cache \
 	-v $(shell pwd)/logs:/app/logs \
 	-v $(shell pwd)/external:/app/external
@@ -67,7 +66,11 @@ maintenance:
 .PHONY: build install run
 build:
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
-	@docker build --rm --tag $(IMAGE_NAME):$(IMAGE_TAG) .
+	@docker build \
+		--build-arg TAKUMI_UID=$(shell id -u) \
+		--build-arg TAKUMI_GID=$(shell id -g) \
+		--rm --tag $(IMAGE_NAME):$(IMAGE_TAG) \
+		.
 	@echo "✅ Build complete."
 
 install: build

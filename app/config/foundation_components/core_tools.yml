@@ -2,6 +2,4 @@ name: foundation
 channels:
   - conda-forge
 dependencies:
-  - git
-  - wget
   - pip
