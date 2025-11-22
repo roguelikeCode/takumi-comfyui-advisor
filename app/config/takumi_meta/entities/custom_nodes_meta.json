@@ -1,6 +1,25 @@
 {
-  "comfyui_ipadapter_plus": {
-    "entity_type": "custom_node",
-    "takumi_tags": ["core", "style-transfer"]
+  "ComfyUI_IPAdapter_plus": {
+    "takumi_tags": ["ipadapter", "image-to-image", "essential"],
+    "takumi_note": "Crucial for style transfer and character consistency."
+  },
+  "ComfyUI-Manager": {
+    "takumi_tags": ["essential", "utility"],
+    "takumi_note": "The indispensable manager for ComfyUI."
+  },
+  "ComfyUI-KJNodes": {
+    "takumi_tags": ["utility", "image-processing"]
+  },
+  "ComfyUI-VideoHelperSuite": {
+    "takumi_tags": ["video", "utility"]
+  },
+  "comfyui_controlnet_aux": {
+    "takumi_tags": ["controlnet", "preprocessor"]
+  },
+  "comfyui_segment_anything": {
+    "takumi_tags": ["masking", "segmentation"]
+  },
+  "ComfyUI-MagicClothing": {
+    "takumi_tags": ["virtual-try-on", "fashion", "experimental"]
   }
 }
