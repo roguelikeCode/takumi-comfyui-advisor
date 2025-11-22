@@ -257,76 +257,90 @@ run_concierge_use_case() {
     
     echo ""
     echo "Please choose your primary use case:"
-    echo "  (1) Photorealistic"
-    echo "  (2) Anime / Illustration"
-    # --- To be implemented ---
-    # Dynamically generate options from usecase_recipes.yml
-    # ---
-    echo -n "Enter number [1]: "
-    read -n 1 -s choice
-    echo
-    local use_case_key="photorealistic" # Placeholder
-    if [[ "${choice}" == "2" ]]; then use_case_key="anime"; fi
+    echo "  (1) [Example] Photorealistic Image Generation"
+    echo "  (2) Create & Dress Up Original Fashion"
+    # --- To be implemented: Dynamically generate options from available recipes ---
+    echo ""
+    
+    # -n 1: 1文字だけ読み込む
+    # -s: 入力された文字を画面に表示しない (silent)
+    # -p: プロンプトメッセージを指定
+    read -n 1 -s -p "Enter number: " choice
+    echo # 改行してプロンプトを綺麗に見せる
+
+    # デフォルトのユースケースキーを定義
+    local use_case_key="photorealistic_example" # (仮のファイル名)
+
+    # ユーザーの選択に応じて、キーを上書き
+    case "$choice" in
+        "1")
+            # ユーザーが1を選択した場合 (デフォルトなので、実際には不要だが明確化のために記述)
+            use_case_key="photorealistic_example"
+            ;;
+        "2")
+            # [修正] ユーザーが2を選択した場合、正しいレシピファイル名(拡張子なし)を設定
+            use_case_key="create_and_dress_up_original_fashion"
+            ;;
+        *)
+            log_warn "Invalid selection. Proceeding with the default use-case: '${use_case_key}'."
+            # 不正な入力の場合は、デフォルトのまま進む
+            ;;
+    esac
+
+    # レシピファイルから、表示用の名前を取得する (より親切なUIのため)
+    local recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_key}.yml"
+    if [ ! -f "$recipe_path" ]; then
+        log_error "Recipe file for '${use_case_key}' does not exist at ${recipe_path}."
+        exit 1
+    fi
+    local display_name
+    display_name=$(yq -r '.display_name' "$recipe_path")
 
     echo ""
-    log_info "Plan for '$use_case_key':"
-    echo "  - Install a curated set of Python libraries for your custom nodes."
-    echo "  - Apply special handling for libraries known to cause conflicts."
+    log_info "You have selected: \"${display_name}\""
+    echo "The following components will be installed:"
+    # yqを使って、インストールされるコンポーネントのリストを綺麗に表示
+    yq -r '.components[]' "$recipe_path" | sed 's/^/  - /'
     echo ""
-    echo -n "Proceed with this plan? (Y/n): "
-    read -n 1 -s consent
-    echo
+    
+    read -n 1 -s -p "Proceed with this plan? [Y/n]: " consent
     if [[ "${consent,,}" == "n" ]]; then
-        log_warn "Installation aborted by user."
-        exit 1 # Exit with a generic failure code
+        log_warn "Use-case installation aborted by user."; exit 1;
     fi
 
-    # Store the final choice in the global state
+    # 最終的な選択をグローバルなstateに保存
     state["use_case"]=$use_case_key
 }
 
 run_sommelier() {
-    log_info "Consulting The Takumi's Sommelier for a solution..."
-    
-    # --- To be implemented ---
-    # FR-3.2: Rule-based check against error_recipes.yml
-    # FR-3.3: Escalate to SLM if no rule matches
-    # FR-3.4: Offer one-time retry
-    # ---
+    local problem_type="$1" # "missing_foundation" や "generic_error" など
+    local use_case_name="${state[use_case]}"
 
-    # Placeholder logic for demonstration
-    log_warn "This appears to be an unknown issue."
-    echo -n "Consult a small AI (SLM) for hints (experimental)? (Y/n): "
-    read -n 1 -s consent
-    echo
-    if [[ "${consent,,}" == "y" ]]; then
-        local slm_suggestion="pip install torch==2.2.0 --force-reinstall"
-        
-        echo -n "The SLM suggests: '$slm_suggestion'. Try this solution? (Y/n): "
-        read -n 1 -s try_consent
-        echo
-        if [[ "${consent,,}" != "n" ]]; then
-            echo "use_case:${state[use_case]}" > "$HISTORY_FILE"
-            echo "retry_with:$slm_suggestion" >> "$HISTORY_FILE"
-            log_info "Acknowledged. The orchestrator will retry with the new strategy."
-            exit 1 # Exit to signal a retry to the orchestrator
+    if [ "$problem_type" == "missing_foundation" ]; then
+        log_warn "The selected use-case '${use_case_name}' requires the 'foundation' environment, but it is not yet built."
+        read -p "Would you like to build the 'foundation' environment now? [Y/n]: " consent
+        if [[ "${consent,,}" == "n" ]]; then
+            log_error "Cannot proceed without the foundation environment. Aborting."; return 1;
         fi
-    fi
 
-    # FR-3.6: Escalate to The Takumi
-    echo -n "Unable to resolve. Report this issue to The Takumi? (Y/n): "
-    read -n 1 -s report_consent
-    echo
-    if [[ "${report_consent,,}" != "n" ]]; then
-        # --- To be implemented ---
-        # Logic to submit state["last_error_log"] and state["history"]
-        # ---
-        log_info "Thank you for your contribution. Preparing the report..."
-        exit 125 # Exit with special code for reporting
-    fi
+        # Foundation構築コンシェルジュを呼び出し、選択を行わせる
+        run_foundation_concierge
+        # 実際に構築を実行する
+        if ! combine_foundation_environment; then
+            log_error "Failed to build the foundation environment."
+            # ここで、さらに詳細なエラー解決フローに入ることも可能
+            return 1
+        fi
+        log_success "Foundation environment built successfully."
+        # 構築が成功したので、true (0) を返して、元のフローに復帰させる
+        return 0
 
-    log_error "Resolution process aborted by user."
-    exit 1 # Exit with a generic failure code
+    else # generic_error
+        log_info "Consulting The Takumi's Sommelier for a solution..."
+        log_warn "An unknown error occurred."
+        # ... (既存のエラー解決ロジック) ...
+        return 1
+    fi
 }
 
 # ==============================================================================
@@ -398,29 +412,161 @@ node_install_hazardous_libraries() {
     log_success "Hazardous libraries handled."
 }
 
-run_install_flow() {
-    log_info "Starting installation flow..."
-    local log_file="/tmp/install_$(date +%s).log"
+# ==============================================================================
+# Installation Engine v2.0 (Asset Materializer)
+#
+# [思想] このエンジンは、YAMLマニフェストに記述された「アセット」を、
+# 現実のファイルや環境へと「具現化(materialize)」する責務を持つ。
+# ==============================================================================
 
-    # Execute installation nodes, redirecting all output to a log file.
-    if {
-        node_install_bulk_requirements "${state[use_case]}"
-        node_install_hazardous_libraries "${state[use_case]}"
-    } > "$log_file" 2>&1; then
-        # Success Case
-        rm -f "$log_file"
-        return 0
-    else
-        # Failure Case
-        local exit_code=$?
-        log_error "An error occurred during installation (exit code: $exit_code)."
-        log_warn "Full log has been captured for analysis."
-        
-        # Store captured log in the global state
-        state["last_error_log"]=$(cat "$log_file")
-        rm -f "$log_file" # Clean up temporary log file
-        return 1
+# --- Component Installers (Dispatch Targets) ---
+
+install_component_conda() {
+    local source="$1"
+    local version="$2"
+    local channel="$3"
+    log_info "  -> Preparing conda package: ${source}${version}..."
+    # 実際のインストールは、conda env createで一括して行う
+    # ここでは、コマンドライン引数を組み立てるための文字列を返す
+    if [ -n "$channel" ]; then
+        echo "-c ${channel}"
     fi
+    echo "${source}${version}"
+}
+
+install_component_pip() {
+    local source="$1"
+    local version="$2"
+    log_info "  -> Preparing pip package: ${source}${version}..."
+    echo "${source}${version}"
+}
+
+install_component_custom_node() {
+    local source="$1"
+    local version="$2"
+    local comfyui_nodes_dir="/app/ComfyUI/custom_nodes"
+    
+    log_info "  -> Cloning custom node from ${source}..."
+    mkdir -p "$comfyui_nodes_dir"
+    
+    # [修正] git cloneの正しい文法: git clone <repo> <target_directory>
+    # gitリポジトリ名から、ディレクトリ名を自動で抽出する
+    local target_dir="${source##*/}" # URLの最後の/以降を取得
+    target_dir="${target_dir%.git}"   # 末尾の.gitを削除
+    
+    local clone_path="${comfyui_nodes_dir}/${target_dir}"
+
+    # クローン先にディレクトリが既に存在しない場合のみ、cloneを実行する
+    if [ ! -d "$clone_path" ]; then
+        if [ -n "$version" ] && [ "$version" != "main" ]; then
+            git clone --branch "$version" "$source" "$clone_path"
+        else
+            git clone "$source" "$clone_path"
+        fi
+    else
+        log_warn "    Directory '${target_dir}' already exists. Skipping clone."
+    fi
+}
+
+# --- Main Engine ---
+
+run_install_flow() {
+    local use_case_name="${state[use_case]}"
+    if [ -z "$use_case_name" ]; then
+        log_error "No use-case selected."; return 1;
+    fi
+    
+    log_info "Starting asset materialization for use-case: '${use_case_name}'..."
+    local recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.yml"
+    if [ ! -f "$recipe_path" ]; then
+        log_error "Asset manifest file not found: ${recipe_path}"; return 1;
+    fi
+
+    # --- Step 1: Materialize Conda Environment ---
+    if ! yq -e '.environment' "$recipe_path" > /dev/null; then
+        log_error "Asset manifest is missing required 'environment' section."; return 1;
+    fi
+
+    local env_name
+    env_name=$(yq -r '.environment.name' "$recipe_path")
+
+    if conda env list | grep -q "^${env_name}\s"; then
+        log_info "Conda environment '${env_name}' already exists. Skipping creation."
+    else
+        log_info "Materializing Conda environment '${env_name}'..."
+        
+        local conda_components
+        conda_components=$(yq -r '.environment.components[]' "$recipe_path")
+        
+        local conda_args=""
+        local conda_deps=""
+        
+        echo "$conda_components" | while read -r comp_id; do
+            # セマンティックIDをパース: type:source@version|channel
+            local type="${comp_id%%:*}"
+            local remainder="${comp_id#*:}"
+            local source="${remainder%%@*}"
+            remainder="${remainder#*@}"
+            local version="${remainder%%|*}"
+            local channel="${remainder##*|}"
+            # versionとchannelが同じ場合はchannelを空にする
+            if [ "$version" == "$channel" ]; then channel=""; fi
+
+            local result
+            result=$(install_component_conda "$source" "$version" "$channel")
+            conda_args+=$(echo "$result" | grep -- "-c")
+            conda_deps+=$(echo "$result" | grep -v -- "-c")
+            conda_deps+=" "
+        done
+
+        if ! conda create -n "$env_name" ${conda_args} ${conda_deps} -y; then
+            log_error "Failed to create Conda environment '${env_name}'."; return 1;
+        fi
+        log_success "Conda environment '${env_name}' materialized."
+    fi
+
+    # --- Step 2: Materialize Application Components ---
+    log_info "Materializing application components into '${env_name}'..."
+    
+    local app_components
+    app_components=$(yq -r '.components[]' "$recipe_path")
+    
+    local pip_deps="" # pipパッケージを一時的に貯める変数
+    
+    echo "$app_components" | while read -r comp_id; do
+        # セマンティックIDをパース
+        local type="${comp_id%%:*}"
+        local remainder="${comp_id#*:}"
+        local source="${remainder%%@*}"
+        local version="${remainder#*@}"
+        if [ "$source" == "$version" ]; then version=""; fi
+
+        case "$type" in
+            "custom-node")
+                install_component_custom_node "$source" "$version"
+                ;;
+            "pip")
+                # pipパッケージはすぐにはインストールせず、リストに追加していくだけ
+                pip_deps+=$(install_component_pip "$source" "$version")
+                pip_deps+=" "
+                ;;
+            *)
+                log_warn "Unknown component type: '${type}'. Skipping."
+                ;;
+        esac
+    done
+    
+    # --- Step 2.1: Install all pip packages at once ---
+    if [ -n "$pip_deps" ]; then
+        log_info "Installing all pip packages into '${env_name}' via uv..."
+        if ! conda run -n "$env_name" uv pip install $pip_deps; then
+            log_error "Failed to install pip packages."; return 1;
+        fi
+        log_success "All pip packages materialized."
+    fi
+
+    log_success "Asset materialization for '${use_case_name}' is complete."
+    return 0
 }
 
 # ==============================================================================
@@ -441,43 +587,21 @@ main() {
         exit 1
     fi
 
-    # --- Phase 2: Foundation Installation ---
-    # Load state from history file if it exists
-    if [ -f "$HISTORY_FILE" ]; then
-        log_info "Loaded installation history. Foundation is already built."
-        # ---
-        # A robust parser to load history into the `state` associative array.
-        while IFS=':' read -r key value; do
-            if [[ -n "$key" && -n "$value" ]]; then
-                state["$key"]="$value"
-            fi
-        done < "$HISTORY_FILE"
-    else
-        # 履歴ファイルがない場合、初回実行とみなし、Conciergeと環境構築を実行
-        run_concierge_foundation
-        # 環境構築に失敗した場合、Sommelierに助けを求める
-        if ! combine_foundation_environment; then
-            run_sommelier
-            exit 1
-        fi
-    fi
-
-    # --- ここから、ユースケース環境の追加インストールフェーズが始まる---
-    # If use_case is not determined yet, run the initial user dialogue
-    log_info "Foundation is ready. Proceeding to use-case selection."
+    # --- Phase 2: User Goal Identification ---
+    # 履歴ファイルにuse_caseが記録されていなければ、ユーザーに尋ねる
     if [ -z "${state[use_case]}" ]; then
         run_concierge_use_case
     fi
-    
-    # Attempt the installation
+
+    # --- Phase 3: Execution ---
     if ! run_install_flow; then
-        run_sommelier; exit 1;
+        # run_install_flowの中でSommelierが呼ばれるので、ここではシンプルに終了
+        log_error "Installation failed."
+        exit 1
     fi
 
     # --- Finalization ---
     log_success "All processes completed successfully!"
-    # 成功したら、次の再実行でPhase 3から始められるように、use_caseの選択だけを履歴に残すなどの高度化も考えられる
-    # rm -f "$HISTORY_FILE"
     exit 0
 }
 

@@ -1,0 +1,20 @@
+# ==============================================================================
+# Python 3.10 Environment Component
+#
+# This file defines a *separate* Conda environment named 'py310',
+# specifically for tools that require Python 3.10.
+# It is intended to coexist with the main 'foundation' environment.
+# ==============================================================================
+
+# [重要] 環境名を 'foundation' ではなく、'py310' のように、
+# その役割を示すユニークな名前にします。
+name: py310
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  # このPython 3.10環境で、pipを使って何かをインストールするために、
+  # pip自身も、この環境内にインストールしておきます。
+  - pip
