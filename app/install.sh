@@ -202,23 +202,76 @@ detect_gpu_environment() {
 }
 
 # ==============================================================================
-# The Takumi's Concierge & Sommelier (The "What" and "Why")
+# The Takumi's Concierge & Sommelier
 # ==============================================================================
 
-run_concierge_foundation() {
-
-    log_info "Welcome to The Takumi's Foundation Concierge."
-    log_info "First, we will build the essential 'foundation' for your workshop."
+run_concierge() {
+    log_info "Your foundation is perfect. Now, let's select your specialized tools."
     
-    # Hardware diagnostics
+    echo ""
+    echo "Please choose your primary use case:"
+    echo "  (1) [Defaults] (Basic setup)"
+    echo "  (2) Create & Dress Up Original Fashion (MagicClothing)"
+    # Future expansion: Dynamically list files from the directory
+    echo ""
+    
+    read -n 1 -s -p "Enter number: " choice
+    echo ""
+
+    local use_case_filename="defaults"
+
+    case "$choice" in
+        "1")
+            use_case_filename="defaults"
+            ;;
+        "2")
+            use_case_filename="create_and_dress_up_original_fashion"
+            ;;
+        *)
+            log_warn "Invalid selection. Proceeding with the default use-case: '${use_case_filename}'."
+            ;;
+    esac
+
+    # --- UI: 確認画面 ---
+    local use_case_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_filename}.yml"
+    
+    if [ ! -f "$use_case_path" ]; then
+        log_error "Recipe file for '${use_case_filename}' does not exist at ${use_case_path}."
+        exit 1
+    fi
+
+    local display_name
+    display_name=$(yq -r '.display_name' "$use_case_path")
+
+    echo ""
+    log_info "You have selected: \"${display_name}\""
+    echo "The following components will be installed:"
+    
+    # [修正] GraphAIスタイルのYAML(オブジェクト配列)を、人間が読みやすい文字列に整形して表示
+    # 例: "  - [custom-node] ComfyUI-MagicClothing (main)"
+    yq -r '.components[] | "  - [" + .type + "] " + .source + (if .version then " (" + .version + ")" else "" end)' "$use_case_path"
+    
+    echo ""
+    read -n 1 -s -p "Proceed with this plan? [Y/n]: " consent
+    echo ""
+
+    if [[ "${consent,,}" == "n" ]]; then
+        log_warn "Use-case installation aborted by user."
+        exit 1
+    fi
+
+    state["use_case"]=$use_case_filename
+}
+
+resolve_missing_foundation() {
+    
     if ! detect_gpu_environment; then
         log_error "Failed to diagnose hardware environment. Cannot proceed."
         exit 1
     fi
 
-    # Environmental component proposals
     local accelerator_component="cpu"
-    # If CUDA is detected, select the component that matches the major version
+
     if [[ "${state[detected_accelerator]}" == "cuda" ]]; then
         accelerator_component="cuda-${state[detected_cuda_major]}"
     fi
@@ -230,7 +283,6 @@ run_concierge_foundation() {
     echo "  - Accelerator:     ${accelerator_component} (Optimized for your system)"
     echo ""
 
-    # Safety equipment
     local component_path="${CONFIG_DIR}/foundation_components/accelerator/${accelerator_component}.yml"
     if [ ! -f "$component_path" ]; then
         log_error "Configuration for your accelerator ('${accelerator_component}') is not available."
@@ -238,78 +290,17 @@ run_concierge_foundation() {
         accelerator_component="cpu"
     fi
     
-    echo -n "Proceed with building this foundation? [Y/n]: "
-    read -n 1 -s consent
-    echo
-    if [[ "${consent,,}" != "y" ]]; then
+    read -n 1 -s -p "Proceed with building this foundation? [Y/n]: " consent
+    echo ""
+
+    if [[ "${consent,,}" == "n" ]]; then
         log_warn "Installation aborted by user."
         exit 1
     fi
 
-    # Save the user's selected configuration in 'state'
     state["selected_accelerator"]=$accelerator_component
     state["selected_python"]="3.12"
     state["selected_core"]="core_tools"
-}
-
-run_concierge_use_case() {
-    log_info "Your foundation is perfect. Now, let's select your specialized tools."
-    
-    echo ""
-    echo "Please choose your primary use case:"
-    echo "  (1) [Example] Photorealistic Image Generation"
-    echo "  (2) Create & Dress Up Original Fashion"
-    # --- To be implemented: Dynamically generate options from available recipes ---
-    echo ""
-    
-    # -n 1: 1文字だけ読み込む
-    # -s: 入力された文字を画面に表示しない (silent)
-    # -p: プロンプトメッセージを指定
-    read -n 1 -s -p "Enter number: " choice
-    echo # 改行してプロンプトを綺麗に見せる
-
-    # デフォルトのユースケースキーを定義
-    local use_case_key="photorealistic_example" # (仮のファイル名)
-
-    # ユーザーの選択に応じて、キーを上書き
-    case "$choice" in
-        "1")
-            # ユーザーが1を選択した場合 (デフォルトなので、実際には不要だが明確化のために記述)
-            use_case_key="photorealistic_example"
-            ;;
-        "2")
-            # [修正] ユーザーが2を選択した場合、正しいレシピファイル名(拡張子なし)を設定
-            use_case_key="create_and_dress_up_original_fashion"
-            ;;
-        *)
-            log_warn "Invalid selection. Proceeding with the default use-case: '${use_case_key}'."
-            # 不正な入力の場合は、デフォルトのまま進む
-            ;;
-    esac
-
-    # レシピファイルから、表示用の名前を取得する (より親切なUIのため)
-    local recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_key}.yml"
-    if [ ! -f "$recipe_path" ]; then
-        log_error "Recipe file for '${use_case_key}' does not exist at ${recipe_path}."
-        exit 1
-    fi
-    local display_name
-    display_name=$(yq -r '.display_name' "$recipe_path")
-
-    echo ""
-    log_info "You have selected: \"${display_name}\""
-    echo "The following components will be installed:"
-    # yqを使って、インストールされるコンポーネントのリストを綺麗に表示
-    yq -r '.components[]' "$recipe_path" | sed 's/^/  - /'
-    echo ""
-    
-    read -n 1 -s -p "Proceed with this plan? [Y/n]: " consent
-    if [[ "${consent,,}" == "n" ]]; then
-        log_warn "Use-case installation aborted by user."; exit 1;
-    fi
-
-    # 最終的な選択をグローバルなstateに保存
-    state["use_case"]=$use_case_key
 }
 
 run_sommelier() {
@@ -318,27 +309,28 @@ run_sommelier() {
 
     if [ "$problem_type" == "missing_foundation" ]; then
         log_warn "The selected use-case '${use_case_name}' requires the 'foundation' environment, but it is not yet built."
-        read -p "Would you like to build the 'foundation' environment now? [Y/n]: " consent
+        
+        read -n 1 -s -p "Would you like to build the 'foundation' environment now? [Y/n]: " consent
+        echo ""
+        
         if [[ "${consent,,}" == "n" ]]; then
-            log_error "Cannot proceed without the foundation environment. Aborting."; return 1;
-        fi
-
-        # Foundation構築コンシェルジュを呼び出し、選択を行わせる
-        run_foundation_concierge
-        # 実際に構築を実行する
-        if ! combine_foundation_environment; then
-            log_error "Failed to build the foundation environment."
-            # ここで、さらに詳細なエラー解決フローに入ることも可能
+            log_error "Cannot proceed without the foundation environment. Aborting."
             return 1
         fi
+
+        resolve_missing_foundation
+
+        if ! combine_foundation_environment; then
+            log_error "Failed to build the foundation environment."
+            return 1
+        fi
+        
         log_success "Foundation environment built successfully."
-        # 構築が成功したので、true (0) を返して、元のフローに復帰させる
         return 0
 
-    else # generic_error
+    else 
         log_info "Consulting The Takumi's Sommelier for a solution..."
         log_warn "An unknown error occurred."
-        # ... (既存のエラー解決ロジック) ...
         return 1
     fi
 }
@@ -350,12 +342,10 @@ run_sommelier() {
 combine_foundation_environment() {
     log_info "Combining components to build your 'foundation' environment..."
     
-    # stateに保存された選択済みのコンポーネントを取得
     local accelerator_yml="${CONFIG_DIR}/foundation_components/accelerator/${state[selected_accelerator]}.yml"
     local python_yml="${CONFIG_DIR}/foundation_components/python/${state[selected_python]}.yml"
     local core_tools_yml="${CONFIG_DIR}/foundation_components/${state[selected_core]}.yml"
 
-    # 全ての部品ファイルが存在するか、最後の安全確認
     if ! { [ -f "$accelerator_yml" ] && [ -f "$python_yml" ] && [ -f "$core_tools_yml" ]; }; then
         log_error "One or more required component files are missing. Cannot build environment."
         echo "Checked paths:"
@@ -365,7 +355,6 @@ combine_foundation_environment() {
         return 1
     fi
 
-    # conda env createコマンドを動的に組み立てて実行
     if . ${CONDA_DIR}/etc/profile.d/conda.sh && \
         conda env create \
             --file "$accelerator_yml" \
@@ -373,7 +362,6 @@ combine_foundation_environment() {
             --file "$core_tools_yml"; then
         
         log_success "Foundation environment built successfully."
-        # 成功の証として、履歴ファイルに構成を記録
         echo "foundation_accelerator:${state[selected_accelerator]}" > "$HISTORY_FILE"
         echo "foundation_python:${state[selected_python]}" >> "$HISTORY_FILE"
         return 0
@@ -413,55 +401,43 @@ node_install_hazardous_libraries() {
 }
 
 # ==============================================================================
-# Installation Engine v2.0 (Asset Materializer)
+# Installation Engine v3.0 (Asset Materializer)
 #
 # [思想] このエンジンは、YAMLマニフェストに記述された「アセット」を、
 # 現実のファイルや環境へと「具現化(materialize)」する責務を持つ。
 # ==============================================================================
 
-# --- Component Installers (Dispatch Targets) ---
-
-install_component_conda() {
-    local source="$1"
-    local version="$2"
-    local channel="$3"
-    log_info "  -> Preparing conda package: ${source}${version}..."
-    # 実際のインストールは、conda env createで一括して行う
-    # ここでは、コマンドライン引数を組み立てるための文字列を返す
-    if [ -n "$channel" ]; then
-        echo "-c ${channel}"
-    fi
-    echo "${source}${version}"
-}
-
-install_component_pip() {
-    local source="$1"
-    local version="$2"
-    log_info "  -> Preparing pip package: ${source}${version}..."
-    echo "${source}${version}"
-}
+# --- Component Installers ---
 
 install_component_custom_node() {
-    local source="$1"
-    local version="$2"
+    local id="$1"      # ID (e.g., "ComfyUI-MagicClothing")
+    local version="$2" # Branch/Tag (e.g., "main")
     local comfyui_nodes_dir="/app/ComfyUI/custom_nodes"
     
-    log_info "  -> Cloning custom node from ${source}..."
+    # [修正] IDを使ってメタデータからURLを取得する
+    local meta_file="${CACHE_DIR}/catalogs/custom_nodes_merged.json"
+    local url
+    # jsonからurlキーを取得 (キーが存在しない場合はnullになる)
+    url=$(jq -r --arg id "$id" '.[$id].url // empty' "$meta_file")
+
+    if [ -z "$url" ]; then
+        log_error "  -> Custom Node ID '${id}' not found in catalog. Skipping."
+        return 1
+    fi
+
+    log_info "  -> Cloning custom node '${id}' from ${url}..."
     mkdir -p "$comfyui_nodes_dir"
     
-    # [修正] git cloneの正しい文法: git clone <repo> <target_directory>
-    # gitリポジトリ名から、ディレクトリ名を自動で抽出する
-    local target_dir="${source##*/}" # URLの最後の/以降を取得
-    target_dir="${target_dir%.git}"   # 末尾の.gitを削除
-    
+    # URLからディレクトリ名を抽出
+    local target_dir="${url##*/}"
+    target_dir="${target_dir%.git}"
     local clone_path="${comfyui_nodes_dir}/${target_dir}"
 
-    # クローン先にディレクトリが既に存在しない場合のみ、cloneを実行する
     if [ ! -d "$clone_path" ]; then
         if [ -n "$version" ] && [ "$version" != "main" ]; then
-            git clone --branch "$version" "$source" "$clone_path"
+            git clone --branch "$version" "$url" "$clone_path"
         else
-            git clone "$source" "$clone_path"
+            git clone "$url" "$clone_path"
         fi
     else
         log_warn "    Directory '${target_dir}' already exists. Skipping clone."
@@ -477,89 +453,94 @@ run_install_flow() {
     fi
     
     log_info "Starting asset materialization for use-case: '${use_case_name}'..."
-    local recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.yml"
-    if [ ! -f "$recipe_path" ]; then
-        log_error "Asset manifest file not found: ${recipe_path}"; return 1;
+    
+    # [修正] 変数名を統一 ($recipe_path -> $use_case_path)
+    local use_case_path="${CONFIG_DIR}/recipes/use_cases/${use_case_name}.yml"
+    
+    if [ ! -f "$use_case_path" ]; then
+        log_error "Asset manifest file not found: ${use_case_path}"; return 1;
     fi
 
     # --- Step 1: Materialize Conda Environment ---
-    if ! yq -e '.environment' "$recipe_path" > /dev/null; then
+    # GraphAIスタイルに合わせて、TSVパース方式に変更
+    
+    if ! yq -e '.environment' "$use_case_path" > /dev/null; then
         log_error "Asset manifest is missing required 'environment' section."; return 1;
     fi
 
     local env_name
-    env_name=$(yq -r '.environment.name' "$recipe_path")
+    env_name=$(yq -r '.environment.name' "$use_case_path")
 
     if conda env list | grep -q "^${env_name}\s"; then
         log_info "Conda environment '${env_name}' already exists. Skipping creation."
     else
         log_info "Materializing Conda environment '${env_name}'..."
         
-        local conda_components
-        conda_components=$(yq -r '.environment.components[]' "$recipe_path")
-        
-        local conda_args=""
-        local conda_deps=""
-        
-        echo "$conda_components" | while read -r comp_id; do
-            # セマンティックIDをパース: type:source@version|channel
-            local type="${comp_id%%:*}"
-            local remainder="${comp_id#*:}"
-            local source="${remainder%%@*}"
-            remainder="${remainder#*@}"
-            local version="${remainder%%|*}"
-            local channel="${remainder##*|}"
-            # versionとchannelが同じ場合はchannelを空にする
-            if [ "$version" == "$channel" ]; then channel=""; fi
+        local conda_pkgs=()
+        local channels=()
 
-            local result
-            result=$(install_component_conda "$source" "$version" "$channel")
-            conda_args+=$(echo "$result" | grep -- "-c")
-            conda_deps+=$(echo "$result" | grep -v -- "-c")
-            conda_deps+=" "
-        done
+        # TSVで読み込み: type, source, version, channel
+        while IFS=$'\t' read -r type source version channel; do
+            if [ "$version" == "null" ]; then version=""; fi
+            if [ "$channel" == "null" ]; then channel=""; fi
 
-        if ! conda create -n "$env_name" ${conda_args} ${conda_deps} -y; then
+            # チャンネルがあればリストに追加
+            if [ -n "$channel" ]; then
+                channels+=("-c" "$channel")
+            fi
+            
+            # バージョン指定があれば結合 (python=3.10 の形式)
+            if [ -n "$version" ]; then
+                conda_pkgs+=("${source}=${version}")
+            else
+                conda_pkgs+=("${source}")
+            fi
+        done < <(yq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
+
+        # コマンド実行
+        # "${channels[@]}" "${conda_pkgs[@]}" で配列を展開して渡す
+        # sort -u でチャンネルの重複を排除する工夫も可能だが、condaが処理するのでそのままでOK
+        if ! conda create -n "$env_name" "${channels[@]}" "${conda_pkgs[@]}" -y; then
             log_error "Failed to create Conda environment '${env_name}'."; return 1;
         fi
+        
         log_success "Conda environment '${env_name}' materialized."
     fi
 
-    # --- Step 2: Materialize Application Components ---
+    # --- Step 2: Materialize Application Components (GraphAI Style) ---
     log_info "Materializing application components into '${env_name}'..."
     
-    local app_components
-    app_components=$(yq -r '.components[]' "$recipe_path")
-    
-    local pip_deps="" # pipパッケージを一時的に貯める変数
-    
-    echo "$app_components" | while read -r comp_id; do
-        # セマンティックIDをパース
-        local type="${comp_id%%:*}"
-        local remainder="${comp_id#*:}"
-        local source="${remainder%%@*}"
-        local version="${remainder#*@}"
-        if [ "$source" == "$version" ]; then version=""; fi
+    local pip_deps=()
+
+    while IFS=$'\t' read -r type source version; do
+        if [ "$version" == "null" ]; then version=""; fi
+
+        log_info "Processing: [${type}] ${source} (${version})"
 
         case "$type" in
             "custom-node")
+                # sourceにはIDが入っている
                 install_component_custom_node "$source" "$version"
                 ;;
             "pip")
-                # pipパッケージはすぐにはインストールせず、リストに追加していくだけ
-                pip_deps+=$(install_component_pip "$source" "$version")
-                pip_deps+=" "
+                if [ -n "$version" ]; then
+                    pip_deps+=("${source}${version}")
+                else
+                    pip_deps+=("${source}")
+                fi
                 ;;
             *)
-                log_warn "Unknown component type: '${type}'. Skipping."
+                log_warn "Unknown component type: '${type}'"
                 ;;
         esac
-    done
-    
-    # --- Step 2.1: Install all pip packages at once ---
-    if [ -n "$pip_deps" ]; then
-        log_info "Installing all pip packages into '${env_name}' via uv..."
-        if ! conda run -n "$env_name" uv pip install $pip_deps; then
+
+    done < <(yq -r '.components[] | [.type, .source, .version] | @tsv' "$use_case_path")
+
+    # [追加] 溜め込んだpipパッケージを一括インストール
+    if [ ${#pip_deps[@]} -gt 0 ]; then
+        log_info "Installing pip packages into '${env_name}' via uv..."
+        # conda runを使って、指定した環境の中でuvを実行
+        if ! conda run -n "$env_name" uv pip install "${pip_deps[@]}"; then
             log_error "Failed to install pip packages."; return 1;
         fi
         log_success "All pip packages materialized."
@@ -590,7 +571,7 @@ main() {
     # --- Phase 2: User Goal Identification ---
     # 履歴ファイルにuse_caseが記録されていなければ、ユーザーに尋ねる
     if [ -z "${state[use_case]}" ]; then
-        run_concierge_use_case
+        run_concierge
     fi
 
     # --- Phase 3: Execution ---
