@@ -20,8 +20,13 @@ RUN apt-get update && \
     build-essential \
     cmake \
     golang-go \
+    # --- JSON Processor ---
+    jq \
     # --- Python (for uv) ---
     python3-pip \
+    # --- Specific Build Dependencies for AI/Image Libraries ---
+    pkg-config \
+    libcairo2-dev \
     # --- Network & Version Control ---
     curl \
     wget \
@@ -52,21 +57,6 @@ RUN echo ">>> Creating 'takumi' user with UID=${TAKUMI_UID} GID=${TAKUMI_GID}...
 ARG TARGETARCH
 COPY ./app/config/foundation_components/architectures.json /tmp/architectures.json
 
-# --- yq (Bootstrap Tool) ---
-ENV YQ_VERSION=v4.48.2
-RUN echo ">>> --- [1/3] Installing yq ${YQ_VERSION} for arch: ${TARGETARCH}..." && \
-    YQ_BLOCK=$(sed -n "/\"yq\":/,/}/p" /tmp/architectures.json | \
-               sed -n "/\"${YQ_VERSION}\":/,/}/p" | \
-               sed -n "/\"${TARGETARCH}\":/,/}/p") && \
-    echo ">>> --- [2/3] Extracting the 'binary' and 'checksum' values..." && \
-    YQ_BINARY=$(echo "${YQ_BLOCK}" | grep '"binary":' | awk -F '"' '{print $4}') && \
-    YQ_CHECKSUM=$(echo "${YQ_BLOCK}" | grep '"checksum":' | awk -F '"' '{print $4}') && \
-    echo ">>> --- [3/3] Checking security" && \
-    echo "Binary: ${YQ_BINARY}, Checksum: ${YQ_CHECKSUM}" && \
-    wget "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}" -O /usr/local/bin/yq && \
-    echo "${YQ_CHECKSUM}  /usr/local/bin/yq" | sha256sum -c - && \
-    chmod +x /usr/local/bin/yq
-
 # --- uv (Fast Python Package Installer) ---
 RUN echo ">>> Installing uv (via pip)..." && \
     pip install uv --break-system-packages
@@ -76,8 +66,9 @@ ENV MINIFORGE_VERSION=25.9.1-0
 ENV CONDA_DIR=/opt/conda
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
 RUN echo ">>> --- [1/3] Installing Miniforge ${MINIFORGE_VERSION} for arch: ${TARGETARCH}..." && \
-    MINIFORGE_BINARY=$(yq -r ".miniforge.\"${MINIFORGE_VERSION}\".\"${TARGETARCH}\".binary" /tmp/architectures.json) && \
-    MINIFORGE_CHECKSUM=$(yq -r ".miniforge.\"${MINIFORGE_VERSION}\".\"${TARGETARCH}\".checksum" /tmp/architectures.json) && \
+    # バージョン番号にドットが含まれるため、.miniforge["ver"]["arch"].binary の形式でアクセスする
+    MINIFORGE_BINARY=$(jq -r ".miniforge[\"${MINIFORGE_VERSION}\"][\"${TARGETARCH}\"].binary" /tmp/architectures.json) && \
+    MINIFORGE_CHECKSUM=$(jq -r ".miniforge[\"${MINIFORGE_VERSION}\"][\"${TARGETARCH}\"].checksum" /tmp/architectures.json) && \
     echo ">>> --- [2/3] Checking security" && \
     wget "https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/${MINIFORGE_BINARY}" -O /tmp/miniforge.sh && \
     echo "${MINIFORGE_CHECKSUM}  /tmp/miniforge.sh" | sha256sum -c - && \
