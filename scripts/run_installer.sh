@@ -17,14 +17,30 @@ readonly CONTAINER_NAME="takumi-comfyui-dev"
 readonly HISTORY_FILE=".install_history"
 
 # --- Docker Run Options ---
+# [修正] MakefileのDOCKER_RUN_OPTSと同じ設定にする必要があります
+# 特に、storage/envs のマウントが重要です
+# [追加] パッケージキャッシュをマウント (権限エラー回避 & 高速化)
 readonly DOCKER_RUN_OPTS="--rm \
-	--name $CONTAINER_NAME \
-	-v $(pwd)/cache:/app/cache \
-	-v $(pwd)/logs:/app/logs \
-	-v $(pwd)/external:/app/external"
-
+    --name $CONTAINER_NAME \
+    --user $(id -u):$(id -g) \
+    -w /app \
+    -e HOME=/home/takumi \
+    -v $(pwd)/cache:/app/cache \
+    -v $(pwd)/logs:/app/logs \
+    -v $(pwd)/external:/app/external \
+    -v $(pwd)/app:/app \
+    -v $(pwd)/storage/pkgs:/home/takumi/.conda/pkgs \
+    -v $(pwd)/storage/envs:/home/takumi/.conda/envs" 
 
 # --- Main Loop ---
+
+# [修正] 安全装置: もしディレクトリとして存在してしまっていたら削除する
+if [ -d "$HISTORY_FILE" ]; then
+    echo "Removing directory '$HISTORY_FILE' to replace with a file..."
+    rm -rf "$HISTORY_FILE"
+fi
+
+# 空の履歴ファイルを作成（なければ作成、あればタイムスタンプ更新）
 touch "$HISTORY_FILE"
 
 while true; do

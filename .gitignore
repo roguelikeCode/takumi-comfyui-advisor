@@ -1,3 +1,21 @@
+# Local user home directories created by Docker
+/home/
+/.home/
+
+# ComfyUI Source Code (Downloaded by install.sh)
+/app/ComfyUI/
+
+# Cache
 /cache/
+
+# Logs
 /logs/
+
+# Local installation state
+.install_history
+
+# External installation
 /external/
+
+# Conda environments and package cache (Heavy binaries)
+/storage/

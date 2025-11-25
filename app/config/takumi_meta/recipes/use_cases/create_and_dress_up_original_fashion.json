@@ -92,6 +92,12 @@
   },
   "components": [
     {
+      "type": "git-clone",
+      "source": "https://github.com/comfyanonymous/ComfyUI.git",
+      "version": "master",
+      "path": "/app/ComfyUI"
+    },
+    {
       "type": "custom-node",
       "source": "ComfyUI_MagicClothing",
       "version": "main"

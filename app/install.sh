@@ -399,15 +399,37 @@ run_install_flow() {
     
     local pip_deps=()
 
-    while IFS=$'\t' read -r type source version; do
+    # [修正1] jqコマンド: .path も抽出するように追加 (.path // "" はnullなら空文字にする意)
+    # [修正2] readコマンド: path 変数を受け取るように追加
+    while IFS=$'\t' read -r type source version path; do
         if [ "$version" == "null" ]; then version=""; fi
+        if [ "$path" == "null" ]; then path=""; fi
 
-        log_info "Processing: [${type}] ${source} (${version})"
+        log_info "Processing: [${type}] ${source}"
 
         case "$type" in
+            "git-clone")
+                # [新設] 汎用的なGit Clone処理
+                if [ -z "$path" ]; then
+                    log_error "Path is required for git-clone type: ${source}"; continue;
+                fi
+                log_info "  -> Cloning repository to ${path}..."
+                
+                if [ ! -d "$path" ]; then
+                    if [ -n "$version" ] && [ "$version" != "main" ] && [ "$version" != "master" ]; then
+                         git clone --branch "$version" "$source" "$path"
+                    else
+                         git clone "$source" "$path"
+                    fi
+                else
+                    log_warn "    Directory ${path} already exists. Skipping."
+                fi
+                ;;
+
             "custom-node")
                 install_component_custom_node "$source" "$version"
                 ;;
+
             "pip")
                 if [ -n "$version" ]; then
                     pip_deps+=("${source}${version}")
@@ -420,12 +442,12 @@ run_install_flow() {
                 ;;
         esac
 
-    done < <(jq -r '.components[] | [.type, .source, .version] | @tsv' "$use_case_path")
+    done < <(jq -r '.components[] | [.type, .source, .version, .path // ""] | @tsv' "$use_case_path")
 
     # --- Step 2.1: Install pip packages ---
     if [ ${#pip_deps[@]} -gt 0 ]; then
         log_info "Installing pip packages into '${env_name}' via uv..."
-        # [重要] conda runを使って、作成した環境の中でuvを実行
+        # プログレスバーが見えるように --no-capture-output を推奨
         if ! conda run -n "$env_name" --no-capture-output uv pip install "${pip_deps[@]}"; then
             log_error "Failed to install pip packages."; return 1;
         fi

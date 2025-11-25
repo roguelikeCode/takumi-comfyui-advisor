@@ -46,13 +46,19 @@ CUSTOM_NODE_LIST_CACHE := $(CACHE_DIR)/custom-node-list.json
 IMAGE_NAME := takumi-comfyui
 IMAGE_TAG  := latest
 CONTAINER_NAME := takumi-comfyui-dev
+# [追加] Condaの仮想環境をホスト側の 'storage/envs' に保存する
+# これにより、コンテナを再起動しても環境が維持される
 DOCKER_RUN_OPTS := --rm \
 	--name $(CONTAINER_NAME) \
 	--user $(shell id -u):$(shell id -g) \
+	-w /app \
 	-e HOME=/home/takumi \
 	-v $(shell pwd)/cache:/app/cache \
 	-v $(shell pwd)/logs:/app/logs \
-	-v $(shell pwd)/external:/app/external
+	-v $(shell pwd)/external:/app/external \
+	-v $(shell pwd)/app:/app \
+	-v $(shell pwd)/scripts:/app/scripts \
+	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs 
 
 # ==============================================================================
 # Dockerfile Wrapper Recipes
@@ -77,11 +83,15 @@ install: build
 	@echo ">>> Launching installer wrapper..."
 	@bash ./scripts/run_installer.sh
 
-# [未実装] 将来、ComfyUIを起動するコマンドをここに記述する
-run: build
-	@echo ">>> Running the application..."
-	@echo "WARN: 'run' target is not yet implemented."
-# 例: docker run -it -p 8188:8188 $(DOCKER_RUN_OPTS) --gpus all $(IMAGE_NAME):$(IMAGE_TAG) python main.py
+run:
+	@echo ">>> Starting ComfyUI..."
+	@echo ">>> Open http://localhost:8188 in your browser after server starts."
+	@docker run -it --rm \
+		--gpus all \
+		-p 8188:8188 \
+		$(DOCKER_RUN_OPTS) \
+		$(IMAGE_NAME):$(IMAGE_TAG) \
+		bash /app/scripts/run.sh
 
 # --- Development ---
 .PHONY: shell test lint
