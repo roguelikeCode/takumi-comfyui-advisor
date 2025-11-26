@@ -494,4 +494,8 @@ main() {
 }
 
 # --- Script Entry Point ---
-main "$@"
+# [修正] 直接実行された場合のみ main を呼び出す。
+# 他のスクリプトから source された場合は、関数定義だけを読み込んで何もしない。
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

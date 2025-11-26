@@ -103,10 +103,10 @@ shell: build
 
 test: build
 	@echo ">>> Running tests inside a new container..."
+# [修正] 個別マウントをやめ、DOCKER_RUN_OPTSでマウント済みのパスを直接使う
 	@docker run $(DOCKER_RUN_OPTS) \
-		-v $(shell pwd)/scripts/run-tests.sh:/app/tests/run.sh \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
-		bash /app/tests/run.sh
+		bash /app/scripts/run_tests.sh
 
 lint: 
 
