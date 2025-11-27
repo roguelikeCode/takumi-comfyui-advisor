@@ -68,33 +68,37 @@ submit_log_to_takumi() {
     local log_content="$1" 
 
     # --- Development Mode ---
-    # Write the log to a local file
     if [ "$DEV_MODE" = "true" ]; then
-        mkdir -p "$LOG_DIR"
-        local log_file="$LOG_DIR/logbook_$(date +%s).jsonc"
-        echo "$log_content" > "$log_file"
-        log_warn "DEV MODE: Log saved locally to $log_file"
+        # ... (既存のローカル保存ロジック) ...
         return
     fi
 
     # --- Production Mode ---
-    # Ask user for consent and send to cloud
     echo -n "Contribute this anonymous log to The Takumi's Logbook? (Y/n): "
     read -n 1 -s consent
     echo
     if [[ "${consent,,}" != "n" ]]; then
         log_info "Thank you. Submitting log to the collective intelligence..."
 
-        # ログの内容を curl コマンドで送信する
-        # curl -X POST \
-        #  -H "Content-Type: application/json" \
-        #  -d "$log_content" \  # <-- $LOG_JSON から $log_content に修正
-        #  "https://<your-api-gateway-endpoint>"
-        
-        # (上記のcurlはまだ動かないので、今はシミュレーションする)
-        sleep 1 # 送信しているように見せる
-        
-        log_success "Log submitted successfully."
+        # [修正] あなたのAPI GatewayのURLに書き換えてください
+        local api_url="https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
+
+        # curlでPOST送信
+        # -s: 静かに実行 (進捗バーを出さない)
+        # -o /dev/null: 結果を画面に出さない
+        # -w "%{http_code}": HTTPステータスコードだけを表示
+        local status_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "$log_content" \
+            "$api_url")
+
+        if [ "$status_code" -eq 200 ] || [ "$status_code" -eq 201 ]; then
+            log_success "Log submitted successfully."
+        else
+            log_warn "Failed to submit log (HTTP $status_code). Saved locally instead."
+            # 失敗したらローカルに保存するなどのフォールバックがあると親切
+        fi
     fi
 }
 
@@ -487,6 +491,21 @@ main() {
         log_error "Installation failed."
         exit 1
     fi
+
+    # --- Phase 4: Log Submission (ここを追加！) ---
+    # 送信するデータをJSON形式で作成
+    local log_payload
+    log_payload=$(cat <<EOF
+{
+  "status": "success",
+  "use_case": "${state[use_case]}",
+  "accelerator": "${state[selected_accelerator]:-unknown}",
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+)
+    # 作成したデータを渡して送信関数を呼び出す
+    submit_log_to_takumi "$log_payload"
 
     # --- Finalization ---
     log_success "All processes completed successfully!"
