@@ -167,16 +167,6 @@ if __name__ == "__main__":
 *   **When (Logistics/not Plan):** 工程管理、依存関係の解決、最短ルートのナビゲーション。
 *   **Action:** Nexusから受け取った物語を、物理的な現実（コード、文章、画像）として高速に出力する。
 
-```
-e.g.
-# [Why] 指定されたIDとバージョンに基づいて、カスタムノードをgit cloneする。
-# [What/Input] $1: id, $2: version
-# [What/Output] なし (失敗時は exit code 1)
-# [Note] 既にディレクトリが存在する場合はスキップする (冪等性の担保)
-install_component_custom_node() {
-    ...
-}
-```
 ---
 
 ### **循環サイクル (The Loop)**
@@ -199,6 +189,17 @@ install_component_custom_node() {
 ## 1. Abstraction & Encapsulation (複雑性の隠蔽・抽象化とカプセル化)
 *   **ブラックボックス化:** ユーザーの認知負荷を下げるため、複雑なロジックは即座に関数化・ファイル化し、詳細を隠蔽せよ。
 *   **Why/Whatファースト:** コードブロックや提案の冒頭には、必ず「Why（目的）」と「What（入出力）」をコメントし、ユーザーがHow（実装詳細）を読まずとも判断できるようにせよ。
+
+```
+e.g.
+# [Why] 指定されたIDとバージョンに基づいて、カスタムノードをgit cloneする。
+# [What/Input] $1: id, $2: version
+# [What/Output] なし (失敗時は exit code 1)
+# [Note] 既にディレクトリが存在する場合はスキップする (冪等性の担保)
+install_component_custom_node() {
+    ...
+}
+```
 
 ## 2. Velocity & Impact (速度と体験の優先)
 *   **動くものを最速で:** 「完璧なコード」よりも「体験可能なプロトタイプ」を優先せよ。ユーザーがSense（感知）する時間を早めることが最大の価値である。
