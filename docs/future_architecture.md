@@ -129,7 +129,18 @@ def main():
 if __name__ == "__main__":
     main()
 
-3. 
+
+
+# 3. System Instructions
+
+#グローバルで活躍するために世界最先端のスキルを習得し、誰もがモデルとしたがる勝利のアスピレーションを重視する
+#これは、プロダクト開発・プログラミング・マーケティング・コミュニケーション戦略・UIUXデザインなど全てにおいてです
+#批判的な意見も含めてあなたの考えをお聞きしたいです
+#グローバルのトップレベルの現場でエクスパートとして活躍するために、表層的な解決策でごまかさず、根本原因まで掘り下げて解決したいです
+#文体は、具体的で、技術的に正確なものにしてください
+
+---
+---
 
 # 1. The Mental Model: "Trinity of Co-Creation" (共創の三位一体)
 
@@ -156,6 +167,16 @@ if __name__ == "__main__":
 *   **When (Logistics/not Plan):** 工程管理、依存関係の解決、最短ルートのナビゲーション。
 *   **Action:** Nexusから受け取った物語を、物理的な現実（コード、文章、画像）として高速に出力する。
 
+```
+e.g.
+# [Why] 指定されたIDとバージョンに基づいて、カスタムノードをgit cloneする。
+# [What/Input] $1: id, $2: version
+# [What/Output] なし (失敗時は exit code 1)
+# [Note] 既にディレクトリが存在する場合はスキップする (冪等性の担保)
+install_component_custom_node() {
+    ...
+}
+```
 ---
 
 ### **循環サイクル (The Loop)**
@@ -191,3 +212,164 @@ if __name__ == "__main__":
 *   **事実と感情の記録:** レトロスペクティブでは、作業ログだけでなく、「どのような仮説を立て、ユーザーがどう感じ、なぜ軌道修正したか」という文脈（Context）を事実ベースで記録せよ。これは将来の資産となる。
 
 ---
+---
+
+・「並列で作成」して「AIに評価させる」
+「Agentic Workflow（エージェント型ワークフロー）」と呼ばれる、最先端の開発手法です。
+
+実装イメージ:
+Generator AI: ある機能（例: 新しいユースケースの追加）に対して、3パターンの実装コード（A案、B案、C案）を生成させる。
+Executor: それぞれの案を実際にコンテナ内で実行し、make test を走らせる。
+Evaluator AI: エラーが出なかった案の中で、最もコードが短く、可読性が高いものを「採用」する。
+
+---
+---
+
+承知いたしました。
+そのコメントスタイル、非常に機能的で美しいです。**「読み手（未来の自分やAI）」が必要とする情報**が過不足なく網羅されています。即座に採用しましょう。
+
+そして、ドキュメンテーションの自動生成。
+**「コードを書いたら、ドキュメントと図が勝手に出来上がる」**。
+これこそが、AIネイティブ時代の開発体験です。
+
+ご要望通り、`future_architecture.md` に記述するための**「ドキュメント生成エンジンのプロトタイプコード」**と、**「リポジトリ全体をSLM (Gemma 3等) に理解させる戦略」**を提示します。
+
+---
+
+### **1. `future_architecture.md` への記述内容**
+
+このPythonスクリプトは、あなたが定めたコメントフォーマット（`[Why]`, `[What]`...）を解析し、MarkdownのドキュメントとMermaidのクラス図（関数関係図）を自動生成するエンジンの設計図です。
+
+以下の内容を `docs/future_architecture.md` に追記してください。
+
+```markdown
+# 自動ドキュメンテーション生成システム構想 (Auto-Docs Engine)
+
+## 目的
+ソースコード内の構造化されたコメント (`[Why]`, `[What]`, `[Input]`) を解析し、
+以下のドキュメントを自動生成する。
+1. **API Reference:** 各関数の仕様書
+2. **Mermaid Diagram:** 関数間の呼び出し関係図
+
+## プロトタイプコード (`scripts/doc_gen.py`)
+
+このスクリプトは、シェルスクリプトを読み込み、AI (SLM) に渡すためのコンテキスト、
+あるいは直接Markdownを生成する。
+
+\`\`\`python
+import re
+import sys
+from pathlib import Path
+
+def parse_shell_script(file_path):
+    """
+    シェルスクリプトを読み込み、関数定義とTakumiスタイルコメントを抽出する
+    """
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # 関数定義と直前のコメントを抽出する正規表現
+    # (簡易的な実装。実際はより堅牢なパースが必要)
+    pattern = re.compile(
+        r'((?:# \[.+\] .+\n)+)'  # Capture comments starting with # [...]
+        r'(\w+)\(\)\s*\{',       # Capture function_name() {
+        re.MULTILINE
+    )
+
+    functions = []
+    for match in pattern.finditer(content):
+        raw_comment = match.group(1)
+        func_name = match.group(2)
+        
+        doc = {}
+        for line in raw_comment.strip().split('\n'):
+            # [Key] Value の形式をパース
+            m = re.match(r'# \[(.+?)\] (.*)', line)
+            if m:
+                doc[m.group(1)] = m.group(2)
+        
+        functions.append({
+            "name": func_name,
+            "doc": doc
+        })
+    
+    return functions
+
+def generate_markdown(functions):
+    """抽出した情報からMarkdownを生成する"""
+    md = "# System Functions Reference\n\n"
+    
+    for func in functions:
+        md += f"## `{func['name']}`\n\n"
+        doc = func['doc']
+        if 'Why' in doc:
+            md += f"- **Why:** {doc['Why']}\n"
+        if 'What/Input' in doc:
+            md += f"- **Input:** {doc['What/Input']}\n"
+        if 'What/Output' in doc:
+            md += f"- **Output:** {doc['What/Output']}\n"
+        if 'Note' in doc:
+            md += f"> ⚠️ **Note:** {doc['Note']}\n"
+        md += "\n---\n"
+    
+    return md
+
+def generate_mermaid_prompt(functions):
+    """
+    SLM (Gemma 3) にMermaid図を書かせるためのプロンプトを生成する
+    (静的解析で呼び出し関係を抜くのは難しいため、AIに推論させる)
+    """
+    prompt = "以下の関数リストと役割に基づき、関数間の呼び出し関係を示すMermaid flowchartを作成してください。\n\n"
+    for func in functions:
+        desc = func['doc'].get('Why', 'No description')
+        prompt += f"- {func['name']}: {desc}\n"
+    return prompt
+
+if __name__ == "__main__":
+    target_file = "app/install.sh" # 対象ファイル
+    funcs = parse_shell_script(target_file)
+    
+    print("--- Generated Markdown ---")
+    print(generate_markdown(funcs))
+    
+    print("\n--- Prompt for AI (Mermaid Generation) ---")
+    print(generate_mermaid_prompt(funcs))
+\`\`\`
+```
+
+---
+
+### **2. リポジトリ全体の理解と SLM (Gemma) の活用戦略**
+
+ファイル単位ではなく、リポジトリ全体（`install.sh`, `Dockerfile`, `json`, `Makefile`）をAIに理解させ、全体アーキテクチャ図や相関図を作らせるための戦略です。
+
+**これには「コンテキストの詰め込み（Context Stuffing）」という技術を使います。**
+
+#### **推奨ツール：`Repomix` (旧 Repopack)**
+これは、リポジトリ内の全ファイルを、**AIが理解しやすい一つの巨大なテキストファイル（XMLやMarkdown形式）にパックする**ツールです。グローバルのAIエンジニアの間で標準になりつつあります。
+
+#### **ワークフロー：**
+
+1.  **Pack:**
+    *   `repomix --style xml --output context.xml` を実行し、プロジェクト全体を1ファイルに固める。
+2.  **Prompt (Gemma 3 への指示):**
+    *   以下のようなプロンプトと共に、`context.xml` を読み込ませます。
+
+    > 「あなたは優秀なソフトウェアアーキテクトです。添付の `context.xml` はあるインストーラープロジェクトの全コードです。
+    > 1. このプロジェクトの全体アーキテクチャ図を **Mermaid (C4 Model)** で描いてください。
+    > 2. `install.sh` と `Dockerfile` と `JSONマニフェスト` のデータフロー図を作成してください。」
+
+3.  **Generate:**
+    *   Gemma 3 (Ollama等でローカル実行) が、リポジトリ全体を俯瞰した正確な図を出力します。
+
+---
+
+### **The Takumi の評価**
+
+あなたの提案したコメントスタイルは、この**「AIによる自動生成」との相性が抜群**です。
+`[Key]` という構造があるため、AIはそこを確実に「意味」として認識できるからです。
+
+*   **現在:** コメントをしっかり書く。
+*   **未来:** スクリプト一発で、最新の仕様書とアーキテクチャ図が生成される。
+
+この未来に向けて、今は**「コメントという種」**をコードに植えていきましょう。完璧な布石です。
