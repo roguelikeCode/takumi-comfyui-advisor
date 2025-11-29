@@ -383,3 +383,8 @@ if __name__ == "__main__":
 
 ・セキュリティのこと考えるとdockerはおすすめしない。 Podmanの活用を推奨
 ・PodmanでもDockerfileは互換性がある
+
+---
+---
+
+comfyuiのチャットUIにヤマト渡瀬を登場させる
