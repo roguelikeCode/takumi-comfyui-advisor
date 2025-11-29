@@ -1,0 +1,10 @@
+{
+  "takumi-flow-magic-clothing-001": {
+    "name": "Magic Clothing Standard",
+    "creator": "frankchieng (Adapted by Takumi)",
+    "description": "Standard generation workflow for MagicClothing.",
+    "tags": ["fashion", "virtual-try-on", "magic-clothing"],
+    "path": "/app/assets/workflows/magic_clothing_v1.json",
+    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE"
+  }
+}
