@@ -330,6 +330,10 @@ install_component_custom_node() {
 
 # --- Main Engine ---
 
+# [Why] 選択されたユースケースの定義(JSON)に基づき、環境構築の全工程を統括するメインフロー
+# [What] Conda環境の作成 -> コンポーネント(Git/CustomNode)の配置 -> Pipパッケージのインストール
+# [Input] Global state[use_case]
+# [Output] 0: Success, 1: Failure
 run_install_flow() {
     local use_case_name="${state[use_case]}"
     if [ -z "$use_case_name" ]; then
@@ -338,7 +342,6 @@ run_install_flow() {
     
     log_info "Starting asset materialization for use-case: '${use_case_name}'..."
     
-    # .json を読み込む
     local use_case_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.json"
     
     if [ ! -f "$use_case_path" ]; then
@@ -346,10 +349,6 @@ run_install_flow() {
     fi
 
     # --- Step 1: Materialize Conda Environment ---
-    
-    # [修正] JSONをパースして、conda createコマンドを動的に組み立てる
-    # これにより、マニフェストの 'components' キーを condaの引数として正しく変換できる
-    
     local env_name
     env_name=$(jq -r '.environment.name' "$use_case_path")
 
@@ -361,24 +360,12 @@ run_install_flow() {
         local conda_pkgs=()
         local channels=()
 
-        # jqでTSVに変換して読み込む
         while IFS=$'\t' read -r type source version channel; do
-            # nullチェック
             if [ "$version" == "null" ]; then version=""; fi
             if [ "$channel" == "null" ]; then channel=""; fi
-
-            # チャンネル指定がある場合
-            if [ -n "$channel" ]; then
-                # 配列にまだ含まれていなければ追加するロジックが望ましいが、
-                # condaは重複を許容するのでそのまま追加
-                channels+=("-c" "$channel")
-            fi
+            if [ -n "$channel" ]; then channels+=("-c" "$channel"); fi
             
-            # パッケージ指定 (python=3.10 の形式にする)
             if [ -n "$version" ]; then
-                # バージョン指定が = で始まっていなければ = を付けるなどの正規化も可能だが
-                # ここではマニフェストが正しいと仮定する (例: python, 3.10 -> python=3.10)
-                # ただし、マニフェストで "version": "3.10" となっているので "=" を補う
                 if [[ "$version" != =* ]] && [[ "$version" =~ ^[0-9] ]]; then
                     conda_pkgs+=("${source}=${version}")
                 else
@@ -389,10 +376,12 @@ run_install_flow() {
             fi
         done < <(jq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
 
-        # コマンド実行
-        # "${channels[@]}" "${conda_pkgs[@]}" で配列を展開
+        # [AI適用] Conda環境作成
         if ! conda create -n "$env_name" "${channels[@]}" "${conda_pkgs[@]}" -y; then
-            log_error "Failed to create Conda environment '${env_name}'."; return 1;
+             consult_ai_on_complex_failure \
+                "Failed to create Conda environment '${env_name}'." \
+                "Packages: ${conda_pkgs[*]}"
+            return 1
         fi
         
         log_success "Conda environment '${env_name}' materialized."
@@ -403,8 +392,6 @@ run_install_flow() {
     
     local pip_deps=()
 
-    # [修正1] jqコマンド: .path も抽出するように追加 (.path // "" はnullなら空文字にする意)
-    # [修正2] readコマンド: path 変数を受け取るように追加
     while IFS=$'\t' read -r type source version path; do
         if [ "$version" == "null" ]; then version=""; fi
         if [ "$path" == "null" ]; then path=""; fi
@@ -413,7 +400,6 @@ run_install_flow() {
 
         case "$type" in
             "git-clone")
-                # [新設] 汎用的なGit Clone処理
                 if [ -z "$path" ]; then
                     log_error "Path is required for git-clone type: ${source}"; continue;
                 fi
@@ -451,15 +437,97 @@ run_install_flow() {
     # --- Step 2.1: Install pip packages ---
     if [ ${#pip_deps[@]} -gt 0 ]; then
         log_info "Installing pip packages into '${env_name}' via uv..."
-        # プログレスバーが見えるように --no-capture-output を推奨
+        
+        # [AI適用] Pipインストール
         if ! conda run -n "$env_name" --no-capture-output uv pip install "${pip_deps[@]}"; then
-            log_error "Failed to install pip packages."; return 1;
+             consult_ai_on_complex_failure \
+                "Failed to install pip packages via uv." \
+                "Target Env: $env_name, Packages: ${pip_deps[*]}"
+            return 1
         fi
         log_success "All pip packages materialized."
     fi
 
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
+}
+
+# ==============================================================================
+# The Brain Interface (Gemma 3 Integration)
+# ==============================================================================
+
+# [Why] シェルスクリプトからAI(Gemma 3)の知能を借用し、ユーザーに対話的な解決策を提示するため
+# [What] Python製の脳(brain.py)にプロンプトを投げ、回答を整形して標準出力する
+# [Input] $1: Prompt (AIへの質問内容)
+ask_takumi() {
+    local prompt="$1"
+    local script_path="${APP_ROOT}/scripts/brain.py"
+    
+    log_info "Consulting The Takumi (Gemma 3)..."
+    
+    if [ -f "$script_path" ]; then
+        local response
+        # Pythonスクリプト呼び出し
+        response=$(python3 "$script_path" "$prompt")
+        
+        echo ""
+        echo -e "${COLOR_BLUE}--- The Takumi's Advice ---${COLOR_RESET}"
+        echo "$response"
+        echo -e "${COLOR_BLUE}---------------------------${COLOR_RESET}"
+        echo ""
+    else
+        log_warn "Brain script not found at $script_path. Skipping AI consultation."
+    fi
+}
+
+# [Why] シンプルなコマンド実行において、失敗時に自動的にAIの診断を仰ぐため
+# [What] 指定されたコマンドを実行し、終了コードが非0の場合、自動的にエラーログを作ってAIに投げる
+# [Input] $1: Command (実行するコマンド文字列), $2: Description (ログ用の説明)
+# [Output] 成功時は0, 失敗時はコマンドのexit code
+try_with_ai() {
+    local command="$1"
+    local description="$2"
+    
+    log_info "$description"
+    
+    if eval "$command"; then
+        log_success "Done."
+        return 0
+    else
+        local exit_code=$?
+        log_error "Command failed with exit code $exit_code."
+        
+        local prompt="以下のコマンドを実行しようとしましたが、失敗しました。
+Command: '$command'
+Description: $description
+Exit Code: $exit_code
+
+あなたは熟練のエンジニアです。このエラーの原因と、Docker/Linux環境での解決策を
+日本語で3行以内で簡潔にアドバイスしてください。"
+
+        ask_takumi "$prompt"
+        return $exit_code
+    fi
+}
+
+# [Why] 配列展開などを含む複雑なコマンド(Conda/Pip)が失敗した際、詳細な文脈をAIに渡すため
+# [What] エラー発生時のコンテキスト（変数の中身など）を整形し、ask_takumi を呼び出す
+# [Input] $1: Error Message, $2: Context Data (デバッグ用の変数ダンプなど)
+consult_ai_on_complex_failure() {
+    local error_msg="$1"
+    local context_data="$2"
+    
+    log_error "$error_msg"
+    
+    local prompt="以下のインストール処理が失敗しました。
+Error: $error_msg
+Context:
+$context_data
+
+依存関係の競合やシステム要件の問題が考えられます。
+この状況を打開するための技術的なアドバイスを、日本語で提示してください。"
+
+    ask_takumi "$prompt"
 }
 
 # ==============================================================================
@@ -470,7 +538,8 @@ main() {
     log_info "Takumi Installer Engine v4.0 starting..."
 
     # --- Phase 1: Preparation ---
-    if ! fetch_external_catalogs; then
+    # [修正] try_with_ai を使用し、ネットワークエラー時はAIに助言を求める
+    if ! try_with_ai "fetch_external_catalogs" "Fetching external catalogs"; then
         log_warn "Could not fetch external catalogs. Proceeding with local files if available."
     fi
 

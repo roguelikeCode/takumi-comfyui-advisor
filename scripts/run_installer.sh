@@ -21,6 +21,7 @@ readonly HISTORY_FILE=".install_history"
 # 特に、storage/envs のマウントが重要です
 # [追加] パッケージキャッシュをマウント (権限エラー回避 & 高速化)
 readonly DOCKER_RUN_OPTS="--rm \
+    --gpus all \
     --name $CONTAINER_NAME \
     --user $(id -u):$(id -g) \
     -w /app \
@@ -29,8 +30,10 @@ readonly DOCKER_RUN_OPTS="--rm \
     -v $(pwd)/logs:/app/logs \
     -v $(pwd)/external:/app/external \
     -v $(pwd)/app:/app \
+    -v $(pwd)/scripts:/app/scripts \
     -v $(pwd)/storage/pkgs:/home/takumi/.conda/pkgs \
-    -v $(pwd)/storage/envs:/home/takumi/.conda/envs" 
+    -v $(pwd)/storage/envs:/home/takumi/.conda/envs \
+    -v $(pwd)/storage/ollama:/home/takumi/.ollama" 
 
 # --- Main Loop ---
 
