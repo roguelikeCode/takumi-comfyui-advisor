@@ -58,7 +58,8 @@ DOCKER_RUN_OPTS := --rm \
 	-v $(shell pwd)/external:/app/external \
 	-v $(shell pwd)/app:/app \
 	-v $(shell pwd)/scripts:/app/scripts \
-	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs 
+	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs \
+	-v $(shell pwd)/storage/ollama:/home/takumi/.ollama 
 
 # ==============================================================================
 # Dockerfile Wrapper Recipes
