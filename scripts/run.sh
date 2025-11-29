@@ -23,6 +23,22 @@ if [ ! -d "/app/ComfyUI" ]; then
     exit 1
 fi
 
+echo ">>> Setting up Takumi Bridge..."
+# [Why] 開発中の拡張機能をComfyUIに認識させるため
+# [What] app/takumi_bridge へのシンボリックリンクを作成する
+TARGET_LINK="/app/ComfyUI/custom_nodes/ComfyUI-Takumi-Bridge"
+SOURCE_DIR="/app/takumi_bridge"
+
+if [ -d "$SOURCE_DIR" ]; then
+    # リンクがなければ作成
+    if [ ! -L "$TARGET_LINK" ]; then
+        ln -s "$SOURCE_DIR" "$TARGET_LINK"
+        echo "✅ Linked Takumi Bridge to custom_nodes."
+    fi
+else
+    echo "⚠️ Takumi Bridge source not found at $SOURCE_DIR"
+fi
+
 cd /app/ComfyUI
 
 echo ">>> Starting ComfyUI..."
