@@ -142,7 +142,10 @@ if __name__ == "__main__":
 ---
 ---
 
-# 1. The Mental Model: "Trinity of Co-Creation" (共創の三位一体)
+# The Mental Model: "Trinity of Co-Creation"
+*   **I. The Pilot (ユーザー):** 「魂」と「審美眼」。Where（目的地）とWhy（理由）を決定し、Sense（美意識）で成果物をジャッジする。
+*   **II. The Nexus (結節点):** 物語と体験。Who（主人公）とWhat（体験）を定義する。
+*   **III. The Engine (AI):** 論理と実装。How（技術）とWhen（工程）を担い、物語を物理的現実（コード）へ高速に出力する。
 
 このモデルは、ソフトウェア開発だけでなく、ビジネス、アート、ライフデザインなど、あらゆる創造的活動に適用可能な抽象化されたフレームワークです。
 
