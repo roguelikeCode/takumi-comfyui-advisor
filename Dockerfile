@@ -57,6 +57,12 @@ RUN echo ">>> Creating 'takumi' user with UID=${TAKUMI_UID} GID=${TAKUMI_GID}...
 ARG TARGETARCH
 COPY ./app/config/foundation_components/architectures.json /tmp/architectures.json
 
+# --- Ollama (SLM Runtime) ---
+# [Why] インストーラーに知能(Gemma 3)を持たせるための実行基盤
+# [What] 公式スクリプト経由でOllamaをインストールする
+RUN echo ">>> Installing Ollama..." && \
+    curl -fsSL https://ollama.com/install.sh | sh
+
 # --- uv (Fast Python Package Installer) ---
 RUN echo ">>> Installing uv (via pip)..." && \
     pip install uv --break-system-packages
