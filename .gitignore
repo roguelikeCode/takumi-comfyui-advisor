@@ -19,3 +19,6 @@
 
 # Conda environments and package cache (Heavy binaries)
 /storage/
+
+# Secrets
+.env
