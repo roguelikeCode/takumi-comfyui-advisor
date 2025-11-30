@@ -22,6 +22,7 @@ readonly HISTORY_FILE=".install_history"
 # [追加] パッケージキャッシュをマウント (権限エラー回避 & 高速化)
 readonly DOCKER_RUN_OPTS="--rm \
     --gpus all \
+    --env-file .env \
     --name $CONTAINER_NAME \
     --user $(id -u):$(id -g) \
     -w /app \

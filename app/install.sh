@@ -448,6 +448,30 @@ run_install_flow() {
         log_success "All pip packages materialized."
     fi
 
+    # --- Step 3: Takumi Asset Manager (New!) ---
+    # [Why] モデルのダウンロードやコードのパッチ当てを自動化するため
+    # [What] use_caseに対応するレシピがあれば、Asset Managerを起動する
+    # 現在は magic-clothing のみ対応だが、将来は use_case_name に応じて分岐可能
+    
+    # 簡易実装: use_case が magic_clothing 系なら実行
+    if [[ "$use_case_name" == *"fashion"* ]] || [[ "$use_case_name" == *"magic"* ]]; then
+        log_info "Launching Takumi Asset Manager..."
+        
+        local manager_script="${APP_ROOT}/scripts/asset_manager.py"
+        
+        if [ -f "$manager_script" ]; then
+            # Conda環境内で実行する必要がある (huggingface_hubを使うため)
+            if ! conda run -n "$env_name" --no-capture-output python "$manager_script"; then
+                log_error "Asset Manager encountered an issue (check logs)."
+                # アセットDL失敗でも環境自体は使えるので、exit 1 せずに警告に留める選択肢もあるが
+                # ここでは厳格にエラーとする
+                return 1
+            fi
+        else
+            log_warn "Asset Manager script not found at $manager_script"
+        fi
+    fi
+
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
 }
