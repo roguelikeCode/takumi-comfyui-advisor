@@ -130,11 +130,9 @@ app.registerExtension({
             const text = input.value.trim();
             if (!text) return;
 
-            // ユーザーのメッセージを表示
             addMessage(text, "user");
             input.value = "";
 
-            // Loading表示
             const loadingId = addMessage("Thinking...", "takumi");
 
             try {
@@ -145,9 +143,24 @@ app.registerExtension({
                 });
                 const data = await res.json();
                 
-                // Loadingを消して回答を表示
                 document.getElementById(loadingId).remove();
-                addMessage(data.response, "takumi");
+
+                // [修正] アクション分岐
+                if (data.type === "action") {
+                    // 1. メッセージを表示
+                    addMessage(data.message, "takumi");
+                    
+                    // 2. ワークフローをキャンバスに展開 (Nexus Function)
+                    if (data.workflow) {
+                         // ComfyUIのAPI: グラフデータをロードする
+                         app.loadGraphData(data.workflow);
+                         addMessage("✅ キャンバスを更新しました。", "takumi");
+                    }
+                } else {
+                    // 通常会話
+                    addMessage(data.response, "takumi");
+                }
+
             } catch (e) {
                 document.getElementById(loadingId).textContent = "Error: " + e;
             }
