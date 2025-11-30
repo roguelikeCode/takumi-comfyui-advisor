@@ -49,6 +49,8 @@ CONTAINER_NAME := takumi-comfyui-dev
 # [追加] Condaの仮想環境をホスト側の 'storage/envs' に保存する
 # これにより、コンテナを再起動しても環境が維持される
 DOCKER_RUN_OPTS := --rm \
+	--gpus all \
+	--env-file .env \
 	--name $(CONTAINER_NAME) \
 	--user $(shell id -u):$(shell id -g) \
 	-w /app \
