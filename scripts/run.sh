@@ -39,6 +39,15 @@ else
     echo "⚠️ Takumi Bridge source not found at $SOURCE_DIR"
 fi
 
+echo ">>> Starting Ollama (The Brain)..."
+# [Why] ComfyUIと同時にAIランタイムを起動しておくため
+# [What] バックグラウンド(&)で起動し、ログは別ファイルに逃がす
+ollama serve > /app/logs/ollama.log 2>&1 &
+
+# Ollamaの起動待ち (数秒)
+echo ">>> Waiting for Ollama to wake up..."
+sleep 5
+
 cd /app/ComfyUI
 
 echo ">>> Starting ComfyUI..."
