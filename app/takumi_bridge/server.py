@@ -27,19 +27,18 @@ async def chat_handler(request):
         data = await request.json()
         user_prompt = data.get("prompt", "")
         
-        # 1. カタログの準備
         catalog = load_workflow_catalog()
         catalog_str = json.dumps(catalog, indent=2)
 
-        # 2. System Prompt (Intent Detection)
-        # AIに「通常会話」か「ワークフロー実行」かを判断させる
+        # [Update] System Prompt: パラメータ抽出を指示
         system_prompt = (
             f"You are Takumi, an AI assistant for ComfyUI. "
-            f"Here is the list of available workflows:\n{catalog_str}\n\n"
+            f"Available workflows:\n{catalog_str}\n\n"
             "Rules:\n"
-            "1. If the user asks to load or use a workflow, return ONLY a JSON object with this format: "
-            "{\"action\": \"load_workflow\", \"target_id\": \"<workflow_id_from_catalog>\"}\n"
-            "2. If the user asks a normal question, answer normally in Japanese text."
+            "1. If the user wants to generate an image or use a workflow, return a JSON object with: "
+            "{\"action\": \"load_workflow\", \"target_id\": \"<id>\", \"params\": {\"prompt\": \"<english_visual_description>\"}}\n"
+            "   - Translate the user's request into a detailed English prompt for Stable Diffusion.\n"
+            "2. If it's a normal chat, return: {\"response\": \"<answer_in_japanese>\"}"
         )
 
         ollama_payload = {
@@ -47,10 +46,9 @@ async def chat_handler(request):
             "prompt": user_prompt,
             "system": system_prompt,
             "stream": False,
-            "format": "json" # Gemma 3にJSONモードを強制（精度向上）
+            "format": "json"
         }
 
-        # 3. Ollamaへ問い合わせ
         async with aiohttp.ClientSession() as session:
             async with session.post(OLLAMA_API_URL, json=ollama_payload) as resp:
                 if resp.status != 200:
@@ -58,40 +56,74 @@ async def chat_handler(request):
                 
                 ollama_res = await resp.json()
                 ai_response_str = ollama_res.get("response", "")
-                
-                # 4. レスポンスの解析 (Action or Talk)
+                print(f">>> [TakumiBridge] Raw AI Response: {ai_response_str}")
+
                 try:
-                    # AIがJSONを返してきた場合 (Action)
                     ai_data = json.loads(ai_response_str)
                     
+                    # Case 1: Action (Workflow Load)
                     if "action" in ai_data and ai_data["action"] == "load_workflow":
-                        target_id = ai_data["target_id"]
+                        target_id = None
+                        raw_id = ai_data.get("target_id", "").strip()
                         
-                        # 実際のワークフローファイル(.json)をロードする
-                        if target_id in catalog:
-                            file_path = catalog[target_id]["path"]
+                        # Fuzzy Search
+                        for key in catalog.keys():
+                            if raw_id.lower() in key.lower():
+                                target_id = key
+                                break
+                        
+                        if target_id:
+                            meta = catalog[target_id]
+                            file_path = meta["path"]
+                            
                             if os.path.exists(file_path):
                                 with open(file_path, 'r') as wf:
                                     workflow_json = json.load(wf)
+                                
+                                # [New] Dynamic Injection (動的注入)
+                                params = ai_data.get("params", {})
+                                mapping = meta.get("mapping", {})
+                                injected_log = []
+
+                                if "prompt" in params and "prompt" in mapping:
+                                    # 地図(mapping)に従って書き換える
+                                    target_node_id = mapping["prompt"]["node_id"]
+                                    widget_index = mapping["prompt"]["widget_index"]
+                                    new_prompt_text = params["prompt"]
                                     
+                                    # ノードを探して書き換え
+                                    for node in workflow_json.get("nodes", []):
+                                        if node["id"] == target_node_id:
+                                            # ウィジェット配列の値を更新
+                                            if len(node["widgets_values"]) > widget_index:
+                                                node["widgets_values"][widget_index] = new_prompt_text
+                                                injected_log.append(f"Prompt -> '{new_prompt_text}'")
+                                            break
+
+                                message = f"ワークフロー '{meta['name']}' をロードします。"
+                                if injected_log:
+                                    message += f"\n(設定変更: {', '.join(injected_log)})"
+
                                 return web.json_response({
                                     "type": "action",
-                                    "message": f"ワークフロー '{target_id}' をロードします。",
+                                    "message": message,
                                     "workflow": workflow_json
                                 })
                             else:
-                                return web.json_response({"type": "text", "response": f"エラー: ファイルが見つかりません ({file_path})"})
+                                return web.json_response({"type": "text", "response": f"Error: File not found ({file_path})"})
                         else:
-                            return web.json_response({"type": "text", "response": "指定されたワークフローIDが見つかりません。"})
+                            return web.json_response({"type": "text", "response": f"Workflow '{raw_id}' not found."})
+
+                    # Case 2: Normal Talk
+                    elif "response" in ai_data:
+                        return web.json_response({"type": "text", "response": ai_data["response"]})
                     
-                    # AIが普通のJSON会話を返してきた場合 (Talk)
-                    response_text = ai_data.get("response", str(ai_data))
-                    return web.json_response({"type": "text", "response": response_text})
+                    else:
+                        return web.json_response({"type": "text", "response": ai_response_str})
 
                 except json.JSONDecodeError:
-                    # JSONパース失敗時はそのままテキストとして返す (Backup)
                     return web.json_response({"type": "text", "response": ai_response_str})
 
     except Exception as e:
         print(f"[TakumiBridge] Error: {e}")
-        return web.Response(text=str(e), status=500)
+        return web.json_response({"type": "text", "response": f"System Error: {str(e)}"})
