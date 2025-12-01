@@ -5,6 +5,10 @@
     "description": "Standard generation workflow for MagicClothing.",
     "tags": ["fashion", "virtual-try-on", "magic-clothing"],
     "path": "/app/assets/workflows/magic_clothing_v1.json",
-    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE"
+    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
+    "mapping": {
+      "prompt": { "node_id": 23, "widget_index": 0 },
+      "seed": { "node_id": 23, "widget_index": 6 }
+    }
   }
 }

@@ -18,7 +18,7 @@ app.registerExtension({
                 background-size: cover;
                 background-position: center;
                 cursor: pointer;
-                z-index: 10000; /* 最前面に */
+                z-index: 10000;
                 box-shadow: 0 4px 10px rgba(0,0,0,0.5);
                 transition: transform 0.2s;
                 border: 2px solid #4cc9f0;
@@ -35,10 +35,15 @@ app.registerExtension({
                 border: 1px solid #444;
                 border-radius: 12px;
                 z-index: 10000;
-                display: none; /* 初期状態は非表示 */
+                display: none;
                 flex-direction: column;
                 box-shadow: 0 10px 20px rgba(0,0,0,0.5);
                 font-family: sans-serif;
+                
+                /* [Fix] テキスト選択・カーソル操作を強制許可 */
+                user-select: text !important;
+                -webkit-user-select: text !important;
+                cursor: auto !important;
             }
             
             #takumi-header {
@@ -62,6 +67,10 @@ app.registerExtension({
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
+                
+                /* [Fix] メッセージ内のテキストも選択可能に */
+                user-select: text !important;
+                cursor: text !important;
             }
 
             .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; }
@@ -74,6 +83,7 @@ app.registerExtension({
                 display: flex;
                 gap: 5px;
             }
+            
             #takumi-input {
                 flex: 1;
                 padding: 8px;
@@ -81,7 +91,12 @@ app.registerExtension({
                 border: 1px solid #555;
                 background: #111;
                 color: #fff;
+                
+                /* [Fix] 入力欄の操作性を確保 */
+                user-select: text !important;
+                cursor: text !important;
             }
+            
             #takumi-send {
                 padding: 8px 15px;
                 background: #4cc9f0;
@@ -166,11 +181,55 @@ app.registerExtension({
             }
         };
 
-        // エンターキー対応
-        windowDiv.querySelector("#takumi-input").onkeydown = (e) => {
+       // --- Event Handling Fix (UI改善・完全版 v3) ---
+        // [Why] ComfyUIの干渉を防ぎつつ、Enter送信などの操作性を確保する
+        
+        const stopPropagation = (e) => {
+            // 1. [Fix] Enterキーの特例処理 (VIP Pass)
+            // ここで捕まえて、即座に送信を実行してしまう
+            if (e.target.id === "takumi-input" && e.type === "keydown" && e.key === "Enter") {
+                e.preventDefault();  // 改行などを防ぐ
+                e.stopPropagation(); // ComfyUIに伝えない
+                e.stopImmediatePropagation(); // 他のリスナーも止める
+                sendMsg(); // ★送信実行
+                return;
+            }
+
+            // 2. ボタンや入力欄へのクリックは許可
+            if ((e.target.id === "takumi-send" || e.target.id === "takumi-input") && 
+                (e.type === "click" || e.type === "mousedown" || e.type === "mouseup")) {
+                return; 
+            }
+
+            // 3. それ以外（ComfyUIへのショートカット漏洩）はブロック
+            e.stopPropagation();
+            
+            // コピペ系は即時停止
+            if (['copy', 'paste', 'cut', 'keydown', 'keyup'].includes(e.type)) {
+                e.stopImmediatePropagation();
+            }
+        };
+
+        // チャットウィンドウ内でのイベントを監視 (Capture Phase)
+        ['keydown', 'keyup', 'keypress', 'paste', 'copy', 'cut', 'mousedown', 'mouseup', 'click'].forEach(evt => {
+            windowDiv.addEventListener(evt, stopPropagation, true);
+        });
+
+        // 送信ボタンのクリック処理
+        const sendBtn = windowDiv.querySelector("#takumi-send");
+        sendBtn.onclick = (e) => {
+            // ここで明示的に伝播を止めることで、ComfyUIへの漏洩を防ぐ
+            e.stopPropagation();
+            sendMsg();
+        };
+
+        // エンターキー
+        const inputField = windowDiv.querySelector("#takumi-input");
+        inputField.onkeydown = (e) => {
+            // 入力欄でのエンターキーもここで止める
+            e.stopPropagation(); 
             if (e.key === "Enter") sendMsg();
         };
-        windowDiv.querySelector("#takumi-send").onclick = sendMsg;
 
         // ヘルパー関数: メッセージ追加
         function addMessage(text, type) {
