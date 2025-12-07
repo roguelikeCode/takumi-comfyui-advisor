@@ -96,9 +96,10 @@ install: build
 
 run:
 	@echo ">>> Starting ComfyUI..."
-	@echo ">>> Open http://localhost:8188 in your browser after server starts."
+	@echo ">>> Open http://localhost:8188 for ComfyUI"
 	@docker run -it --rm \
 		--gpus all \
+		--env-file .env \
 		-p 8188:8188 \
 		$(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
