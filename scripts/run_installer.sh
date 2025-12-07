@@ -50,7 +50,16 @@ touch "$HISTORY_FILE"
 while true; do
     echo "--- Starting new installation attempt ---"
 
-    docker run -it $DOCKER_RUN_OPTS \
+    # [Fix] dotenvx が利用可能な場合、それ経由で復号した値を渡す
+    # -e HF_TOKEN を明示することで、--env-file (暗号化状態) の値を上書きする
+    LAUNCHER=""
+    if command -v dotenvx >/dev/null 2>&1; then
+        LAUNCHER="dotenvx run --"
+    fi
+
+    $LAUNCHER docker run -it \
+        -e HF_TOKEN \
+        $DOCKER_RUN_OPTS \
         -v "$(pwd)/$HISTORY_FILE":/app/.install_history \
         "$IMAGE_NAME:$IMAGE_TAG" \
         bash /app/install.sh

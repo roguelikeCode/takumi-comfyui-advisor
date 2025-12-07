@@ -77,6 +77,11 @@
       "file": "/app/ComfyUI/custom_nodes/ComfyUI_MagicClothing/garment_adapter/attention_processor.py",
       "find": "hidden_states = attn.to_out[0](hidden_states, *args)",
       "replace": "hidden_states = attn.to_out[0](hidden_states) # Patched by Takumi"
+    },
+    {
+      "file": "/app/ComfyUI/custom_nodes/ComfyUI_MagicClothing/garment_adapter/garment_diffusion.py",
+      "find": "checkpoint_path = folder_paths.get_full_path(\"magic_cloth_checkpoint\", \"cloth_segm.pth\") #'checkpoints/cloth_segm.pth'",
+      "replace": "checkpoint_path = \"/app/ComfyUI/models/layer_model/cloth_segm.pth\" # Patched by Takumi"
     }
   ]
 }

@@ -66,14 +66,22 @@ DOCKER_RUN_OPTS := --rm \
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
-.PHONY: main dev maintenance
+.PHONY: pre-check main dev maintenance
+pre-check:
 main:
 dev:
 maintenance:
 
+# --- Pre-Check ---
+REQUIRED_DIRS := logs cache external config storage/pkgs storage/envs storage/ollama
+
+.PHONY: ensure-dirs
+ensure-dirs:
+	@mkdir -p $(REQUIRED_DIRS)
+
 # --- Main ---
 .PHONY: build install run
-build:
+build: ensure-dirs
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
 	@docker build \
 		--build-arg TAKUMI_UID=$(shell id -u) \
