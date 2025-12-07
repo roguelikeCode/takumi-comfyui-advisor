@@ -330,6 +330,68 @@ install_component_custom_node() {
 
 # --- Main Engine ---
 
+# [Why] 任意のレシピJSONからpipパッケージを抽出してインストールするため
+# [What] 指定されたJSONをパースし、現在のConda環境にpip installする
+# [Input] $1: json_path, Global: $state[use_case_env]
+install_pip_from_recipe() {
+    local recipe_path="$1"
+    
+    if [ ! -f "$recipe_path" ]; then
+        log_warn "Recipe not found: $recipe_path"
+        return 0
+    fi
+
+    log_info "Processing extra recipe: $recipe_path"
+
+    local pip_deps=()
+    # jqを使って pip タイプのコンポーネントだけを抽出
+    while IFS=$'\t' read -r type source version; do
+        if [ "$type" == "pip" ]; then
+            if [ "$version" != "null" ] && [ -n "$version" ]; then
+                pip_deps+=("${source}${version}")
+            else
+                pip_deps+=("${source}")
+            fi
+        fi
+    done < <(jq -r '.components[] | select(.type=="pip") | [.type, .source, .version] | @tsv' "$recipe_path")
+
+    if [ ${#pip_deps[@]} -gt 0 ]; then
+        log_info "  -> Installing extra pip packages..."
+        if ! conda run -n "${state[use_case_env]}" --no-capture-output uv pip install "${pip_deps[@]}"; then
+            log_error "Failed to install packages from $recipe_path"
+            return 1
+        fi
+    fi
+}
+
+# [Why] 初回起動時にチャット機能が即座に使えるようにするため
+# [What] Ollamaサーバーを起動し、指定されたモデル(gemma3)をダウンロードする
+setup_ollama_model() {
+    local model_name="gemma3"
+    
+    log_info "Setting up AI Model (${model_name})..."
+
+    # 1. Ollamaサーバーをバックグラウンドで起動
+    if ! pgrep -x "ollama" > /dev/null; then
+        ollama serve > /dev/null 2>&1 &
+        local pid=$!
+        log_info "  -> Waiting for Ollama to start..."
+        sleep 5
+    fi
+
+    # 2. モデルをPull (既に持っていればスキップされるので安全)
+    if ollama list | grep -q "${model_name}"; then
+        log_info "  -> Model '${model_name}' is already installed."
+    else
+        log_info "  -> Pulling '${model_name}'... (This may take a while)"
+        if ! ollama pull "${model_name}"; then
+            log_warn "Failed to pull model '${model_name}'. You may need to run 'ollama pull ${model_name}' manually."
+        else
+            log_success "Model '${model_name}' installed."
+        fi
+    fi
+}
+
 # [Why] 選択されたユースケースの定義(JSON)に基づき、環境構築の全工程を統括するメインフロー
 # [What] Conda環境の作成 -> コンポーネント(Git/CustomNode)の配置 -> Pipパッケージのインストール
 # [Input] Global state[use_case]
@@ -448,7 +510,7 @@ run_install_flow() {
         log_success "All pip packages materialized."
     fi
 
-    # --- Step 3: Takumi Asset Manager (New!) ---
+    # --- Step 3: Takumi Asset Manager ---
     # [Why] モデルのダウンロードやコードのパッチ当てを自動化するため
     # [What] use_caseに対応するレシピがあれば、Asset Managerを起動する
     # 現在は magic-clothing のみ対応だが、将来は use_case_name に応じて分岐可能
@@ -471,6 +533,9 @@ run_install_flow() {
             log_warn "Asset Manager script not found at $manager_script"
         fi
     fi
+
+    # --- Step 4: Setup Brain (New!) ---
+    setup_ollama_model
 
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
