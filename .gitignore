@@ -1,3 +1,26 @@
+# --- 1. Global Safety Net (Binary & Secrets) ---
+*.safetensors
+*.ckpt
+*.pth
+*.bin
+*.onnx
+*.engine
+.tmp.driveupload/
+.env
+.env.keys
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# --- 2. System & IDE ---
+.DS_Store
+Thumbs.db
+.venv/
+venv/
+__pycache__/
+*.pyc
+
 # Local user home directories created by Docker
 /home/
 /.home/
@@ -19,6 +42,3 @@
 
 # Conda environments and package cache (Heavy binaries)
 /storage/
-
-# Secrets
-.env
