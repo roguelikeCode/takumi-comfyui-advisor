@@ -1,4 +1,45 @@
-# --- 1. Global Safety Net (Binary & Secrets) ---
+# -------------------------------------------------------------------
+# 1. Security & Secrets (最優先・機密情報)
+# -------------------------------------------------------------------
+.env
+.env.keys
+.env.*.local
+
+# -------------------------------------------------------------------
+# 2. System & IDE (OS・エディタ設定)
+# -------------------------------------------------------------------
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code (許可リスト方式: 設定ファイルのみ許可し、他は無視)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains
+.idea/
+
+# -------------------------------------------------------------------
+# 3. Languages & Frameworks (言語・環境)
+# -------------------------------------------------------------------
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# -------------------------------------------------------------------
+# 4. Large Binary Files (AIモデル・巨大ファイル)
+# -------------------------------------------------------------------
 *.safetensors
 *.ckpt
 *.pth
@@ -6,39 +47,26 @@
 *.onnx
 *.engine
 .tmp.driveupload/
-.env
-.env.keys
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
 
-# --- 2. System & IDE ---
-.DS_Store
-Thumbs.db
-.venv/
-venv/
-__pycache__/
-*.pyc
-
-# Local user home directories created by Docker
-/home/
-/.home/
-
-# ComfyUI Source Code (Downloaded by install.sh)
-/app/ComfyUI/
-
-# Cache
-/cache/
-
-# Logs
-/logs/
-
-# Local installation state
+# -------------------------------------------------------------------
+# 5. Runtime & Logs (実行ログ・一時ファイル)
+# -------------------------------------------------------------------
+*.log
+logs/
+*.jsonl
 .install_history
 
-# External installation
-/external/
+# -------------------------------------------------------------------
+# 6. Generated Artifacts (自動生成されるディレクトリ)
+# -------------------------------------------------------------------
+# インストーラーやDockerが生成する重いディレクトリ
+app/ComfyUI/
+external/
+cache/
+storage/
 
-# Conda environments and package cache (Heavy binaries)
-/storage/
+# -------------------------------------------------------------------
+# 7. Local user home directories created by Docker
+# -------------------------------------------------------------------
+/home/
+/.home/
