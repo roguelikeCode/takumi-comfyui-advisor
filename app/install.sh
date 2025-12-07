@@ -60,6 +60,35 @@ declare -A state=(
     ["last_error_log"]=""
 )
 
+# ログファイルのパス定義
+readonly INSTALL_LOG="${LOG_DIR}/install.log"
+mkdir -p "$LOG_DIR"
+
+# エラーハンドラ関数
+# [Fix] 関数名を変更: handle_error -> cleanup_and_report
+cleanup_and_report() {
+    # 直前の終了コードを取得
+    local exit_code=$?
+    
+    # 正常終了(0)なら何もしない
+    if [ $exit_code -eq 0 ]; then
+        return
+    fi
+
+    echo ""
+    log_error "Installation failed with exit code $exit_code."
+    
+    # ... (以下の Python 呼び出しロジックはそのまま) ...
+    local recipe_path=""
+    # ...
+        python3 "${APP_ROOT}/scripts/report_failure.py" "$INSTALL_LOG" "$recipe_path"
+    # ...
+}
+
+# [Fix] ERR ではなく EXIT に変更
+# これにより、exit 1 で終了した場合も確実に呼ばれます
+trap 'cleanup_and_report' EXIT
+
 # ==============================================================================
 # Logger
 # ==============================================================================
@@ -674,5 +703,6 @@ EOF
 # [修正] 直接実行された場合のみ main を呼び出す。
 # 他のスクリプトから source された場合は、関数定義だけを読み込んで何もしない。
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+    # [Fix] 全出力をログファイルにも保存する (パイプを使うとtrapが効きにくくなるため、プロセス置換を使用)
+    main "$@" > >(tee "$INSTALL_LOG") 2>&1
 fi
