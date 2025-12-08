@@ -67,27 +67,27 @@ mkdir -p "$LOG_DIR"
 # エラーハンドラ関数
 # [Fix] 関数名を変更: handle_error -> cleanup_and_report
 cleanup_and_report() {
-    # 直前の終了コードを取得
     local exit_code=$?
     
-    # 正常終了(0)なら何もしない
-    if [ $exit_code -eq 0 ]; then
-        return
+    # --- Case 1: 失敗時 (既存のロジック) ---
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        log_error "Installation failed with exit code $exit_code."
+        
+        # レシピパスの解決
+        local recipe_path=""
+        if [ -n "${state[use_case]}" ]; then
+            recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${state[use_case]}.json"
+        fi
+
+        # 失敗レポート送信
+        if command -v python3 >/dev/null; then
+            python3 "${APP_ROOT}/scripts/report_failure.py" "$INSTALL_LOG" "$recipe_path"
+        fi
+        # 失敗時はここで終了
+        exit $exit_code
     fi
-
-    echo ""
-    log_error "Installation failed with exit code $exit_code."
-    
-    # ... (以下の Python 呼び出しロジックはそのまま) ...
-    local recipe_path=""
-    # ...
-        python3 "${APP_ROOT}/scripts/report_failure.py" "$INSTALL_LOG" "$recipe_path"
-    # ...
 }
-
-# [Fix] ERR ではなく EXIT に変更
-# これにより、exit 1 で終了した場合も確実に呼ばれます
-trap 'cleanup_and_report' EXIT
 
 # ==============================================================================
 # Logger
@@ -247,6 +247,7 @@ run_concierge_use_case() {
     echo "Please choose your primary use case:"
     echo "  (1) [Defaults] (Basic setup)"
     echo "  (2) Create & Dress Up Original Fashion (MagicClothing)"
+    echo "  (3) AI Video Generation (AnimateDiff)"
     echo ""
     
     read -n 1 -s -p "Enter number: " choice
@@ -260,6 +261,9 @@ run_concierge_use_case() {
             ;;
         "2")
             use_case_filename="create_and_dress_up_original_fashion"
+            ;;
+        "3")
+            use_case_filename="animate_diff_video"
             ;;
         *)
             log_warn "Invalid selection. Proceeding with the default use-case: '${use_case_filename}'"

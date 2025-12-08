@@ -2,6 +2,7 @@
 # [What] 標準ライブラリのみでOllama APIを叩く軽量クライアント
 # [Input] コマンドライン引数としてプロンプトを受け取る
 
+import os
 import sys
 import json
 import urllib.request
@@ -44,16 +45,37 @@ def ensure_model_pulled():
     # 今回はシンプルに、generateリクエストを投げて404が返ってきたらpullする戦略をとる
     pass 
 
+def load_system_prompt():
+    """
+    [Why] プロンプトを外部ファイル化し、関心を分離するため
+    [What] app/config/.../system_prompt.txt を読み込む。失敗時はデフォルトを返す。
+    """
+    try:
+        # スクリプトの場所 (scripts/brain.py) から相対パスで辿る
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        prompt_path = os.path.join(base_dir, "app", "config", "takumi_meta", "prompts", "system_prompt.txt")
+        
+        if os.path.exists(prompt_path):
+            with open(prompt_path, 'r', encoding='utf-8') as f:
+                return f.read()
+    except Exception as e:
+        print(f">>> [Brain] Warning: Failed to load system prompt file ({e}). Using fallback.", file=sys.stderr)
+    
+    # フォールバック（万が一ファイルがない場合）
+    return "You are Takumi, a helpful AI assistant for troubleshooting."
+
 def query_ollama(prompt):
-    """
-    [Why] Ollamaにプロンプトを投げ、レスポンスを取得する
-    """
+    # [Fix] 外部ファイルからプロンプトをロード
+    system_prompt = load_system_prompt()
+
     payload = {
         "model": MODEL_NAME,
         "prompt": prompt,
         "stream": False,
-        "system": "あなたは「Takumi」という名の、熟練したシステムエンジニア兼コンシェルジュです。日本語で、簡潔かつ的確に答えてください。"
+        "system": system_prompt
     }
+    
+    # --- ここから下が重要（省略されていた部分） ---
     
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(OLLAMA_API_URL, data=data, headers={"Content-Type": "application/json"})
@@ -70,7 +92,9 @@ def query_ollama(prompt):
             # 再帰呼び出し
             return query_ollama(prompt)
         else:
-            raise e
+            return f"AI Error: {e}"
+    except Exception as e:
+        return f"AI Connection Error: {e}"
 
 def main():
     if len(sys.argv) < 2:

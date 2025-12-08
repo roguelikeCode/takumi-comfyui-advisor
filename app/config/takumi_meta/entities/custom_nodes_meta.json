@@ -32,5 +32,15 @@
   "ComfyUI_essentials": {
     "url": "https://github.com/cubiq/ComfyUI_essentials",
     "takumi_tags": ["utility", "essential", "math"]
+  },
+  "ComfyUI-AnimateDiff-Evolved": {
+    "url": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved",
+    "takumi_tags": ["animation", "animate-diff", "essential"],
+    "takumi_note": "The state-of-the-art implementation of AnimateDiff for ComfyUI."
+  },
+  "ComfyUI-Advanced-ControlNet": {
+    "url": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet",
+    "takumi_tags": ["controlnet", "advanced", "animation"],
+    "takumi_note": "Required for precise control in video generation."
   }
 }
