@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ENV_NAME="magic_clothing_env"
+ENV_NAME="animatediff_env"
 
 # Condaの設定読み込み
 source /opt/conda/etc/profile.d/conda.sh
