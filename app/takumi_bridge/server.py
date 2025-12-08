@@ -21,6 +21,32 @@ def load_workflow_catalog():
             return json.load(f)
     return {}
 
+# [Fix] プロンプト構築関数の追加
+def build_system_prompt(catalog_str):
+    # 1. 基本人格 (トラブルシューティング知識) をロード
+    base_prompt = ""
+    prompt_path = "/app/config/takumi_meta/prompts/system_prompt.txt"
+    
+    if os.path.exists(prompt_path):
+        try:
+            with open(prompt_path, 'r', encoding='utf-8') as f:
+                base_prompt = f.read()
+        except Exception as e:
+            print(f"[TakumiBridge] Failed to load system prompt: {e}")
+
+    # 2. 機能能力 (ワークフロー操作) を定義
+    #    ※ base_prompt の指示と矛盾しないよう、セクションを分ける
+    functional_prompt = (
+        "\n\n=== WORKFLOW CONTROL CAPABILITIES ===\n"
+        f"Available workflows:\n{catalog_str}\n\n"
+        "Rules for Workflow Loading:\n"
+        "1. If the user wants to generate an image or use a workflow, return a JSON object with: "
+        "{\"action\": \"load_workflow\", \"target_id\": \"<id>\", \"params\": {\"prompt\": \"<english_visual_description>\"}}\n"
+        "2. If it's a normal chat or troubleshooting question, return: {\"response\": \"<answer_in_japanese>\"}"
+    )
+
+    return base_prompt + functional_prompt
+
 @server.PromptServer.instance.routes.post("/takumi/chat")
 async def chat_handler(request):
     try:
@@ -30,16 +56,8 @@ async def chat_handler(request):
         catalog = load_workflow_catalog()
         catalog_str = json.dumps(catalog, indent=2)
 
-        # [Update] System Prompt: パラメータ抽出を指示
-        system_prompt = (
-            f"You are Takumi, an AI assistant for ComfyUI. "
-            f"Available workflows:\n{catalog_str}\n\n"
-            "Rules:\n"
-            "1. If the user wants to generate an image or use a workflow, return a JSON object with: "
-            "{\"action\": \"load_workflow\", \"target_id\": \"<id>\", \"params\": {\"prompt\": \"<english_visual_description>\"}}\n"
-            "   - Translate the user's request into a detailed English prompt for Stable Diffusion.\n"
-            "2. If it's a normal chat, return: {\"response\": \"<answer_in_japanese>\"}"
-        )
+        # [Fix] ファイルとコードを融合したプロンプトを生成
+        system_prompt = build_system_prompt(catalog_str)
 
         ollama_payload = {
             "model": MODEL_NAME,
@@ -56,7 +74,9 @@ async def chat_handler(request):
                 
                 ollama_res = await resp.json()
                 ai_response_str = ollama_res.get("response", "")
-                print(f">>> [TakumiBridge] Raw AI Response: {ai_response_str}")
+                
+                # [Cleanup] 本番環境では内部ログを表示しない
+                # print(f">>> [TakumiBridge] Raw AI Response: {ai_response_str}") 
 
                 try:
                     ai_data = json.loads(ai_response_str)
