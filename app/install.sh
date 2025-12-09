@@ -71,8 +71,14 @@ cleanup_and_report() {
     
     # --- Case 1: 失敗時 (既存のロジック) ---
     if [ $exit_code -ne 0 ]; then
+        # ユーザーに報告
         echo ""
         log_error "Installation failed with exit code $exit_code."
+
+        # [Fix] PRIVACY_LEVELが "0" なら送信せずに終了するガードを追加
+        if [ "${TAKUMI_PRIVACY_LEVEL}" = "0" ]; then
+            return
+        fi
         
         # レシピパスの解決
         local recipe_path=""
