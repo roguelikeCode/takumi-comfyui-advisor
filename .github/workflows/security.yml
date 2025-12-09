@@ -45,12 +45,24 @@ jobs:
             TAKUMI_UID=9000
             TAKUMI_GID=9000
 
-      - name: Run Trivy vulnerability scanner
+      # [Step 1] HIGHレベル: 検知はするが、CIは止めない (exit-code: 0)
+      # 「監視モード」Ollama等の制御不能なHIGH脆弱性でCIを止めないよう、閾値は設定せずにレポート化で監視する
+      - name: Scan for HIGH vulnerabilities (Monitor Only)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'takumi-comfyui:test'
           format: 'table'
-          exit-code: '1'
-          # [Fix] Ollama等の制御不能なHIGH脆弱性でCIを止めないよう、閾値をCRITICALに引き上げる
+          exit-code: '0'  # <--- 止めない
+          severity: 'HIGH'
+          ignore-unfixed: true
+
+      # [Step 2] CRITICALレベル: 検知したら即座に止める (exit-code: 1)
+      # 「遮断モード」Takumiの安全基準を守る
+      - name: Scan for CRITICAL vulnerabilities (Blocker)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'takumi-comfyui:test'
+          format: 'table'
+          exit-code: '1'  # <--- 止める
           severity: 'CRITICAL'
           ignore-unfixed: true
