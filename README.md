@@ -17,9 +17,9 @@ Especially for creators on Windows, the reality is harsh:
 
 *   **No one to talk to:** "The programmer is a Mac user and doesn't understand my Windows errors."
 *   **Dependency hell:** "Why does NumPy break with `IMPORT FAILED` when I include other custom nodes?"
-*   **C++ Build Nightmares:** `insightface` or `onnxruntime` failing because you don't have Visual Studio Build Tools installed.
+*   **C++ Build Nightmares:** "`insightface` or `onnxruntime` failed because Visual Studio Build Tools are not installed. I don't understand the warning."
 *   **Version Mismatch:** "It works on my friend's PC, but crashes on my RTX 3090."
-*   **Silent Failures:** PyTorch silently falling back to CPU mode, making rendering painfully slow.
+*   **Silent Failures:** "Out of nowhere, PyTorch falls back to the CPU version, which makes rendering incredibly slow. Why? I thought I installed the GPU version?"
 
 Instead of creating art, you spend days debugging Python errors. **This ends today.**
 
