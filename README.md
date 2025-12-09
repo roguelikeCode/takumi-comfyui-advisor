@@ -4,10 +4,10 @@
 > The AI-Powered Concierge that saves you from Dependency Hell.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Conda](https://img.shields.io/badge/conda-%2344A833.svg?style=flat&logo=anaconda&logoColor=white)](https://docs.conda.io/)
 [![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
 
 ---
 
@@ -45,21 +45,24 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
     Built-in LLM (Gemma 3) monitors your workflow. If an error occurs, Takumi explains it in plain language and guides you to the solution.
 
 4.  **🧩 Verified Use-Cases (Recipes)**
-    We don't just give you ComfyUI; we give you **"Environments that Work."**
+    We give you **"Environments that Work,"** such as:
     *   👗 **MagicClothing:** Virtual Try-On environment (Fixed Diffusers/Transformers versions).
     *   🎥 **AnimateDiff:** AI Video generation environment (FFmpeg/Audio enabled).
 
 5.  **📦 Asset Manager**
-    Modern AI models require complex combinations of Checkpoints, VAEs, Clips, and Motion Modules. Takumi's "Asset Manager" downloads and links them automatically, solving the fragmented model problem.
+    Modern AI models require complex combinations of `Checkpoints`, `VAEs`, `Clips`, `LoRA` and `Motion Modules`. Takumi's "Asset Manager" downloads and links them automatically, solving the fragmented model problem.
 
 ---
 
 ## ⚡ Quick Start
 
 ### Prerequisites
-*   **Docker Desktop** (or Rancher Desktop / Podman)
+*   **Windows Users:** **WSL2 (Ubuntu)** is required.
+    *   *⚠️ Please run all commands inside the `Ubuntu` terminal, NOT in `PowerShell`.*
+*   **Docker Desktop** (configured with WSL2 backend)
 *   **NVIDIA GPU** (Drivers installed)
 *   **Git**
+*   **Make**
 
 ### Installation
 
@@ -99,6 +102,7 @@ Installation failed? Don't worry. Takumi automatically captures the error log an
 *   **Phase 1 (Current):** OSS Release. Stable environments for MagicClothing & AnimateDiff.
 *   **Phase 2:** Listen to user use cases and add them to recipes (Discord Community).
 *   **Phase 3:** Team Analytics & Enterprise Dashboard.
+*   **Future Vision:** Sustainable Creator Economy & Revenue Sharing (Web 3.0).
 
 ## 🤝 Community & Support
 
