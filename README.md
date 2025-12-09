@@ -102,7 +102,7 @@ Installation failed? Don't worry. Takumi automatically captures the error log an
 ## 🤝 Community & Support
 
 Join our **Discord Server** to share your creations, ask for help, and request new Use-Case Recipes.
-[**[Join Discord]**](#) *(Link coming soon)*
+[**[Join Discord]**](#)
 
 ## License
 
