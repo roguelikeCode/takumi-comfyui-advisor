@@ -14,6 +14,19 @@ jobs:
     runs-on: ubuntu-24.04
     
     steps:
+      # [Fix] ビルド前にディスク容量を確保する (巨大なDockerイメージ対策)
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # 不要なプリインストールツールを削除
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Checkout code
         uses: actions/checkout@v4
 
