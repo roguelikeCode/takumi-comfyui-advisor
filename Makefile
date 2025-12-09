@@ -16,6 +16,7 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Lifecycle Commands:"
+	@echo "  setup-env     Create .env file and install utilities."
 	@echo "  build         Build the Docker image from Dockerfile."
 	@echo "  install       Run the guided installation process inside a new container."
 	@echo "  run           Run the main application (e.g., ComfyUI) in a container."
@@ -24,6 +25,7 @@ help:
 	@echo "  shell         Start an interactive shell inside a new container for debugging."
 	@echo "  test          Run automated tests to verify the environment and scripts."
 	@echo "  clean         Remove built images and cached files."
+
 
 # ==============================================================================
 # Shell Color Codes
@@ -66,8 +68,9 @@ DOCKER_RUN_OPTS := --rm \
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
-.PHONY: pre-check main dev maintenance
+.PHONY: pre-check setup main dev maintenance
 pre-check:
+setup:
 main:
 dev:
 maintenance:
@@ -78,6 +81,25 @@ REQUIRED_DIRS := logs cache external config storage/pkgs storage/envs storage/ol
 .PHONY: ensure-dirs
 ensure-dirs:
 	@mkdir -p $(REQUIRED_DIRS)
+
+# --- Setup ---
+# [Why] ユーザーが手動でファイルをコピーする手間を省き、暗号化ツールの導入を支援する
+setup-env:
+	@echo ">>> Setting up environment..."
+	@if [ ! -f .env ]; then \
+		echo "  -> Creating .env from .env.example..."; \
+		cp .env.example .env; \
+		echo "  ✅ .env created. Please open it and set your HF_TOKEN."; \
+	else \
+		echo "  -> .env already exists. Skipping."; \
+	fi
+	@echo ">>> Checking for dotenvx (Encryption tool)..."
+	@if ! command -v dotenvx >/dev/null 2>&1; then \
+		echo "  -> dotenvx not found. Installing locally..."; \
+		curl -sfS https://dotenvx.sh/install.sh | sh; \
+	else \
+		echo "  ✅ dotenvx is installed."; \
+	fi
 
 # --- Main ---
 .PHONY: build install run
@@ -94,16 +116,28 @@ install: build
 	@echo ">>> Launching installer wrapper..."
 	@bash ./scripts/run_installer.sh
 
-run:
+# [Fix] runターゲット: dotenvxがある場合はそれを使って復号し、なければ通常のdocker runを行う
+run: build
 	@echo ">>> Starting ComfyUI..."
 	@echo ">>> Open http://localhost:8188 for ComfyUI"
-	@docker run -it --rm \
-		--gpus all \
-		--env-file .env \
-		-p 8188:8188 \
-		$(DOCKER_RUN_OPTS) \
-		$(IMAGE_NAME):$(IMAGE_TAG) \
-		bash /app/scripts/run.sh
+	@if command -v dotenvx >/dev/null 2>&1; then \
+		dotenvx run -- docker run -it --rm \
+			--gpus all \
+			-e HF_TOKEN \
+			--env-file .env \
+			-p 8188:8188 \
+			$(DOCKER_RUN_OPTS) \
+			$(IMAGE_NAME):$(IMAGE_TAG) \
+			bash /app/scripts/run.sh; \
+	else \
+		docker run -it --rm \
+			--gpus all \
+			--env-file .env \
+			-p 8188:8188 \
+			$(DOCKER_RUN_OPTS) \
+			$(IMAGE_NAME):$(IMAGE_TAG) \
+			bash /app/scripts/run.sh; \
+	fi
 
 # --- Development ---
 .PHONY: shell test lint
