@@ -29,8 +29,8 @@ jobs:
           tags: takumi-comfyui:test
           # ビルド引数を渡してエラーを防ぐ (ダミーIDでOK)
           build-args: |
-            TAKUMI_UID=1000
-            TAKUMI_GID=1000
+            TAKUMI_UID=9000
+            TAKUMI_GID=9000
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
