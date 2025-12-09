@@ -1,0 +1,45 @@
+name: Security Scan (Trivy)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 0' # 毎週日曜日に定期スキャン
+
+jobs:
+  build-and-scan:
+    name: Build & Scan Docker Image
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        # イメージをビルドするが、Pushはしない（ロードのみ）
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: takumi-comfyui:test
+          # ビルド引数を渡してエラーを防ぐ (ダミーIDでOK)
+          build-args: |
+            TAKUMI_UID=1000
+            TAKUMI_GID=1000
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'takumi-comfyui:test'
+          format: 'table'
+          # CRITICALな脆弱性が見つかったらCIを失敗させる (exit code 1)
+          exit-code: '1'
+          # 検知する脆弱性のレベル
+          severity: 'CRITICAL,HIGH'
+          # OSパッケージの脆弱性のみを対象とする (Pythonライブラリ等は別途)
+          ignore-unfixed: true
