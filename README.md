@@ -4,6 +4,7 @@
 > The AI-Powered Concierge that saves you from Dependency Hell.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Conda](https://img.shields.io/badge/conda-%2344A833.svg?style=flat&logo=anaconda&logoColor=white)](https://docs.conda.io/)
 [![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
