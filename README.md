@@ -77,9 +77,9 @@ make setup-env
 # [Action Required]
 Open the generated '.env' file and paste your Hugging Face Token.
 
-1. Go to: https://huggingface.co/settings/tokens
-2. Create new token -> Type: "Read" -> Name: "Takumi"
-3. Copy the token (hf_...) and paste it into .env (HF_TOKEN=hf_...)
+1. https://huggingface.co/settings/tokens
+2. Create new token -> Token type: "Read" -> Token name: "Takumi"
+3. Copy the token (hf_...) and paste it into '.env' (HF_TOKEN=hf_...)
 
 # 3. Build & Install (The Magic Command)
 # Select your desired use-case number from the menu (e.g., AnimateDiff)
