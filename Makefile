@@ -17,6 +17,7 @@ help:
 	@echo ""
 	@echo "Lifecycle Commands:"
 	@echo "  setup-env     Create .env file and install utilities."
+	@echo "  encrypt       Encrypt .env file using dotenvx."
 	@echo "  build         Build the Docker image from Dockerfile."
 	@echo "  install       Run the guided installation process inside a new container."
 	@echo "  run           Run the main application (e.g., ComfyUI) in a container."
@@ -68,6 +69,14 @@ DOCKER_RUN_OPTS := --rm \
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
+.PHONY: pre-check setup security main dev maintenance
+pre-check:
+setup:
+security:
+main:
+dev:
+maintenance:
+
 # --- Configuration ---
 # Versions
 DOTENVX_VERSION := v1.51.1
@@ -97,6 +106,20 @@ setup-env:
 		echo "  ✅ dotenvx installed successfully."; \
 	else \
 		echo "  ✅ dotenvx is already installed."; \
+	fi
+
+# --- Security ---
+encrypt:
+	@if [ ! -f .env ]; then \
+		echo "❌ .env file not found. Please run 'make setup-env' first."; \
+		exit 1; \
+	fi
+	@if command -v dotenvx >/dev/null 2>&1; then \
+		echo ">>> Encrypting .env..."; \
+		dotenvx encrypt; \
+		echo "✅ Secrets encrypted. Keys generated in .env.keys"; \
+	else \
+		echo "❌ dotenvx not found. Please run 'make setup-env' first."; \
 	fi
 
 # --- Main ---
