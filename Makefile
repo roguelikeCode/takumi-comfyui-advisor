@@ -68,12 +68,9 @@ DOCKER_RUN_OPTS := --rm \
 # ==============================================================================
 # Dockerfile Wrapper Recipes
 # ==============================================================================
-.PHONY: pre-check setup main dev maintenance
-pre-check:
-setup:
-main:
-dev:
-maintenance:
+# --- Configuration ---
+# Versions
+DOTENVX_VERSION := v1.51.1
 
 # --- Pre-Check ---
 REQUIRED_DIRS := logs cache external config storage/pkgs storage/envs storage/ollama
@@ -95,10 +92,11 @@ setup-env:
 	fi
 	@echo ">>> Checking for dotenvx (Encryption tool)..."
 	@if ! command -v dotenvx >/dev/null 2>&1; then \
-		echo "  -> dotenvx not found. Installing locally..."; \
-		curl -sfS https://dotenvx.sh/install.sh | sh; \
+		echo "  -> dotenvx not found. Installing $(DOTENVX_VERSION)..."; \
+		curl -sfS https://dotenvx.sh/install.sh | sh -s -- --version $(DOTENVX_VERSION); \
+		echo "  ✅ dotenvx installed successfully."; \
 	else \
-		echo "  ✅ dotenvx is installed."; \
+		echo "  ✅ dotenvx is already installed."; \
 	fi
 
 # --- Main ---
