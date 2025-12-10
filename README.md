@@ -68,6 +68,7 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
 
 ```bash
 # 1. Clone the repository
+# This creates a folder named 'takumi-comfyui-advisor' in your current location
 git clone https://github.com/roguelikeCode/takumi-comfyui-advisor.git
 cd takumi-comfyui-advisor
 
@@ -75,11 +76,14 @@ cd takumi-comfyui-advisor
 make setup-env
 
 # [Action Required]
-Open the generated '.env' file and paste your Hugging Face Token.
+# Open the generated 'takumi-comfyui-advisor/.env' file and paste your Hugging Face Token.
 
 1. https://huggingface.co/settings/tokens
 2. Create new token -> Token type: "Read" -> Token name: "Takumi"
-3. Copy the token (hf_...) and paste it into '.env' (HF_TOKEN=hf_...)
+3. Copy the token (hf_...)
+4. Paste it into 'takumi-comfyui-advisor/.env' (HF_TOKEN=hf_...)
+5. Encrypt your secrets (secure your token):
+make encrypt
 
 # 3. Build & Install (The Magic Command)
 # Select your desired use-case number from the menu (e.g., AnimateDiff)
