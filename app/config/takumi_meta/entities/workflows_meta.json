@@ -10,5 +10,16 @@
       "prompt": { "node_id": 23, "widget_index": 0 },
       "seed": { "node_id": 23, "widget_index": 6 }
     }
+  },
+  "takumi-flow-animatediff-001": {
+    "name": "AnimateDiff Video Generator",
+    "creator": "Takumi Standard",
+    "description": "Text-to-Video generation using AnimateDiff Evolved.",
+    "tags": ["animation", "video", "animatediff"],
+    "path": "/app/assets/workflows/animate_diff_v1.json",
+    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
+    "mapping": {
+      "prompt": { "node_id": 10, "widget_index": 0 } 
+    }
   }
 }
