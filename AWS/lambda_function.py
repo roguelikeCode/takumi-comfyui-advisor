@@ -2,66 +2,105 @@ import json
 import boto3
 import time
 import uuid
+import os
+import logging
+from typing import Dict, Any, Union
 
-# ログ保存先のS3バケット名
-# (バケット作成時に設定した名前に合わせる必要があります)
-BUCKET_NAME = 'takumi-logbook-v1'
+# --- Configuration ---
+# [Why] To allow infrastructure changes without modifying code. (AWS management screen)
+# [What] Get bucket name from environment variable, fallback to default.
+BUCKET_NAME = os.environ.get('LOG_BUCKET_NAME', 'takumi-logbook-v1')
 
-# S3クライアントの初期化
-s3 = boto3.client('s3')
+# --- Initialization ---
+s3_client = boto3.client('s3')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-def lambda_handler(event, context):
-    """
-    API Gatewayからのリクエストを受け取り、S3にJSONログとして保存するLambda関数
-    """
+# ==============================================================================
+# Helper Functions (Encapsulation)
+# ==============================================================================
+
+# [Why] To standardize API Gateway responses.
+# [What] Returns a dictionary formatted for Lambda proxy integration.
+# [Input] status_code (int), body (dict)
+# [Output] dict (APIGatewayProxyResponse)
+def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*' # CORS support if needed
+        },
+        'body': json.dumps(body, ensure_ascii=False)
+    }
+
+# [Why] To safely extract and parse the JSON payload from the request.
+# [What] Handles both stringified JSON and direct dictionary objects.
+# [Input] event (dict)
+# [Output] dict (Parsed JSON data)
+def parse_payload(event: Dict[str, Any]) -> Dict[str, Any]:
+    body = event.get('body', '{}')
+    
+    # API Gateway might send body as string or dict depending on configuration
+    if isinstance(body, str):
+        if not body.strip():
+            return {}
+        return json.loads(body)
+    return body
+
+# [Why] To organize logs efficiently in the Data Lake.
+# [What] Generates a unique S3 key structure: logs/YYYY-MM-DD/timestamp_uuid.json
+# [Output] str (S3 object key)
+def generate_s3_key() -> str:
+    current_time = int(time.time())
+    date_str = time.strftime('%Y-%m-%d', time.gmtime(current_time))
+    file_id = str(uuid.uuid4())
+    return f"logs/{date_str}/{current_time}_{file_id}.json"
+
+# [Why] To persist the telemetry data securely.
+# [What] Uploads the JSON payload to the configured S3 bucket.
+# [Input] key (str), data (dict)
+def save_to_s3(key: str, data: Dict[str, Any]) -> None:
+    s3_client.put_object(
+        Bucket=BUCKET_NAME,
+        Key=key,
+        Body=json.dumps(data, ensure_ascii=False),
+        ContentType='application/json'
+    )
+
+# ==============================================================================
+# Main Handler
+# ==============================================================================
+
+# [Why] Entry point for AWS Lambda execution.
+# [What] Orchestrates parsing, saving, and error handling.
+def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
-        # 1. リクエストボディの解析
-        # API Gatewayからは通常文字列として渡されるが、
-        # テスト実行時などは辞書として渡される場合があるためハンドリングする
-        body = event.get('body', '{}')
-        if isinstance(body, str):
-            try:
-                payload = json.loads(body)
-            except json.JSONDecodeError:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'Invalid JSON format'})
-                }
-        else:
-            payload = body
-
-        # 2. ファイル名の生成
-        # 衝突を避けるため、タイムスタンプとUUIDを組み合わせる
-        # 構造: logs/YYYY-MM-DD/timestamp_uuid.json (日別にフォルダ分けすると管理しやすい)
-        current_time = int(time.time())
-        date_str = time.strftime('%Y-%m-%d', time.gmtime(current_time))
-        file_id = str(uuid.uuid4())
+        logger.info("Processing new telemetry request.")
         
-        # S3上のパス (Key)
-        file_name = f"logs/{date_str}/{current_time}_{file_id}.json"
+        # 1. Parse Input
+        try:
+            payload = parse_payload(event)
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON format received.")
+            return create_response(400, {'error': 'Invalid JSON format'})
 
-        # 3. S3への保存
-        s3.put_object(
-            Bucket=BUCKET_NAME,
-            Key=file_name,
-            Body=json.dumps(payload, ensure_ascii=False), # 日本語文字化け防止
-            ContentType='application/json'
-        )
+        if not payload:
+             return create_response(400, {'error': 'Empty payload'})
 
-        # 4. 成功レスポンス
-        print(f"Successfully saved log to {file_name}")
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Log saved successfully', 
-                'path': file_name
-            })
-        }
+        # 2. Generate Key
+        file_key = generate_s3_key()
+
+        # 3. Save to S3
+        save_to_s3(file_key, payload)
+        logger.info(f"Log saved successfully to {file_key}")
+
+        # 4. Return Success
+        return create_response(200, {
+            'message': 'Log saved successfully',
+            'path': file_key
+        })
 
     except Exception as e:
-        # エラーハンドリング
-        print(f"Error: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': 'Internal Server Error'})
-        }
+        logger.error(f"Internal Server Error: {str(e)}", exc_info=True)
+        return create_response(500, {'error': 'Internal Server Error'})
