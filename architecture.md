@@ -45,3 +45,26 @@ graph LR
     C -- "3. Streaming JSON" --> B
     B -- "4. Response" --> A
 ```
+
+# 
+```mermaid
+graph TD
+    Start[make install] --> Main[main関数]
+    
+    subgraph Execution
+        Main --> Fetch[カタログ取得]
+        Main --> Build[カタログ結合]
+        Main --> Flow[インストール実行]
+    end
+
+    Execution -- 成功 (Exit 0) --> End[終了]
+    Execution -- 失敗 (Exit 1) --> Trap[Trap発動]
+
+    subgraph Trap: cleanup_and_report
+        Trap --> Check{Exit Code?}
+        Check -- 0 (成功) --> Silent[何もしない]
+        Check -- 1 (失敗) --> Reporter[report_failure.py]
+    end
+
+    Reporter --> AWS[(AWS Cloud)]
+```
