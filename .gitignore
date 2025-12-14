@@ -59,6 +59,7 @@ yarn-error.log
 # OS
 .DS_Store
 Thumbs.db
+*Zone.Identifier
 
 # VS Code (Allow settings, ignore local state)
 .vscode/*
