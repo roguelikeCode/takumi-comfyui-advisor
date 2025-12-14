@@ -1,14 +1,27 @@
-# [Why] ComfyUIにカスタムノード/拡張機能として認識させるため
-# [What] serverモジュールをインポートし、Webディレクトリをマッピングする
+"""
+Takumi Bridge Node Initialization
 
-from .server import *
+[Why] To register the extension with ComfyUI and expose web assets.
+[What] Defines the web directory and initializes the server routes.
+"""
 
-# WEB_DIRECTORY は、ComfyUIが静的ファイル(JS/CSS)を探す場所を指定する
-# ここで指定したフォルダ内のファイルは、ブラウザからアクセス可能になる
+from . import server
+
+# ==============================================================================
+# ComfyUI Node Configuration
+# ==============================================================================
+
+# [Why] To serve the frontend assets (JS/CSS/Images) to the browser.
+# [What] Points to the './js' directory relative to this file.
 WEB_DIRECTORY = "./js"
 
-# ノードクラスは今回は登録しない（サーバー拡張のみ）が、形式上必要
+# [Why] This extension provides a backend API (Bridge), not a processing node.
+# [What] Define empty mappings to satisfy ComfyUI's loader requirements.
+# [Note] The logic resides in 'server.py' (API) and 'js/takumi.js' (Frontend).
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
-print(">>> [TakumiBridge] Loaded. Web extension ready.")
+# [Why] To explicitly define what this module exports.
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+
+print(f">>> [TakumiBridge] Loaded. Web extension ready at '{WEB_DIRECTORY}'.")

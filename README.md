@@ -42,7 +42,7 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
     Just type `make install`. Takumi handles Conda, CUDA, PyTorch, and all Custom Nodes automatically.
 
 3.  **🤖 AI Concierge (Yamato_Watase)**
-    Built-in LLM (Gemma 3) monitors your workflow. If an error occurs, Takumi explains it in plain language and guides you to the solution.
+    Built-in LLM (Gemma 2) monitors your workflow. If an error occurs, Takumi explains it in plain language and guides you to the solution.
 
 4.  **🧩 Verified Use-Cases (Recipes)**
     We give you **"Environments that Work,"** such as:
@@ -94,6 +94,7 @@ make run
 ```
 
 Access ComfyUI at **http://localhost:8188**
+Exit with "**Ctrl + C**"
 
 ---
 

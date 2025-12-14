@@ -149,9 +149,9 @@ install_pip_from_recipe() {
 
 # [Why] To ensure the AI model is ready for the Chat UI.
 # [What] Starts Ollama server and pulls the required model if missing.
-# [Input] None
+# [Note] gemma2:2b provides the best balance of speed and instruction following
 setup_ollama_model() {
-    local model_name="gemma3"
+    local model_name="gemma2:2b"
     log_info "Setting up AI Model (${model_name})..."
 
     if ! pgrep -x "ollama" > /dev/null; then

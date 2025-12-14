@@ -1,70 +1,177 @@
-# The Takumi's Logbook (AWS Architecture)
+# 🏛️ System Architecture & Design Principles
+
+> **[Why]** To visualize the structural integrity and data flow of the Takumi system.
+> **[What]** Documentation of the containerization strategy, installer logic, AI interaction, and telemetry pipelines.
+
+---
+
+## 1. High-Level Concept: "The Factory"
+
+The system operates on a **"Container-First"** philosophy. The Host OS serves only as a launcher, while all logic, dependencies, and AI models reside inside a reproducible Docker container.
 
 ```mermaid
 graph TD
-    %% 定義: クラスによるスタイリング（視認性向上）
-    classDef local fill:#444444,stroke:#ffffff,stroke-width:2px,color:#ffffff;
-    classDef cloud fill:#005f73,stroke:#94d2bd,stroke-width:2px,color:#ffffff;
-    classDef storage fill:#ae2012,stroke:#f4a261,stroke-width:2px,color:#ffffff;
+    %% Color Palette: Yamato Navy
+    classDef host fill:#415a77,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:4px,color:#fff;
+    classDef cloud fill:#e0e1dd,stroke:#0d1b2a,stroke-width:2px,color:#0d1b2a;
 
-    subgraph Local["Local Environment (User PC)"]
-        A["<b>Client: install.sh</b><br/>func: submit_log_to_takumi"]:::local
+    subgraph Host ["🖥️ Host OS (Windows/WSL2/Linux)"]
+        User((User))
+        Make[Makefile]
+        Dotenv[.env Secrets]
     end
 
-    subgraph Cloud["AWS Serverless Infrastructure"]
-        B["<b>AWS API Gateway</b><br/>Route: POST /logs"]:::cloud
-        C["<b>AWS Lambda</b><br/>File: lambda_function.py<br/>Handler: lambda_handler"]:::cloud
-        D[("<b>AWS S3</b><br/>Bucket: takumi-logbook-v1")]:::storage
+    subgraph Docker ["📦 Docker Container (Takumi OS)"]
+        Installer["install.sh / Installer Engine"]
+        Runtime[ComfyUI Runtime]
+        Brain[Ollama / Gemma 2]
+        Bridge[Takumi Bridge Server]
     end
 
-    A -->|1. curl -X POST| B
-    B -->|2. Invoke| C
-    C -->|3. boto3.put_object| D
+    subgraph Cloud ["☁️ External World"]
+        HuggingFace[Hugging Face Hub]
+        AWS[AWS Telemetry Lake]
+    end
+
+    User -->|make install / run| Make
+    Make -->|Injects| Dotenv
+    Make -->|Builds & Runs| Docker
+    
+    Installer -->|Downloads| HuggingFace
+    Runtime -->|Loads| HuggingFace
+    Bridge -->|Queries| Brain
+    Installer -.->|Reports Failure| AWS
+    
+    class Host host;
+    class Docker container;
+    class Cloud cloud;
 ```
 
-# The Takumi Copilot (Interaction Flow)
+---
+
+## 2. Installer Architecture: "The Modular Core"
+
+The installation logic has been refactored from a monolithic script into a **Modular Architecture**.
+The entry point (`install.sh`) acts as an orchestrator, loading specialized libraries to handle specific tasks.
 
 ```mermaid
 graph LR
-    %% 定義: クラスによるスタイリング
-    classDef ui fill:#3a0ca3,stroke:#4cc9f0,stroke-width:2px,color:#ffffff;
-    classDef server fill:#2d6a4f,stroke:#74c69d,stroke-width:2px,color:#ffffff;
-    classDef brain fill:#b5179e,stroke:#f72585,stroke-width:4px,color:#ffffff;
+    %% Color Palette: Yamato Navy & Cyan
+    classDef entry fill:#4cc9f0,stroke:#fff,stroke-width:2px,color:#0d1b2a;
+    classDef lib fill:#1b263b,stroke:#4cc9f0,stroke-width:1px,color:#fff;
+    classDef data fill:#ffffff,stroke:#0d1b2a,stroke-width:2px,color:#0d1b2a;
 
-    subgraph Browser["User Interface (Browser)"]
-        A["<b>ComfyUI Frontend (JS)</b><br/>File: takumi_chat.js<br/>Event: api.fetch()"]:::ui
+    Entry("app/install.sh"):::entry
+
+    subgraph Libraries ["📚 app/lib/"]
+        Utils(utils.sh):::lib
+        Logger(logger.sh):::lib
+        BrainInterface(brain.sh):::lib
+        Diagnostics(diagnostics.sh):::lib
+        Concierge(concierge.sh):::lib
+        Core(installer.sh):::lib
     end
 
-    subgraph Container["Docker Container (Takumi System)"]
-        B["<b>ComfyUI Server (Python)</b><br/>Node: TakumiBridgeNode<br/>Route: /takumi/chat"]:::server
-        C["<b>The Brain (Ollama)</b><br/>Model: gemma3:7b<br/>Port: 11434"]:::brain
+    subgraph Data ["💾 app/config/"]
+        Recipes[("JSON Recipes")]:::data
+        Catalog[("Node Catalog")]:::data
     end
 
-    A -- "1. POST /takumi/chat" --> B
-    B -- "2. HTTP Request" --> C
-    C -- "3. Streaming JSON" --> B
-    B -- "4. Response" --> A
+    Entry -->|Source| Libraries
+    Core -->|Read| Recipes
+    Core -->|Merge| Catalog
+    Concierge -->|Select| Recipes
+    BrainInterface -->|Consult| Brain["scripts/brain.py"]
 ```
 
-# 
+### **Module Responsibilities**
+
+| Module | Responsibility (What) |
+| :--- | :--- |
+| **`utils.sh`** | Global constants, paths, and state variables. |
+| **`logger.sh`** | Standardized logging outputs and error traps. |
+| **`diagnostics.sh`** | Hardware inspection (NVIDIA GPU/CUDA version). |
+| **`concierge.sh`** | Interactive menu for Use-Case selection. |
+| **`brain.sh`** | Interface to Python AI script for error analysis. |
+| **`installer.sh`** | Core logic for Conda/Pip/Custom Nodes installation. |
+
+---
+
+## 3. The Brain & Bridge: "Natural Language Interface"
+
+How the User talks to the System. The `Takumi Bridge` acts as a translator between the User's intent (Natural Language) and ComfyUI's internal logic (JSON Graphs).
+
 ```mermaid
-graph TD
-    Start[make install] --> Main[main関数]
+sequenceDiagram
+    participant User
+    participant UI as Takumi UI (JS)
+    participant Server as Bridge Server (Python)
+    participant AI as Ollama (Gemma)
+    participant Comfy as ComfyUI Core
+
+    User->>UI: "I want to make an anime video"
+    UI->>Server: POST /takumi/chat {prompt}
     
-    subgraph Execution
-        Main --> Fetch[カタログ取得]
-        Main --> Build[カタログ結合]
-        Main --> Flow[インストール実行]
+    %% Fixed: Changed background to Dark Navy for better contrast
+    rect rgb(27, 38, 59)
+        note right of Server: Thought Process
+        Server->>Server: Build System Prompt (Persona + Catalog)
+        Server->>AI: Query (LLM Inference)
+        AI-->>Server: JSON { action: "load_workflow", target: "animatediff..." }
     end
-
-    Execution -- 成功 (Exit 0) --> End[終了]
-    Execution -- 失敗 (Exit 1) --> Trap[Trap発動]
-
-    subgraph Trap: cleanup_and_report
-        Trap --> Check{Exit Code?}
-        Check -- 0 (成功) --> Silent[何もしない]
-        Check -- 1 (失敗) --> Reporter[report_failure.py]
-    end
-
-    Reporter --> AWS[(AWS Cloud)]
+    
+    Server->>Server: WorkflowEngine.process_action()
+    Server->>Server: Inject dynamic params (Prompt)
+    
+    Server-->>UI: Response { type: "action", workflow: JSON }
+    UI->>Comfy: app.loadGraphData(workflow)
+    Comfy-->>User: [Workflow Loaded on Canvas]
 ```
+
+---
+
+## 4. Telemetry Pipeline: "The Black Box"
+
+We collect data **only when things go wrong** (OSS) or for **team analytics** (Enterprise).
+This "Black Box" approach helps us improve the `Renovate Fixer` engine.
+
+```mermaid
+graph LR
+    %% Styles: Consistent Navy Theme
+    classDef client fill:#1b263b,stroke:#4cc9f0,color:#fff;
+    classDef cloud fill:#e0e1dd,stroke:#f4511e,stroke-width:2px,color:#0d1b2a;
+
+    subgraph Client ["User Environment"]
+        Trap["install.sh (Trap)"]:::client
+        Reporter["scripts/report_failure.py"]:::client
+    end
+
+    subgraph Cloud ["AWS Serverless"]
+        APIGW["API Gateway"]:::cloud
+        Lambda["Lambda Function"]:::cloud
+        S3[("S3 Data Lake")]:::cloud
+    end
+
+    Trap -- "On Error (Exit != 0)" --> Reporter
+    Reporter -- "Gather Logs & Context" --> Reporter
+    Reporter -- "POST JSON" --> APIGW
+    APIGW --> Lambda
+    Lambda -- "Store" --> S3
+```
+
+---
+
+## 5. Design Philosophy
+
+### **Abstraction & Encapsulation**
+We hide complexity. The user runs `make install`, and the system handles the chaos of Python versions, CUDA drivers, and compilation tools behind the scenes.
+
+### **Idempotency**
+You can run `make install` as many times as you want. The scripts check existing states and only apply necessary changes (Self-Healing).
+
+### **Single Source of Truth**
+*   **Version Control:** Git is the master.
+*   **Environment:** Dockerfile is the definition.
+*   **Recipes:** JSON files define the "correct" combination of libraries.
+

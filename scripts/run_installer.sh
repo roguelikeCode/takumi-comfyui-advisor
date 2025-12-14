@@ -1,86 +1,125 @@
-# ==============================================================================
-# Takumi Installer Wrapper Script
-#
-# Description: This script orchestrates the installation process, handling the
-#              retry loop and user interaction outside of the Makefile.
-# ==============================================================================
-
 #!/bin/bash
 
-# --- Strict Mode & Safety ---
+# ==============================================================================
+# Takumi Installer Session Manager
+#
+# [Why] To orchestrate the installation process from the Host OS.
+# [What] Manages Docker lifecycle, injects secrets via dotenvx, and handles the retry loop.
+# ==============================================================================
+
+# --- Strict Mode ---
 set -euo pipefail
 
-# --- Configuration (matches Makefile) ---
+# ==============================================================================
+# [1] Configuration (Encapsulation)
+# ==============================================================================
+
+# Container Settings
 readonly IMAGE_NAME="takumi-comfyui"
 readonly IMAGE_TAG="latest"
 readonly CONTAINER_NAME="takumi-comfyui-dev"
+
+# File Paths
+readonly CURRENT_DIR="$(pwd)"
 readonly HISTORY_FILE=".install_history"
 
-# --- Docker Run Options ---
-# [修正] MakefileのDOCKER_RUN_OPTSと同じ設定にする必要があります
-# 特に、storage/envs のマウントが重要です
-# [追加] パッケージキャッシュをマウント (権限エラー回避 & 高速化)
-readonly DOCKER_RUN_OPTS="--rm \
-    --gpus all \
-    --env-file .env \
-    --name $CONTAINER_NAME \
-    --user $(id -u):$(id -g) \
-    -w /app \
-    -e HOME=/home/takumi \
-    -v $(pwd)/cache:/app/cache \
-    -v $(pwd)/logs:/app/logs \
-    -v $(pwd)/external:/app/external \
-    -v $(pwd)/app:/app \
-    -v $(pwd)/scripts:/app/scripts \
-    -v $(pwd)/storage/pkgs:/home/takumi/.conda/pkgs \
-    -v $(pwd)/storage/envs:/home/takumi/.conda/envs \
-    -v $(pwd)/storage/ollama:/home/takumi/.ollama" 
+# [Why] To define volume mappings in a readable, maintainable format.
+# [What] Returns an array of Docker volume arguments.
+get_volume_args() {
+    echo \
+        "-v ${CURRENT_DIR}/cache:/app/cache" \
+        "-v ${CURRENT_DIR}/logs:/app/logs" \
+        "-v ${CURRENT_DIR}/external:/app/external" \
+        "-v ${CURRENT_DIR}/app:/app" \
+        "-v ${CURRENT_DIR}/scripts:/app/scripts" \
+        "-v ${CURRENT_DIR}/storage/pkgs:/home/takumi/.conda/pkgs" \
+        "-v ${CURRENT_DIR}/storage/envs:/home/takumi/.conda/envs" \
+        "-v ${CURRENT_DIR}/storage/ollama:/home/takumi/.ollama" \
+        "-v ${CURRENT_DIR}/${HISTORY_FILE}:/app/${HISTORY_FILE}"
+}
 
-# --- Main Loop ---
+# ==============================================================================
+# [2] Helper Functions (Abstraction)
+# ==============================================================================
 
-# [修正] 安全装置: もしディレクトリとして存在してしまっていたら削除する
-if [ -d "$HISTORY_FILE" ]; then
-    echo "Removing directory '$HISTORY_FILE' to replace with a file..."
-    rm -rf "$HISTORY_FILE"
-fi
-
-# 空の履歴ファイルを作成（なければ作成、あればタイムスタンプ更新）
-touch "$HISTORY_FILE"
-
-while true; do
-    echo "--- Starting new installation attempt ---"
-
-    # [Fix] dotenvx が利用可能な場合、それ経由で復号した値を渡す
-    # -e HF_TOKEN を明示することで、--env-file (暗号化状態) の値を上書きする
-    LAUNCHER=""
-    if command -v dotenvx >/dev/null 2>&1; then
-        LAUNCHER="dotenvx run --"
+# [Why] To ensure the history file exists and is a valid file (not a dir).
+# [What] Removes directory if conflict exists, touches file.
+ensure_history_file() {
+    if [ -d "$HISTORY_FILE" ]; then
+        echo "Removing directory '$HISTORY_FILE' to replace with a file..."
+        rm -rf "$HISTORY_FILE"
     fi
+    touch "$HISTORY_FILE"
+}
 
-    $LAUNCHER docker run -it \
-        -e HF_TOKEN \
-        $DOCKER_RUN_OPTS \
-        -v "$(pwd)/$HISTORY_FILE":/app/.install_history \
-        "$IMAGE_NAME:$IMAGE_TAG" \
-        bash /app/install.sh
+# [Why] To construct the correct execution command based on environment capabilities.
+# [What] Wraps docker command with dotenvx if available to decrypt secrets.
+execute_docker_run() {
+    local docker_cmd=(
+        docker run -it
+        --rm
+        --gpus all
+        --env-file .env
+        -e HF_TOKEN # Inject decrypted token
+        --name "$CONTAINER_NAME"
+        --user "$(id -u):$(id -g)"
+        -w /app
+        -e HOME=/home/takumi
+    )
 
-    exit_code=$?
+    # Append volumes dynamically
+    docker_cmd+=($(get_volume_args))
 
-    if [ $exit_code -eq 0 ]; then
-        echo "✅ Installation successful!"
-        rm -f "$HISTORY_FILE"
-        break
+    # Append Image and Command
+    docker_cmd+=("${IMAGE_NAME}:${IMAGE_TAG}" bash /app/install.sh)
+
+    # [Logic] Wrap with dotenvx if installed
+    if command -v dotenvx >/dev/null 2>&1; then
+        dotenvx run -- "${docker_cmd[@]}"
     else
-        read -p "Installation failed. Retry with a different strategy? (Y/n): " consent
-        if [[ "${consent,,}" == "n" ]]; then
-            if [ $exit_code -eq 125 ]; then
-                echo "🛑 Report submitted to The Takumi as requested. Process finished."
-            else
-                echo "Aborted by user."
-            fi
+        "${docker_cmd[@]}"
+    fi
+}
+
+# ==============================================================================
+# [3] Main Session Loop
+# ==============================================================================
+
+main() {
+    ensure_history_file
+
+    while true; do
+        echo "--- Starting new installation attempt ---"
+
+        # Execute the containerized installer
+        # The exit code determines if we succeeded or failed
+        if execute_docker_run; then
+            echo "✅ Installation successful!"
             rm -f "$HISTORY_FILE"
             break
+        else
+            local exit_code=$?
+            
+            # Special case: User explicitly aborted or reported via GUI logic (125)
+            if [ "$exit_code" -eq 125 ]; then
+                echo "🛑 Report submitted to The Takumi as requested. Process finished."
+                rm -f "$HISTORY_FILE"
+                break
+            fi
+
+            # Standard failure: Ask for retry
+            read -p "Installation failed. Retry with a different strategy? (Y/n): " consent
+            if [[ "${consent,,}" == "n" ]]; then
+                echo "Aborted by user."
+                rm -f "$HISTORY_FILE"
+                break
+            fi
+            echo "Acknowledged. Preparing for another attempt..."
         fi
-        echo "Acknowledged. Preparing for another attempt..."
-    fi
-done
+    done
+}
+
+# --- Entry Point ---
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
