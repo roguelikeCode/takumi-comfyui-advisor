@@ -122,7 +122,7 @@ Installation failed? Don't worry. Takumi automatically captures the error log an
 ## 🤝 Community & Support
 
 Join our **Discord Server** to share your creations, ask for help, and request new Use-Case Recipes.
-[**[Join Discord]**](#)
+[![Discord](https://img.shields.io/discord/1449713759898832984?color=7289da&label=Discord&logo=discord&logoColor=white)](https://discord.gg/n2KSKjTkAa)
 
 ## License
 
