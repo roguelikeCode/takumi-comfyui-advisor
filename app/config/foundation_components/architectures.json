@@ -1,16 +1,4 @@
 {
-  "yq": {
-    "v4.48.2": {
-      "amd64": {
-        "binary": "yq_linux_amd64",
-        "checksum": "0ffc35320180d4911bc3a772934da508715e08af444cb33d4d43660065e25bcc"
-      },
-      "arm64": {
-        "binary": "yq_linux_arm64",
-        "checksum": "3c21630fda217239a5b7d718d08f08e02503098230b3abd49195d315a6dcfe45"
-      }
-    }
-  },
   "miniforge": {
     "25.9.1-0": {
       "amd64": {

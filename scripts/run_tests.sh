@@ -1,52 +1,94 @@
 #!/bin/bash
 
-# エラー即時脱出、未定義変数エラー、パイプエラー検知
+# ==============================================================================
+# Takumi System: Automated Integration Tests
+#
+# [Why] To verify the core functionality of the installer logic in a controlled environment.
+# [What] Executes key functions (catalog fetching, merging) and validates the output artifacts.
+# ==============================================================================
+
+# --- Strict Mode ---
 set -euo pipefail
 
-echo "========================================"
-echo "🧪 Takumi System: Automated Testing"
-echo "========================================"
+# --- Import Libraries ---
+# [Note] We directly load the library modules instead of the entry point script.
+source /app/lib/utils.sh
+source /app/lib/logger.sh
+source /app/lib/installer.sh
 
-# 1. install.sh をライブラリとして読み込む（実行はされない）
-#    これにより、fetch_external_catalogs などの関数が使えるようになる
-source /app/install.sh
+# ==============================================================================
+# Test Harness (Abstraction)
+# ==============================================================================
 
-# --- Test Case 1: Catalog Fetching ---
-echo ">>> [Test 1/3] Fetching external catalogs..."
-if fetch_external_catalogs; then
-    echo "✅ Fetch success."
-else
-    echo "🔴 Fetch failed."
-    exit 1
-fi
+# [Why] To standardize test case execution and reporting.
+# [What] Runs a command, logs the step, and handles success/failure.
+# [Input] $1: description, $2: command
+run_test() {
+    local description="$1"
+    local command="$2"
+    
+    log_info ">>> Testing: ${description}..."
+    
+    if eval "$command"; then
+        log_success "Pass."
+    else
+        log_error "Fail."
+        exit 1
+    fi
+}
 
-# --- Test Case 2: Catalog Merging ---
-echo ">>> [Test 2/3] Building merged catalog..."
-if build_merged_catalog "custom_nodes"; then
-    echo "✅ Merge success."
-else
-    echo "🔴 Merge failed."
-    exit 1
-fi
+# [Why] To validate the integrity of generated JSON files.
+# [What] Checks for file existence and valid JSON syntax using jq.
+# [Input] $1: file_path
+validate_json_artifact() {
+    local file_path="$1"
+    
+    if [ ! -f "$file_path" ]; then
+        log_error "Artifact missing: $file_path"
+        return 1
+    fi
 
-# --- Test Case 3: Artifact Validation ---
-echo ">>> [Test 3/3] Validating output JSON..."
-TARGET_FILE="/app/cache/catalogs/custom_nodes_merged.json"
+    if ! jq empty "$file_path" > /dev/null 2>&1; then
+        log_error "Invalid JSON format: $file_path"
+        return 1
+    fi
+    
+    return 0
+}
 
-# ファイル存在確認
-if [ ! -f "$TARGET_FILE" ]; then
-    echo "🔴 Error: Output file not found: $TARGET_FILE"
-    exit 1
-fi
+# ==============================================================================
+# Test Cases
+# ==============================================================================
 
-# JSON構文チェック (jqを使って正しいJSONか確認する)
-if jq empty "$TARGET_FILE" > /dev/null 2>&1; then
-    echo "✅ JSON syntax is valid."
-else
-    echo "🔴 Error: Invalid JSON format generated."
-    exit 1
-fi
+test_catalog_fetching() {
+    run_test "Fetching external catalogs" "fetch_external_catalogs"
+}
 
-echo ""
-echo "🎉 All tests passed successfully!"
-exit 0
+test_catalog_merging() {
+    run_test "Building merged catalog (custom_nodes)" 'build_merged_catalog "custom_nodes"'
+}
+
+test_artifact_integrity() {
+    local target_file="${CACHE_DIR}/catalogs/custom_nodes_merged.json"
+    run_test "Validating output JSON" "validate_json_artifact '$target_file'"
+}
+
+# ==============================================================================
+# Main Execution
+# ==============================================================================
+
+main() {
+    echo "========================================"
+    echo "🧪 Takumi System: Automated Testing"
+    echo "========================================"
+    
+    # Ensure environment is ready (from utils.sh)
+    ensure_directories
+
+    # Execute Test Suite
+    test_catalog_fetching
+    test_catalog_merging
+    test_artifact_integrity
+
+    echo ""
+    log_success "🎉 All tests p

@@ -3,7 +3,7 @@
 At **Takumi ComfyUI Advisor**, we believe that trust is the foundation of any creative tool. We are committed to transparency regarding what data we collect, why we collect it, and how you can control it.
 
 ### Regarding AI Processing
-Takumi's chat features are powered by a local AI (Gemma 3) running entirely on your machine via Ollama.
+Takumi's chat features are powered by a local AI (Gemma 2) running entirely on your machine via Ollama.
 **Your prompts are processed locally, never transmitted to the cloud, and never used to train our models.**
 
 ## 1. What We Collect (Telemetry)

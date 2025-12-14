@@ -3,8 +3,4 @@ channels:
   - conda-forge
 dependencies:
   - pip
-
-post_install:
-  - type: "git-clone"
-    source: "https://github.com/comfyanonymous/ComfyUI.git"
-    target_dir: "/app/ComfyUI"
+  

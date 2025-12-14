@@ -9,7 +9,7 @@ ask_takumi() {
     local error_desc="${2:-}" # Optional second argument
     local script_path="${APP_ROOT}/scripts/brain.py"
     
-    log_info "Consulting The Takumi (Gemma 3)..."
+    log_info "Consulting The Takumi (Gemma 2)..."
     
     if [ -f "$script_path" ]; then
         local response
