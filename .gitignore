@@ -75,4 +75,4 @@ Thumbs.db
 # ------------------------------------------------------------------------------
 # [Why] Prevents accidental commitment if HOME is misconfigured during debugging
 /home/
-/.home//docs/
+/.home/
