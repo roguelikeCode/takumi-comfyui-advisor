@@ -6,4 +6,4 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  - cpuonly # PyTorchをCPU専用モードでインストールするための指定
+  - cpuonly # To install the CPU version of PyTorch

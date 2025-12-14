@@ -1,149 +1,250 @@
-# [Why] ブラウザ(UI)と脳(Ollama/Gemma)をつなぐAPIエンドポイントを提供するため
-# [What] ComfyUIのサーバー機能にフックし、/takumi/chat へのリクエストをOllamaに転送する
-# [Input] Request (JSON with prompt)
-# [Output] Streaming Response (from Ollama)
+"""
+Takumi Bridge Server API
+
+[Why] To provide a backend interface between the ComfyUI frontend and the local AI.
+[What] Handles chat requests, manages prompt context, executes inference, and orchestrates workflow loading.
+"""
 
 import server
 import aiohttp
 from aiohttp import web
 import json
 import os
+import subprocess
+import sys
+from typing import Dict, Any, Optional
 
-# --- Configuration ---
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "gemma3"
-META_PATH = "/app/config/takumi_meta/entities/workflows_meta.json"
-
-def load_workflow_catalog():
-    """ワークフローのメタデータをロードする"""
-    if os.path.exists(META_PATH):
-        with open(META_PATH, 'r') as f:
-            return json.load(f)
-    return {}
-
-# [Fix] プロンプト構築関数の追加
-def build_system_prompt(catalog_str):
-    # 1. 基本人格 (トラブルシューティング知識) をロード
-    base_prompt = ""
-    prompt_path = "/app/config/takumi_meta/prompts/system_prompt.txt"
+# ==============================================================================
+# [1] Configuration (Encapsulation)
+# ==============================================================================
+class TakumiConfig:
+    """Central configuration for the bridge module."""
+    # AI Settings
+    OLLAMA_API_URL = "http://localhost:11434/api/generate"
+    # gemma2:2b provides the best balance of speed and instruction following
+    MODEL_NAME = "gemma2:2b"
     
-    if os.path.exists(prompt_path):
-        try:
-            with open(prompt_path, 'r', encoding='utf-8') as f:
-                base_prompt = f.read()
-        except Exception as e:
-            print(f"[TakumiBridge] Failed to load system prompt: {e}")
+    # File Paths
+    BASE_CONFIG_DIR = "/app/config/takumi_meta"
 
-    # 2. 機能能力 (ワークフロー操作) を定義
-    #    ※ base_prompt の指示と矛盾しないよう、セクションを分ける
-    functional_prompt = (
-        "\n\n=== WORKFLOW CONTROL CAPABILITIES ===\n"
-        f"Available workflows:\n{catalog_str}\n\n"
-        "Rules for Workflow Loading:\n"
-        "1. If the user wants to generate an image or use a workflow, return a JSON object with: "
-        "{\"action\": \"load_workflow\", \"target_id\": \"<id>\", \"params\": {\"prompt\": \"<english_visual_description>\"}}\n"
-        "2. If it's a normal chat or troubleshooting question, return: {\"response\": \"<answer_in_japanese>\"}"
-    )
+    BASE_PROMPT_DIR = f"{BASE_CONFIG_DIR}/prompts"
+    PERSONA_PATH = f"{BASE_PROMPT_DIR}/persona.txt"
+    CAPABILITIES_PATH = f"{BASE_PROMPT_DIR}/capabilities.txt"
 
-    return base_prompt + functional_prompt
+    WORKFLOW_META_PATH = f"{BASE_CONFIG_DIR}/entities/workflows_meta.json"
 
-@server.PromptServer.instance.routes.post("/takumi/chat")
-async def chat_handler(request):
-    try:
-        data = await request.json()
-        user_prompt = data.get("prompt", "")
+# ==============================================================================
+# [2] Resource Managers (Abstraction)
+# ==============================================================================
+class ResourceManager:
+    """Handles loading of static resources like prompts and metadata."""
+
+    @staticmethod
+    def load_workflow_catalog() -> Dict[str, Any]:
+        """[What] Loads the workflow definitions from JSON file."""
+        if os.path.exists(TakumiConfig.WORKFLOW_META_PATH):
+            try:
+                with open(TakumiConfig.WORKFLOW_META_PATH, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"[TakumiBridge] Error loading catalog: {e}", file=sys.stderr)
+        return {}
+
+    @staticmethod
+    def _read_text_file(path: str) -> str:
+        """[What] Helper to safely read a text file."""
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except Exception:
+                pass
+        return ""
+
+    @classmethod
+    def build_full_system_prompt(cls) -> str:
+        """
+        [Why] To combine Persona (Soul) and Capabilities (Skill) into a single prompt.
+        [What] Loads text files, injects catalog data, and merges them.
+        """
         
-        catalog = load_workflow_catalog()
+        # 1. Load Components
+        persona = cls._read_text_file(TakumiConfig.PERSONA_PATH)
+        capabilities = cls._read_text_file(TakumiConfig.CAPABILITIES_PATH)
+        
+        # Fallback
+        if not persona: persona = "You are Takumi."
+        if not capabilities: capabilities = "Respond in JSON."
+
+        # 2. Inject Catalog into Capabilities
+        catalog = cls.load_workflow_catalog()
         catalog_str = json.dumps(catalog, indent=2)
+        
+        if "{{WORKFLOW_CATALOG}}" in capabilities:
+            capabilities = capabilities.replace("{{WORKFLOW_CATALOG}}", catalog_str)
+        else:
+            capabilities += f"\n\nWorkflows:\n{catalog_str}"
 
-        # [Fix] ファイルとコードを融合したプロンプトを生成
-        system_prompt = build_system_prompt(catalog_str)
+        # 3. Merge (Soul + Skill)
+        return f"{persona}\n\n{capabilities}"
 
-        ollama_payload = {
-            "model": MODEL_NAME,
-            "prompt": user_prompt,
+# ==============================================================================
+# [3] Workflow Engine (The Worker)
+# ==============================================================================
+class WorkflowEngine:
+    """Handles the logic of finding, loading, and modifying workflow files."""
+    
+    @staticmethod
+    def process_action(ai_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        [Why] To translate AI's abstract intent into concrete ComfyUI graph data.
+        [Input] ai_data: Dict containing 'target_id' and 'params'.
+        [Output] Dict ready for frontend response (type: action).
+        """
+        catalog = ResourceManager.load_workflow_catalog()
+        target_id_query = ai_data.get("target_id", "").strip().lower()
+        
+        # 1. Fuzzy Search for Workflow ID
+        matched_id = None
+        for key in catalog.keys():
+            if target_id_query in key.lower():
+                matched_id = key
+                break
+        
+        if not matched_id:
+            return {"type": "text", "response": f"Sorry, I couldn't find a workflow matching '{target_id_query}'."}
+
+        # 2. Load File
+        meta = catalog[matched_id]
+        file_path = meta.get("path", "")
+        
+        if not os.path.exists(file_path):
+            return {"type": "text", "response": f"System Error: Workflow file not found at {file_path}"}
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                workflow_json = json.load(f)
+        except Exception as e:
+            return {"type": "text", "response": f"System Error: Failed to load JSON. {e}"}
+
+        # 3. Dynamic Injection (Modify Prompts)
+        params = ai_data.get("params", {})
+        mapping = meta.get("mapping", {})
+        injected_log = []
+
+        if "prompt" in params and "prompt" in mapping:
+            target_node_id = mapping["prompt"]["node_id"]
+            widget_index = mapping["prompt"]["widget_index"]
+            new_prompt = params["prompt"]
+            
+            # Search for the node and update it
+            for node in workflow_json.get("nodes", []):
+                if node["id"] == target_node_id:
+                    if "widgets_values" in node and len(node["widgets_values"]) > widget_index:
+                        node["widgets_values"][widget_index] = new_prompt
+                        injected_log.append(f"Prompt updated to: '{new_prompt}'")
+                    break
+
+        # 4. Construct Success Response
+        message = f"Loaded workflow: **{meta.get('name', matched_id)}**"
+        if injected_log:
+            message += f"\n(Auto-configured: {', '.join(injected_log)})"
+
+        return {
+            "type": "action",
+            "message": message,
+            "workflow": workflow_json
+        }
+
+# ==============================================================================
+# [4] AI Client (Networking)
+# ==============================================================================
+class OllamaClient:
+    """Handles HTTP communication with the local Ollama instance."""
+
+    @staticmethod
+    async def query(user_input: str, system_prompt: str) -> Dict[str, Any]:
+        """
+        [Why] To execute inference and handle potential JSON parsing issues.
+        [What] Sends POST request, cleans Markdown from response, and parses JSON.
+        """
+        payload = {
+            "model": TakumiConfig.MODEL_NAME,
+            "prompt": user_input,
             "system": system_prompt,
             "stream": False,
             "format": "json"
         }
+        
+        print(f">>> [Takumi] User: {user_input}", file=sys.stderr)
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(OLLAMA_API_URL, json=ollama_payload) as resp:
-                if resp.status != 200:
-                    return web.Response(text=f"Ollama Error: {resp.status}", status=500)
-                
-                ollama_res = await resp.json()
-                ai_response_str = ollama_res.get("response", "")
-                
-                # [Cleanup] 本番環境では内部ログを表示しない
-                # print(f">>> [TakumiBridge] Raw AI Response: {ai_response_str}") 
-
-                try:
-                    ai_data = json.loads(ai_response_str)
+            try:
+                async with session.post(TakumiConfig.OLLAMA_API_URL, json=payload) as resp:
+                    if resp.status == 404:
+                        await OllamaClient._pull_model()
+                        return await OllamaClient.query(user_input, system_prompt) # Retry
                     
-                    # Case 1: Action (Workflow Load)
-                    if "action" in ai_data and ai_data["action"] == "load_workflow":
-                        target_id = None
-                        raw_id = ai_data.get("target_id", "").strip()
-                        
-                        # Fuzzy Search
-                        for key in catalog.keys():
-                            if raw_id.lower() in key.lower():
-                                target_id = key
-                                break
-                        
-                        if target_id:
-                            meta = catalog[target_id]
-                            file_path = meta["path"]
-                            
-                            if os.path.exists(file_path):
-                                with open(file_path, 'r') as wf:
-                                    workflow_json = json.load(wf)
-                                
-                                # [New] Dynamic Injection (動的注入)
-                                params = ai_data.get("params", {})
-                                mapping = meta.get("mapping", {})
-                                injected_log = []
-
-                                if "prompt" in params and "prompt" in mapping:
-                                    # 地図(mapping)に従って書き換える
-                                    target_node_id = mapping["prompt"]["node_id"]
-                                    widget_index = mapping["prompt"]["widget_index"]
-                                    new_prompt_text = params["prompt"]
-                                    
-                                    # ノードを探して書き換え
-                                    for node in workflow_json.get("nodes", []):
-                                        if node["id"] == target_node_id:
-                                            # ウィジェット配列の値を更新
-                                            if len(node["widgets_values"]) > widget_index:
-                                                node["widgets_values"][widget_index] = new_prompt_text
-                                                injected_log.append(f"Prompt -> '{new_prompt_text}'")
-                                            break
-
-                                message = f"ワークフロー '{meta['name']}' をロードします。"
-                                if injected_log:
-                                    message += f"\n(設定変更: {', '.join(injected_log)})"
-
-                                return web.json_response({
-                                    "type": "action",
-                                    "message": message,
-                                    "workflow": workflow_json
-                                })
-                            else:
-                                return web.json_response({"type": "text", "response": f"Error: File not found ({file_path})"})
-                        else:
-                            return web.json_response({"type": "text", "response": f"Workflow '{raw_id}' not found."})
-
-                    # Case 2: Normal Talk
-                    elif "response" in ai_data:
-                        return web.json_response({"type": "text", "response": ai_data["response"]})
+                    if resp.status != 200:
+                        return {"error": f"Ollama Error: {resp.status}"}
                     
-                    else:
-                        return web.json_response({"type": "text", "response": ai_response_str})
+                    ollama_res = await resp.json()
+                    ai_text = ollama_res.get("response", "")
+                    print(f">>> [Takumi] AI Raw: {ai_text}", file=sys.stderr)
 
-                except json.JSONDecodeError:
-                    return web.json_response({"type": "text", "response": ai_response_str})
+                    # [Sanitization] Remove Markdown code blocks if present
+                    clean_text = ai_text.strip()
+                    if clean_text.startswith("```json"): clean_text = clean_text[7:]
+                    if clean_text.endswith("```"): clean_text = clean_text[:-3]
+                    
+                    try:
+                        return json.loads(clean_text.strip())
+                    except json.JSONDecodeError:
+                        # Fallback: Treat as normal text response
+                        return {"response": ai_text}
+
+            except Exception as e:
+                return {"error": f"Connection Error: {e}"}
+
+    @staticmethod
+    async def _pull_model():
+        """[Why] Self-healing mechanism for missing models."""
+        print(f">>> [Takumi] Pulling model {TakumiConfig.MODEL_NAME}...", file=sys.stderr)
+        subprocess.run(["ollama", "pull", TakumiConfig.MODEL_NAME], check=True)
+
+# ==============================================================================
+# [5] Route Handler (Controller)
+# ==============================================================================
+@server.PromptServer.instance.routes.post("/takumi/chat")
+async def chat_handler(request):
+    """
+    [Input] Request JSON: { "prompt": "user message" }
+    [Output] Response JSON: { "type": "text"|"action", ... }
+    """
+    try:
+        req_data = await request.json()
+        user_prompt = req_data.get("prompt", "")
+
+        # 1. AI Inference
+        system_prompt = ResourceManager.build_full_system_prompt()
+        ai_data = await OllamaClient.query(user_prompt, system_prompt)
+
+        # 2. Error Check
+        if "error" in ai_data:
+            return web.json_response({"type": "text", "response": ai_data["error"]})
+
+        # 3. Action Dispatch
+        if "action" in ai_data and ai_data["action"] == "load_workflow":
+            response_data = WorkflowEngine.process_action(ai_data)
+            return web.json_response(response_data)
+        
+        # 4. Normal Conversation
+        if "response" in ai_data:
+            return web.json_response({"type": "text", "response": ai_data["response"]})
+
+        # 5. Fallback
+        return web.json_response({"type": "text", "response": str(ai_data)})
 
     except Exception as e:
-        print(f"[TakumiBridge] Error: {e}")
-        return web.json_response({"type": "text", "response": f"System Error: {str(e)}"})
+        print(f"[TakumiBridge] Critical Error: {e}", file=sys.stderr)
+        return web.json_response({"type": "text", "response": "Internal Server Error."})

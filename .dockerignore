@@ -1,24 +1,63 @@
-# Git version control files
-.git
-.gitignore
+# ==============================================================================
+# Takumi Docker Build Context Ignore Rules
+#
+# [Why] To reduce build time and prevent sensitive data leakage.
+# [What] Excludes secrets, heavy assets, logs, and local environment configs.
+# ==============================================================================
 
-# Docker specific files
-Dockerfile
-.dockerignore
+# --- 1. Security & Secrets (CRITICAL) ---
+# [Why] To ensure secrets are NEVER baked into the image layers.
+.env
+.env.keys
+.env.*.local
 
-# Cache and log files that should not be part of the image
+# --- 2. Heavy Data & Artifacts ---
+# [Why] To speed up the "Sending build context to Docker daemon" phase.
+# [What] Exclude directories that are mounted at runtime or downloaded by the installer.
+storage/
 cache/
 logs/
+external/
 
-# Local development environment files
+# [Why] To prevent host-side installations from corrupting the container state.
+app/ComfyUI/
+
+# Large binary files (Safety net)
+*.safetensors
+*.ckpt
+*.pth
+*.bin
+*.onnx
+*.engine
+
+# --- 3. Version Control & CI ---
+.git
+.gitignore
+.dockerignore
+.github/
+Dockerfile
+Makefile
+README.md
+PRIVACY.md
+
+# --- 4. System & IDE ---
 .vscode/
-
-# Python virtual environment
-.venv/
-
-# Node.js dependencies
-node_modules/
-
-# OS specific files
-Thumbs.db
+.idea/
 .DS_Store
+Thumbs.db
+
+# --- 5. Language Runtime Junk ---
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# --- 6. Temporary Files ---
+.install_history
