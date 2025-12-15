@@ -11,22 +11,30 @@ The system operates on a **"Container-First"** philosophy. The Host OS serves on
 
 ```mermaid
 graph TD
-    %% --- Styles ---
-    %% Yamato Navy (#0d1b2a) & Takumi Cyan (#4cc9f0) & White (#ffffff)
-    classDef host fill:#2d3748,stroke:#ffffff,stroke-width:2px,color:#ffffff;
-    classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:4px,color:#ffffff;
-    classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
-    
-    %% Subgraph Styling (To prevent default yellow)
-    classDef plain fill:#f8fafc,stroke:#cbd5e0,stroke-width:2px,color:#0d1b2a;
+    %% --- Global Settings ---
+    linkStyle default stroke:#718096,stroke-width:2px,fill:none;
 
-    subgraph Host ["🖥️ Host OS (Windows/WSL2/Linux)"]
+    %% --- Styles ---
+    classDef host fill:#2d3748,stroke:#cbd5e0,stroke-width:2px,color:#ffffff;
+    classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:3px,color:#ffffff;
+    classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
+    classDef plain fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0d1b2a;
+    %% Invisible styling for spacing
+    classDef hidden display:none;
+
+    subgraph Host ["&nbsp;&nbsp;&nbsp;&nbsp;🖥️ Host OS (Windows/WSL2/Linux)&nbsp;&nbsp;&nbsp;&nbsp;"]
+        direction TB
+        %% Spacer to prevent overlap with title
+        Dummy[ ]:::hidden
         User((User))
         Make[Makefile]
         Dotenv[.env Secrets]
+        
+        Dummy ~~~ User
     end
 
     subgraph Docker ["📦 Docker Container (Takumi OS)"]
+        direction TB
         Installer["install.sh / Installer Engine"]
         Runtime[ComfyUI Runtime]
         Brain[Ollama / Gemma 2]
@@ -34,10 +42,12 @@ graph TD
     end
 
     subgraph Cloud ["☁️ External World"]
+        direction TB
         HuggingFace[Hugging Face Hub]
         AWS[AWS Telemetry Lake]
     end
 
+    %% Connections
     User -->|make install / run| Make
     Make -->|Injects| Dotenv
     Make -->|Builds & Runs| Docker
@@ -47,14 +57,12 @@ graph TD
     Bridge -->|Queries| Brain
     Installer -.->|Reports Failure| AWS
     
-    %% Apply Node Styles
+    %% Apply Styles
     class User,Make,Dotenv host;
     class Installer,Runtime,Brain,Bridge container;
     class HuggingFace,AWS cloud;
-    
-    %% Apply Subgraph Styles (Critical Fix)
     class Host,Cloud plain;
-    class Docker container; 
+    class Docker container;
 ```
 
 ---
@@ -130,13 +138,13 @@ sequenceDiagram
     User->>UI: "I want to make an anime video"
     UI->>Server: POST /takumi/chat {prompt}
     
-    %% Takumi's Brain Process (Dark Blue Background)
-    rect rgb(20, 40, 70)
-        note right of Server: Thought Process
-        Server->>Server: Build System Prompt (Persona + Catalog)
-        Server->>AI: Query (LLM Inference)
-        AI-->>Server: JSON { action: "load_workflow", target: "animatediff..." }
-    end
+    %% Takumi's Brain Process
+    %% Using Note instead of rect ensures text is readable on all themes
+    Note over Server, AI: 🧠 Thought Process (Context Analysis)
+    
+    Server->>Server: Build System Prompt (Persona + Catalog)
+    Server->>AI: Query (LLM Inference)
+    AI-->>Server: JSON { action: "load_workflow", ... }
     
     Server->>Server: WorkflowEngine.process_action()
     Server->>Server: Inject dynamic params (Prompt)
