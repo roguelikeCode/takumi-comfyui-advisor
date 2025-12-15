@@ -16,6 +16,9 @@ graph TD
     classDef host fill:#2d3748,stroke:#ffffff,stroke-width:2px,color:#ffffff;
     classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:4px,color:#ffffff;
     classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
+    
+    %% Subgraph Styling (To prevent default yellow)
+    classDef plain fill:#f8fafc,stroke:#cbd5e0,stroke-width:2px,color:#0d1b2a;
 
     subgraph Host ["🖥️ Host OS (Windows/WSL2/Linux)"]
         User((User))
@@ -44,9 +47,14 @@ graph TD
     Bridge -->|Queries| Brain
     Installer -.->|Reports Failure| AWS
     
+    %% Apply Node Styles
     class User,Make,Dotenv host;
     class Installer,Runtime,Brain,Bridge container;
     class HuggingFace,AWS cloud;
+    
+    %% Apply Subgraph Styles (Critical Fix)
+    class Host,Cloud plain;
+    class Docker container; 
 ```
 
 ---
@@ -58,10 +66,14 @@ The entry point (`install.sh`) acts as an orchestrator, loading specialized libr
 
 ```mermaid
 graph LR
-    %% --- Styles ---
+    %% --- Node Styles ---
     classDef entry fill:#4cc9f0,stroke:#ffffff,stroke-width:2px,color:#0d1b2a;
     classDef lib fill:#1a365d,stroke:#4cc9f0,stroke-width:1px,color:#ffffff;
     classDef data fill:#ffffff,stroke:#0d1b2a,stroke-width:2px,color:#0d1b2a;
+    
+    %% --- Subgraph Styles (Fix for Yellow Background) ---
+    %% Fill: Very Light Blue-Gray (#f1f5f9) instead of Yellow
+    classDef groupStyle fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0d1b2a;
 
     Entry("app/install.sh"):::entry
 
@@ -84,6 +96,9 @@ graph LR
     Core -->|Merge| Catalog
     Concierge -->|Select| Recipes
     BrainInterface -->|Consult| Brain["scripts/brain.py"]
+    
+    %% Apply Subgraph Styles explicitly
+    class Libraries,Data groupStyle;
 ```
 
 ### **Module Responsibilities**
@@ -106,7 +121,6 @@ How the User talks to the System. The `Takumi Bridge` acts as a translator betwe
 ```mermaid
 sequenceDiagram
     %% --- Configuration ---
-    %% Force Dark Theme colors for consistency
     participant User
     participant UI as Takumi UI (JS)
     participant Server as Bridge Server (Python)
@@ -144,6 +158,7 @@ graph LR
     %% --- Styles ---
     classDef client fill:#1a365d,stroke:#4cc9f0,stroke-width:2px,color:#ffffff;
     classDef cloud fill:#e2e8f0,stroke:#f4511e,stroke-width:2px,color:#0d1b2a;
+    classDef plain fill:#f8fafc,stroke:#cbd5e0,stroke-width:2px,color:#0d1b2a;
 
     subgraph Client ["User Environment"]
         Trap["install.sh (Trap)"]:::client
@@ -161,6 +176,8 @@ graph LR
     Reporter -- "POST JSON" --> APIGW
     APIGW --> Lambda
     Lambda -- "Store" --> S3
+    
+    class Client,Cloud plain;
 ```
 
 ---
