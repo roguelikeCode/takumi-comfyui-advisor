@@ -19,17 +19,26 @@ graph TD
     classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:3px,color:#ffffff;
     classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
     classDef plain fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0d1b2a;
-    classDef hidden display:none;
+    
+    %% Title Node Style (Transparent, Text-like)
+    classDef titleStyle fill:none,stroke:none,font-weight:bold,color:#ffffff;
 
-    %% Fixed: Use Full-width spaces (　) to force box expansion
-    subgraph Host ["　　🖥️ Host OS　　<br/>(Windows/WSL2/Linux)"]
+    %% Host Subgraph (Title is empty here)
+    subgraph Host [" "]
         direction TB
-        Dummy[ ]:::hidden
+        
+        %% 1. The Title as a Node (Forces physical separation)
+        HostTitle["🖥️ Host OS<br/>(Windows/WSL2/Linux)"]:::titleStyle
+        
+        %% 2. The User Node
         User((User))
+        
+        %% 3. Components
         Make[Makefile]
         Dotenv[.env Secrets]
         
-        Dummy ~~~ User
+        %% Layout Force: Title -> User
+        HostTitle ~~~ User
     end
 
     subgraph Docker ["📦 Docker Container (Takumi OS)"]
@@ -138,14 +147,13 @@ sequenceDiagram
     UI->>Server: POST /takumi/chat {prompt}
     
     %% Takumi's Brain Process
-    %% Fixed: Use "opt" for labeling without yellow Note
-    %% Color: Matches "External World" (#e2e8f0 -> rgb(226, 232, 240))
+    %% Fixed: Use rect for background, Note for Header with FORCED BLACK TEXT
     rect rgb(226, 232, 240)
-        opt 🧠 Thought Process (Context Analysis)
-            Server->>Server: Build System Prompt (Persona + Catalog)
-            Server->>AI: Query (LLM Inference)
-            AI-->>Server: JSON { action: "load_workflow", ... }
-        end
+        Note over Server, AI: 🧠 Thought Process (Context Analysis)
+        
+        Server->>Server: Build System Prompt (Persona + Catalog)
+        Server->>AI: Query (LLM Inference)
+        AI-->>Server: JSON { action: "load_workflow", ... }
     end
     
     Server->>Server: WorkflowEngine.process_action()
