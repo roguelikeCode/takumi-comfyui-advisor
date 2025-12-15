@@ -19,12 +19,11 @@ graph TD
     classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:3px,color:#ffffff;
     classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
     classDef plain fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0d1b2a;
-    %% Invisible styling for spacing
     classDef hidden display:none;
 
-    subgraph Host ["&nbsp;&nbsp;&nbsp;&nbsp;🖥️ Host OS (Windows/WSL2/Linux)&nbsp;&nbsp;&nbsp;&nbsp;"]
+    %% Fixed: Added line break <br/> to prevent link overlap
+    subgraph Host ["🖥️ Host OS<br/>(Windows/WSL2/Linux)"]
         direction TB
-        %% Spacer to prevent overlap with title
         Dummy[ ]:::hidden
         User((User))
         Make[Makefile]
@@ -139,12 +138,14 @@ sequenceDiagram
     UI->>Server: POST /takumi/chat {prompt}
     
     %% Takumi's Brain Process
-    %% Using Note instead of rect ensures text is readable on all themes
-    Note over Server, AI: 🧠 Thought Process (Context Analysis)
-    
-    Server->>Server: Build System Prompt (Persona + Catalog)
-    Server->>AI: Query (LLM Inference)
-    AI-->>Server: JSON { action: "load_workflow", ... }
+    %% Fixed: Combine Dark Rect (Scope) with Note (Readability)
+    rect rgb(13, 27, 42)
+        Note over Server, AI: 🧠 Thought Process (Context Analysis)
+        
+        Server->>Server: Build System Prompt (Persona + Catalog)
+        Server->>AI: Query (LLM Inference)
+        AI-->>Server: JSON { action: "load_workflow", ... }
+    end
     
     Server->>Server: WorkflowEngine.process_action()
     Server->>Server: Inject dynamic params (Prompt)
