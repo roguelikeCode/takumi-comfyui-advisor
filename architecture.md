@@ -1,4 +1,4 @@
-# 🏛️ System Architecture & Design Principles
+# System Architecture & Design Principles
 
 > **[Why]** To visualize the structural integrity and data flow of the Takumi system.
 > **[What]** Documentation of the containerization strategy, installer logic, AI interaction, and telemetry pipelines.
@@ -11,10 +11,11 @@ The system operates on a **"Container-First"** philosophy. The Host OS serves on
 
 ```mermaid
 graph TD
-    %% Color Palette: Yamato Navy
-    classDef host fill:#415a77,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:4px,color:#fff;
-    classDef cloud fill:#e0e1dd,stroke:#0d1b2a,stroke-width:2px,color:#0d1b2a;
+    %% --- Styles ---
+    %% Yamato Navy (#0d1b2a) & Takumi Cyan (#4cc9f0) & White (#ffffff)
+    classDef host fill:#2d3748,stroke:#ffffff,stroke-width:2px,color:#ffffff;
+    classDef container fill:#0d1b2a,stroke:#4cc9f0,stroke-width:4px,color:#ffffff;
+    classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
 
     subgraph Host ["🖥️ Host OS (Windows/WSL2/Linux)"]
         User((User))
@@ -43,9 +44,9 @@ graph TD
     Bridge -->|Queries| Brain
     Installer -.->|Reports Failure| AWS
     
-    class Host host;
-    class Docker container;
-    class Cloud cloud;
+    class User,Make,Dotenv host;
+    class Installer,Runtime,Brain,Bridge container;
+    class HuggingFace,AWS cloud;
 ```
 
 ---
@@ -57,9 +58,9 @@ The entry point (`install.sh`) acts as an orchestrator, loading specialized libr
 
 ```mermaid
 graph LR
-    %% Color Palette: Yamato Navy & Cyan
-    classDef entry fill:#4cc9f0,stroke:#fff,stroke-width:2px,color:#0d1b2a;
-    classDef lib fill:#1b263b,stroke:#4cc9f0,stroke-width:1px,color:#fff;
+    %% --- Styles ---
+    classDef entry fill:#4cc9f0,stroke:#ffffff,stroke-width:2px,color:#0d1b2a;
+    classDef lib fill:#1a365d,stroke:#4cc9f0,stroke-width:1px,color:#ffffff;
     classDef data fill:#ffffff,stroke:#0d1b2a,stroke-width:2px,color:#0d1b2a;
 
     Entry("app/install.sh"):::entry
@@ -104,6 +105,8 @@ How the User talks to the System. The `Takumi Bridge` acts as a translator betwe
 
 ```mermaid
 sequenceDiagram
+    %% --- Configuration ---
+    %% Force Dark Theme colors for consistency
     participant User
     participant UI as Takumi UI (JS)
     participant Server as Bridge Server (Python)
@@ -113,8 +116,8 @@ sequenceDiagram
     User->>UI: "I want to make an anime video"
     UI->>Server: POST /takumi/chat {prompt}
     
-    %% Fixed: Changed background to Dark Navy for better contrast
-    rect rgb(27, 38, 59)
+    %% Takumi's Brain Process (Dark Blue Background)
+    rect rgb(20, 40, 70)
         note right of Server: Thought Process
         Server->>Server: Build System Prompt (Persona + Catalog)
         Server->>AI: Query (LLM Inference)
@@ -138,9 +141,9 @@ This "Black Box" approach helps us improve the `Renovate Fixer` engine.
 
 ```mermaid
 graph LR
-    %% Styles: Consistent Navy Theme
-    classDef client fill:#1b263b,stroke:#4cc9f0,color:#fff;
-    classDef cloud fill:#e0e1dd,stroke:#f4511e,stroke-width:2px,color:#0d1b2a;
+    %% --- Styles ---
+    classDef client fill:#1a365d,stroke:#4cc9f0,stroke-width:2px,color:#ffffff;
+    classDef cloud fill:#e2e8f0,stroke:#f4511e,stroke-width:2px,color:#0d1b2a;
 
     subgraph Client ["User Environment"]
         Trap["install.sh (Trap)"]:::client
@@ -174,4 +177,3 @@ You can run `make install` as many times as you want. The scripts check existing
 *   **Version Control:** Git is the master.
 *   **Environment:** Dockerfile is the definition.
 *   **Recipes:** JSON files define the "correct" combination of libraries.
-
