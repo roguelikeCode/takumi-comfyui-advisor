@@ -20,24 +20,23 @@ graph TD
     classDef cloud fill:#e2e8f0,stroke:#2d3748,stroke-width:2px,color:#0d1b2a;
     classDef plain fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0d1b2a;
     
-    %% Title Node Style (Transparent, Text-like)
-    classDef titleStyle fill:none,stroke:none,font-weight:bold,color:#ffffff;
+    %% Fixed: Text color to Black (#000000) for visibility on light background
+    classDef titleStyle fill:none,stroke:none,font-weight:bold,color:#000000;
 
-    %% Host Subgraph (Title is empty here)
     subgraph Host [" "]
         direction TB
         
-        %% 1. The Title as a Node (Forces physical separation)
+        %% Title Node (Black Text)
         HostTitle["🖥️ Host OS<br/>(Windows/WSL2/Linux)"]:::titleStyle
         
-        %% 2. The User Node
+        %% User Node
         User((User))
         
-        %% 3. Components
+        %% Components
         Make[Makefile]
         Dotenv[.env Secrets]
         
-        %% Layout Force: Title -> User
+        %% Layout
         HostTitle ~~~ User
     end
 
@@ -55,7 +54,7 @@ graph TD
         AWS[AWS Telemetry Lake]
     end
 
-    %% Connections
+    %% Connections (User initiates the flow)
     User -->|make install / run| Make
     Make -->|Injects| Dotenv
     Make -->|Builds & Runs| Docker
@@ -147,8 +146,9 @@ sequenceDiagram
     UI->>Server: POST /takumi/chat {prompt}
     
     %% Takumi's Brain Process
-    %% Fixed: Use rect for background, Note for Header with FORCED BLACK TEXT
-    rect rgb(226, 232, 240)
+    %% Color: Matches Section 2's background (#f1f5f9 -> rgb(241, 245, 249))
+    %% Note: Sequence diagrams do not support borders (stroke) on rects.
+    rect rgb(241, 245, 249)
         Note over Server, AI: 🧠 Thought Process (Context Analysis)
         
         Server->>Server: Build System Prompt (Persona + Catalog)
