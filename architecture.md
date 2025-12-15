@@ -21,8 +21,8 @@ graph TD
     classDef plain fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0d1b2a;
     classDef hidden display:none;
 
-    %% Fixed: Added line break <br/> to prevent link overlap
-    subgraph Host ["🖥️ Host OS<br/>(Windows/WSL2/Linux)"]
+    %% Fixed: Use Full-width spaces (　) to force box expansion
+    subgraph Host ["　　🖥️ Host OS　　<br/>(Windows/WSL2/Linux)"]
         direction TB
         Dummy[ ]:::hidden
         User((User))
@@ -138,13 +138,14 @@ sequenceDiagram
     UI->>Server: POST /takumi/chat {prompt}
     
     %% Takumi's Brain Process
-    %% Fixed: Combine Dark Rect (Scope) with Note (Readability)
-    rect rgb(13, 27, 42)
-        Note over Server, AI: 🧠 Thought Process (Context Analysis)
-        
-        Server->>Server: Build System Prompt (Persona + Catalog)
-        Server->>AI: Query (LLM Inference)
-        AI-->>Server: JSON { action: "load_workflow", ... }
+    %% Fixed: Use "opt" for labeling without yellow Note
+    %% Color: Matches "External World" (#e2e8f0 -> rgb(226, 232, 240))
+    rect rgb(226, 232, 240)
+        opt 🧠 Thought Process (Context Analysis)
+            Server->>Server: Build System Prompt (Persona + Catalog)
+            Server->>AI: Query (LLM Inference)
+            AI-->>Server: JSON { action: "load_workflow", ... }
+        end
     end
     
     Server->>Server: WorkflowEngine.process_action()
