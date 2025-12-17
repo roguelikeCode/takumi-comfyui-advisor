@@ -9,6 +9,8 @@
 [![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
 
+![Takumi Demo](docs/assets/demo.gif)
+
 ---
 
 ## The Problem: "Creation Stops at Installation"
@@ -87,6 +89,7 @@ make encrypt
 
 # 3. Build & Install (The Magic Command)
 # Select your desired use-case number from the menu (e.g., AnimateDiff)
+Launch Docker Desktop
 make install
 
 # 4. Run
@@ -94,6 +97,7 @@ make run
 ```
 
 Access ComfyUI at **http://localhost:8188**
+
 Exit with "**Ctrl + C**"
 
 ---
