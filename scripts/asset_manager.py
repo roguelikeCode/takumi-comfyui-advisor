@@ -13,6 +13,15 @@ from pathlib import Path
 from typing import List, Dict, Any
 from huggingface_hub import hf_hub_download, login
 
+# The progress bar disappears when running via Docker or a script, so we force it to be displayed
+if not sys.stdout.isatty():
+    sys.stdout.isatty = lambda: True
+if not sys.stderr.isatty():
+    sys.stderr.isatty = lambda: True
+
+# Force progress bar to be displayed (tqdm setting)
+os.environ["TQDM_DISABLE"] = "0"
+
 # ==============================================================================
 # [1] Configuration
 # ==============================================================================
@@ -97,8 +106,7 @@ class AssetProcessor:
             file_path = hf_hub_download(
                 repo_id=repo_id,
                 filename=filename,
-                local_dir=target_dir,
-                local_dir_use_symlinks=False
+                local_dir=target_dir
             )
             
             # Handle renaming if specified

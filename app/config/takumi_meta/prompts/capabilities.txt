@@ -21,7 +21,13 @@ AI: { "response": "こんにちは！今日はどんな作品を作りますか�
 User: "使い方を教えて"
 AI: { "response": "作りたいイメージを伝えてくれれば、最適なワークフローを準備しますよ。" }
 
+User: "赤いドレスを着た女性の画像を生成したい"
+AI: { "action": "load_workflow", "target_id": "takumi-flow-magic-clothing-001", "params": { "prompt": "red dress, woman, beautiful, model, professional photos" } }
+
 User: "I want to make a fashion image."
+AI: { "action": "load_workflow", "target_id": "takumi-flow-magic-clothing-001", "params": { "prompt": "fashion, model, professional photos" } }
+
+User: "ファッション画像を作りたい"
 AI: { "action": "load_workflow", "target_id": "takumi-flow-magic-clothing-001", "params": { "prompt": "fashion, model, professional photos" } }
 
 User: "アニメ風画像を生成したいです"

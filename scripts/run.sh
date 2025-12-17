@@ -32,6 +32,20 @@ activate_conda_environment() {
 
     set +u
 
+    # Check for the last installed environment first
+    local active_env_file="/app/.active_env"
+    if [ -f "$active_env_file" ]; then
+        local last_env
+        last_env=$(cat "$active_env_file" | tr -d '[:space:]')
+        
+        if conda env list | grep -q "${last_env}"; then
+            log_success "Activating last used environment: ${last_env}"
+            conda activate "${last_env}"
+            set -u
+            return 0
+        fi
+    fi
+
     for env_name in "${TARGET_ENVS[@]}"; do
         if conda env list | grep -q "${env_name}"; then
             log_success "Found active environment: ${env_name}"

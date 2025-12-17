@@ -266,7 +266,16 @@ run_install_flow() {
     # 2.1 Pip Installation
     if [ ${#pip_deps[@]} -gt 0 ]; then
         log_info "Installing pip packages into '${env_name}' via uv..."
-        if ! conda run -n "$env_name" --no-capture-output uv pip install "${pip_deps[@]}"; then
+        
+        # Explicitly activate environment in a subshell to ensure 'uv' installs to the correct target.
+        # This avoids variable binding conflicts (set +u/-u) between our strict shell script and Conda's internal scripts.
+        if ! (
+            source /opt/conda/etc/profile.d/conda.sh
+            set +u
+            conda activate "$env_name"
+            set -u
+            uv pip install "${pip_deps[@]}"
+        ); then
              consult_ai_on_complex_failure \
                 "Failed to install pip packages via uv." \
                 "Target Env: $env_name, Packages: ${pip_deps[*]}"
@@ -282,8 +291,19 @@ run_install_flow() {
     if [[ "$use_case_name" == *"fashion"* ]] || [[ "$use_case_name" == *"magic"* ]]; then
         log_info "Launching Takumi Asset Manager..."
         local manager_script="${APP_ROOT}/scripts/asset_manager.py"
+    
+        # Run in a subshell to activate Conda safely and force unbuffered output (-u).
+        # This ensures the download progress bar (tqdm) is visible in real-time on the user's terminal.
         if [ -f "$manager_script" ]; then
-            if ! conda run -n "$env_name" --no-capture-output python "$manager_script"; then
+            (
+                source /opt/conda/etc/profile.d/conda.sh
+                set +u
+                conda activate "$env_name"
+                set -u
+                python -u "$manager_script"
+            )
+            
+            if [ $? -ne 0 ]; then
                 log_error "Asset Manager encountered an issue (check logs)."
                 return 1
             fi
@@ -294,6 +314,9 @@ run_install_flow() {
 
     # 4. Brain
     setup_ollama_model
+
+    # Save the active environment name for run.sh
+    echo "${env_name}" > "${APP_ROOT}/.active_env"
 
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
