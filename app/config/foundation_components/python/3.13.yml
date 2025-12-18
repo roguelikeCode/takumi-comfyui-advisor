@@ -1,0 +1,6 @@
+name: foundation
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13 # [Target] Experimental. May break custom nodes lacking wheels.
+  - pip

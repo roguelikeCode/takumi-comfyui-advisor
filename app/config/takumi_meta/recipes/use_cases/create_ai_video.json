@@ -1,7 +1,7 @@
 {
   "asset_id": "takumi-use-case-video-001",
   "asset_version": "1.0.0",
-  "display_name": "AI Video Generation (AnimateDiff)",
+  "display_name": "Create AI Animation (AnimateDiff)",
   "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
   "environment": {
     "name": "animatediff_env",
@@ -44,6 +44,16 @@
       "source": "ComfyUI-Manager",
       "version": "main"
     },
+    {
+      "type": "custom-node",
+      "source": "ComfyUI_IPAdapter_plus",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "comfyui_controlnet_aux",
+      "version": "main"
+    },
     { "type": "pip", "source": "tqdm" },
     { "type": "pip", "source": "imageio[ffmpeg]" },
     { "type": "pip", "source": "numpy", "version": "<2" },
@@ -58,7 +68,10 @@
     { "type": "pip", "source": "einops" },
     { "type": "pip", "source": "transformers", "version": "==4.38.2" },
     { "type": "pip", "source": "accelerate", "version": "==0.27.2" },
-     { "type": "pip", "source": "torchsde" },
+    { "type": "pip", "source": "diffusers", "version": "==0.24.0" },
+    { "type": "pip", "source": "insightface" },
+    { "type": "pip", "source": "onnxruntime-gpu" },
+    { "type": "pip", "source": "torchsde" },
     { "type": "pip", "source": "kornia" },
     { "type": "pip", "source": "spandrel" },
     { "type": "pip", "source": "soundfile" },

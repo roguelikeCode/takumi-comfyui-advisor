@@ -9,9 +9,8 @@ run_concierge_use_case() {
     
     echo ""
     echo "Please choose your primary use case:"
-    echo "  (1) [Defaults] (Basic setup)"
-    echo "  (2) Create & Dress Up Original Fashion (MagicClothing)"
-    echo "  (3) AI Video Generation (AnimateDiff)"
+    echo "  (1) Create & Dress Up Original Fashion (MagicClothing)"
+    echo "  (2) AI Video Generation (AnimateDiff)"
     echo ""
     
     # Using 'read' with /dev/tty to ensure input even in some piped contexts
@@ -21,9 +20,8 @@ run_concierge_use_case() {
     local use_case_filename="defaults"
 
     case "$choice" in
-        "1") use_case_filename="defaults" ;;
-        "2") use_case_filename="create_and_dress_up_original_fashion" ;;
-        "3") use_case_filename="animate_diff_video" ;;
+        "1") use_case_filename="create_and_dress_up_original_fashion" ;;
+        "2") use_case_filename="create_ai_video" ;;
         *)
             log_warn "Invalid selection. Proceeding with the default use-case: '${use_case_filename}'"
             ;;
