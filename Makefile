@@ -70,6 +70,7 @@ help:
 	@echo "    make shell       : Enter the container shell for debugging."
 	@echo "    make test        : Run automated test suite."
 	@echo "    make clean       : Remove all artifacts and images."
+	@echo "    make purge       : [DANGER] Delete ALL data and reset to factory settings."
 
 # ==============================================================================
 # 1. Setup & Security
@@ -144,7 +145,7 @@ run: build
 # ==============================================================================
 # 3. Development Utilities
 # ==============================================================================
-.PHONY: shell test clean
+.PHONY: shell test clean purge
 shell: build
 	@echo ">>> Starting interactive shell..."
 	@docker run -it $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
@@ -161,3 +162,24 @@ clean:
 	@-docker rmi -f $(IMAGE_NAME):$(IMAGE_TAG) 2>/dev/null || true
 	@-rm -rf ./cache/* ./logs/* ./external/* ./app/ComfyUI
 	@echo "✅ Cleanup complete."
+
+# [Why] Nuclear option. Wipes EVERYTHING including persistent storage (Conda envs, Models).
+# [Note] Use this when you want to start from absolute zero.
+# [Note] This will cause the download time to increase.
+purge:
+	@echo ">>> ☢️  INITIATING TOTAL PURGE... ☢️"
+	@echo ">>> This will delete ALL environments, downloaded models, and caches."
+	@echo ">>> Use sudo to delete the root privilege files created by Docker."
+
+	@sudo rm -rf \
+		app/ComfyUI \
+		external \
+		cache \
+		logs \
+		storage \
+		.install_history \
+		app/.active_env
+	
+	@mkdir -p logs cache external storage/pkgs storage/envs storage/ollama
+	
+	@echo "✅ Project has been reset to factory settings."
