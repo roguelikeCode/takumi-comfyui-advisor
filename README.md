@@ -130,4 +130,4 @@ Join our **Discord Server** to share your creations, ask for help, and request n
 
 ## License
 
-MIT License. Free for everyone.
+[MIT](LICENSE) © 2025 Yamato Watase
