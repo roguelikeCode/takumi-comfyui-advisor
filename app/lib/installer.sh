@@ -73,39 +73,42 @@ build_merged_catalog() {
 # [What] Resolves URL from catalog ID and git clones it.
 # [Input] $1: id, $2: version
 install_component_custom_node() {
-    local id="$1"
+    local source="$1"  # ID or URL
     local version="$2"
     local comfyui_nodes_dir="/app/ComfyUI/custom_nodes"
-    local meta_file="${CACHE_DIR}/catalogs/custom_nodes_merged.json"
     
-    local url
-    if [ -f "$meta_file" ]; then
-        url=$(jq -r --arg id "$id" '.[$id].url // empty' "$meta_file")
+    local url=""
+    
+    # Check if source is a URL (starts with http)
+    if [[ "$source" == http* ]]; then
+        url="$source"
     else
-        log_error "Catalog file not found: $meta_file"
-        return 1
+        # Fallback to catalog lookup (ID based)
+        local meta_file="${CACHE_DIR}/catalogs/custom_nodes_merged.json"
+        if [ -f "$meta_file" ]; then
+            url=$(jq -r --arg id "$source" '.[$id].url // empty' "$meta_file")
+        fi
     fi
 
     if [ -z "$url" ]; then
-        log_error "  -> Custom Node ID '${id}' not found in catalog. Skipping."
+        log_error "  -> Custom Node source '${source}' not found (Invalid ID or URL)."
         return 1
     fi
 
-    log_info "  -> Cloning custom node '${id}' from ${url}..."
-    mkdir -p "$comfyui_nodes_dir"
-    
-    local target_dir="${url##*/}"
-    target_dir="${target_dir%.git}"
-    local clone_path="${comfyui_nodes_dir}/${target_dir}"
+    # Extract directory name from URL (e.g., ComfyUI_MagicClothing)
+    local repo_name=$(basename "$url" .git)
+    local clone_path="${comfyui_nodes_dir}/${repo_name}"
 
+    log_info "  -> Cloning custom node from ${url}..."
+    
     if [ ! -d "$clone_path" ]; then
+        git clone "$url" "$clone_path"
         if [ -n "$version" ] && [ "$version" != "main" ] && [ "$version" != "null" ]; then
-            git clone --branch "$version" "$url" "$clone_path"
-        else
-            git clone "$url" "$clone_path"
+            (cd "$clone_path" && git checkout "$version")
         fi
     else
-        log_warn "    Directory '${target_dir}' already exists. Skipping clone."
+        log_info "    Directory '${repo_name}' already exists. Updating..."
+        (cd "$clone_path" && git pull)
     fi
 }
 
@@ -288,19 +291,29 @@ run_install_flow() {
     install_pip_from_recipe "${CONFIG_DIR}/takumi_meta/recipes/system/dashboard.json"
 
     # 3. Asset Manager
-    if [[ "$use_case_name" == *"fashion"* ]] || [[ "$use_case_name" == *"magic"* ]]; then
-        log_info "Launching Takumi Asset Manager..."
-        local manager_script="${APP_ROOT}/scripts/asset_manager.py"
+    # [Why] Determine the correct asset recipe based on the selected use case
+    local asset_recipe=""
     
-        # Run in a subshell to activate Conda safely and force unbuffered output (-u).
-        # This ensures the download progress bar (tqdm) is visible in real-time on the user's terminal.
-        if [ -f "$manager_script" ]; then
+    if [[ "$use_case_name" == *"fashion"* ]] || [[ "$use_case_name" == *"magic"* ]]; then
+        asset_recipe="${CONFIG_DIR}/takumi_meta/recipes/assets/magic_clothing.json"
+    elif [[ "$use_case_name" == *"video"* ]] || [[ "$use_case_name" == *"animation"* ]]; then
+        asset_recipe="${CONFIG_DIR}/takumi_meta/recipes/assets/animate_diff.json"
+    fi
+
+    if [ -n "$asset_recipe" ]; then
+        log_info "Launching Takumi Asset Manager with recipe: $(basename "$asset_recipe")..."
+        local manager_script="${APP_ROOT}/scripts/asset_manager.py"
+        
+        if [ -f "$manager_script" ] && [ -f "$asset_recipe" ]; then
+            # To ensure progress bars are visible and environment is correctly activated
+            # Run in subshell with unbuffered output (-u)
             (
                 source /opt/conda/etc/profile.d/conda.sh
                 set +u
                 conda activate "$env_name"
                 set -u
-                python -u "$manager_script"
+                # Pass the recipe path as an argument
+                python -u "$manager_script" "$asset_recipe"
             )
             
             if [ $? -ne 0 ]; then
@@ -308,7 +321,7 @@ run_install_flow() {
                 return 1
             fi
         else
-            log_warn "Asset Manager script not found at $manager_script"
+            log_warn "Asset Manager script or Recipe not found."
         fi
     fi
 
