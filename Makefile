@@ -146,12 +146,16 @@ run: build
 # 3. Development Utilities
 # ==============================================================================
 .PHONY: shell test clean purge
+#[Note] If there is no .install_history file, Docker will create the directory
 shell: build
 	@echo ">>> Starting interactive shell..."
+	@touch .install_history
 	@docker run -it $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
 
+#[Note] If there is no .install_history file, Docker will create the directory
 test: build
 	@echo ">>> Running tests..."
+	@touch .install_history
 	@docker run $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run_tests.sh
