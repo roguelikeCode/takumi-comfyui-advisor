@@ -1,37 +1,59 @@
-# [Why] ワークフロー内のノードIDとクラス名を特定し、メタデータ作成を支援するため
-# [What] 指定されたワークフローJSONを読み込み、ノード一覧を見やすく表示する
+"""
+Workflow Inspector Tool
+
+[Why] To identify Node IDs and Class Types within a workflow JSON to assist in metadata creation.
+[What] Loads the specified workflow JSON file and displays a readable list of nodes and their widgets.
+[Input] (Optional) Path to the workflow JSON file. Defaults to 'app/assets/workflows/magic_clothing_v1.json'.
+"""
+
 import json
 import sys
+import os
 
 def main():
-    # 対象ファイル
+    # Default target file (can be overridden by argument)
     file_path = "app/assets/workflows/magic_clothing_v1.json"
     
+    # Check if an argument is provided
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+
+    # Validate path
+    if not os.path.exists(file_path):
+        print(f"❌ Error: File not found at '{file_path}'")
+        print("Usage: python inspect_workflow.py [path/to/workflow.json]")
+        return
+
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             
         print(f"🔍 Analyzing: {file_path}")
-        print("-" * 60)
-        print(f"{'ID':<5} | {'Class Type':<30} | {'Title / Widgets'}")
-        print("-" * 60)
+        print("-" * 80)
+        print(f"{'ID':<5} | {'Class Type':<35} | {'Title / Widgets'}")
+        print("-" * 80)
 
         nodes = data.get("nodes", [])
         for node in nodes:
             node_id = node.get("id")
             class_type = node.get("type")
-            title = node.get("title", class_type)
+            # Try to get the display title or fall back to class type
+            title = node.get("properties", {}).get("Node name for S&R") or node.get("title") or class_type
             
-            # ウィジェット（設定値）の中身をチラ見せ
+            # Preview widget values (truncate if too long)
             widgets = node.get("widgets_values", [])
-            widgets_str = str(widgets)[:50] + "..." if len(str(widgets)) > 50 else str(widgets)
+            widgets_str = str(widgets)
+            if len(widgets_str) > 60:
+                widgets_str = widgets_str[:57] + "..."
             
-            print(f"{node_id:<5} | {class_type:<30} | {title}")
+            print(f"{node_id:<5} | {class_type:<35} | {title}")
             print(f"      > Widgets: {widgets_str}")
-            print("-" * 60)
+            print("-" * 80)
 
-    except FileNotFoundError:
-        print("❌ File not found. Make sure you ran the download step.")
+    except json.JSONDecodeError:
+        print(f"❌ Error: Failed to parse JSON. Please check if '{file_path}' is a valid JSON file.")
+    except Exception as e:
+        print(f"❌ Unexpected Error: {str(e)}")
 
 if __name__ == "__main__":
     main()
