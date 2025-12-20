@@ -1,5 +1,5 @@
-# [Why] インストール失敗時の状況を収集するため
-# [What] 環境情報、エラーログ、レシピを収集・匿名化し、AWSへ送信する
+# [Why] To collect the status of an installation failure
+# [What] Environmental information, error logs, and recipes are collected, anonymized, and sent to AWS.
 # [Input] args: log_file_path, recipe_path
 
 import sys
@@ -7,69 +7,109 @@ import json
 import os
 import platform
 import urllib.request
-import re
+import subprocess
 from datetime import datetime, timezone
 
 # --- Configuration ---
-# 以前の install.sh にあったAPI URLを使用 (本番用に適宜変更してください)
+# API endpoint for the Data Lake
 API_URL = "https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
 
 def sanitize_path(text):
     """
-    [Why] ユーザー名などの個人情報を隠蔽するため
-    [What] /home/username を /home/<USER> に置換する
+    [Why] To protect user privacy by hiding home directory paths.
+    [What] Replaces /home/username with /home/<USER>.
     """
     if not text:
         return ""
-    # ユーザーのホームディレクトリを取得
-    home = os.path.expanduser("~")
-    return text.replace(home, "/home/<USER>")
+    try:
+        home = os.path.expanduser("~")
+        return text.replace(home, "/home/<USER>")
+    except Exception:
+        return text
+    
+def get_python_packages():
+    """
+    [Why] To analyze dependency conflicts (The DNA of the environment).
+    [What] Returns the output of 'pip freeze'.
+    """
+    try:
+        # Run pip freeze
+        result = subprocess.check_output(
+            [sys.executable, "-m", "pip", "freeze"],
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL
+        )
+        return result.splitlines()
+    except Exception as e:
+        return [f"Error getting packages: {str(e)}"]
+
+def get_gpu_info():
+    """
+    [Why] To correlate errors with hardware constraints (VRAM, CUDA version).
+    [What] Runs nvidia-smi if available.
+    """
+    try:
+        # Check if nvidia-smi exists
+        subprocess.check_call(["which", "nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Get simplified GPU info
+        result = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=name,memory.total,driver_version", "--format=csv,noheader"],
+            encoding="utf-8",
+            stderr=subprocess.DEVNULL
+        )
+        return result.strip().splitlines()
+    except Exception:
+        return ["GPU info unavailable (CPU only or nvidia-smi missing)"]
 
 def get_system_info():
-    """最小限のシステム情報を取得"""
+    """[Why] Basic OS and Python version info."""
     return {
         "os": platform.system(),
         "release": platform.release(),
         "machine": platform.machine(),
-        "python_version": sys.version.split()[0]
+        "python_version": sys.version.split()[0],
+        "gpu_info": get_gpu_info(),       # [New]
+        "python_packages": get_python_packages() # [New]
     }
 
-def read_last_logs(log_path, lines=50):
-    """ログファイルの末尾N行を取得"""
+def read_last_logs(log_path, lines=100):
+    """[Why] Reads the tail of the log file."""
     if not os.path.exists(log_path):
         return ["Log file not found."]
     
     try:
         with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
-            # 簡易的な実装: 全読みして末尾を取得 (巨大ログの場合はseekを使うべきだが今回は簡易版)
+            # Read all and take the last N lines (Simple implementation)
             content = f.readlines()
             return [sanitize_path(line.strip()) for line in content[-lines:]]
     except Exception as e:
         return [f"Error reading log: {str(e)}"]
 
 def load_recipe(recipe_path):
-    """実行しようとしていたレシピの内容を取得"""
+    """[Why] Loads the target recipe to understand user intent."""
     if recipe_path and os.path.exists(recipe_path):
         try:
             with open(recipe_path, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {"error": "Failed to load recipe"}
     return None
 
 def send_report(payload):
-    """AWS LambdaへJSONをPOST送信"""
+    """[Why] Sends the JSON payload to AWS Lambda."""
     try:
         data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(API_URL, data=data, headers={
             'Content-Type': 'application/json',
-            'User-Agent': 'Takumi-Installer/1.0'
+            'User-Agent': 'Takumi-Installer/2.0'
         })
         with urllib.request.urlopen(req) as res:
-            print(f">>> [Report] Failure log sent. ID: {res.read().decode('utf-8')}")
+            response = res.read().decode('utf-8')
+            print(f">>> [Report] Failure log sent. ID: {response}")
     except Exception as e:
-        # 送信失敗はユーザー体験を阻害しないよう、静かに警告だけ出す
-        print(f">>> [Report] Failed to send log: {e}")
+        # Sending failures are handled silently, without disrupting the user experience.
+        print(f">>> [Report] Failed to send log (Network issue?): {e}")
 
 def main():
     if len(sys.argv) < 2:
@@ -89,9 +129,8 @@ def main():
         "target_recipe": load_recipe(recipe_file)
     }
 
-    # デバッグ用: ローカルに保存
-    # with open("last_failure_report.json", "w") as f:
-    #    json.dump(payload, f, indent=2)
+    # Debug: Print summary locally
+    # print(json.dumps(payload, indent=2))
 
     print(">>> [Takumi] Sending anonymous crash report to improve future versions...")
     send_report(payload)

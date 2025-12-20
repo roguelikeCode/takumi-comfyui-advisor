@@ -30,9 +30,7 @@ activate_conda_environment() {
     log_info "Initializing Conda environment..."
     source /opt/conda/etc/profile.d/conda.sh
 
-    set +u
-
-    # Check for the last installed environment first
+    # Priority 1: Check for the last installed environment to ensure consistency.
     local active_env_file="/app/.active_env"
     if [ -f "$active_env_file" ]; then
         local last_env
@@ -40,24 +38,32 @@ activate_conda_environment() {
         
         if conda env list | grep -q "${last_env}"; then
             log_success "Activating last used environment: ${last_env}"
+            
+            # Disable strict mode temporarily to avoid Conda's unbound variable errors
+            # Conda activation scripts often reference unbound variables (MKL_INTERFACE_LAYER)
+            set +u
             conda activate "${last_env}"
             set -u
+            
             return 0
         fi
     fi
 
+    # Priority 2: Fallback to the predefined list if no active env record exists.
     for env_name in "${TARGET_ENVS[@]}"; do
         if conda env list | grep -q "${env_name}"; then
             log_success "Found active environment: ${env_name}"
-            conda activate "${env_name}"
             
+            # Disable strict mode temporarily
+            set +u
+            conda activate "${env_name}"
             set -u
+            
             return 0
         fi
     done
-    
-    set -u
 
+    # If the environment is not found, an error occurs.
     log_error "No suitable Conda environment found."
     log_warn "Expected one of: ${TARGET_ENVS[*]}"
     return 1
