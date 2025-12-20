@@ -1,0 +1,7 @@
+- id: "torch-version-mismatch-is-compiling"
+  pattern: "module 'torch.compiler' has no attribute 'is_compiling'"
+  description: "PyTorch version is too old for current ComfyUI. Upgrade to 2.1.2+."
+  solution:
+    type: "command"
+    command: "pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 xformers==0.0.23.post1 --index-url https://download.pytorch.org/whl/cu121"
+    confidence: 0.99

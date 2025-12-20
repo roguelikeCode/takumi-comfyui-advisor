@@ -1,20 +1,97 @@
 {
   "asset_id": "takumi-use-case-video-001",
   "asset_version": "1.0.0",
-  "display_name": "Create AI Animation (AnimateDiff)",
+  "display_name": "Create AI Video (AnimateDiff)",
   "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
+  "contribution": [
+    {
+      "type": "use_case_recipe",
+      "total_share": 30,
+      "distribution_rule": "equal",
+      "contributors": [
+        {
+          "id": "did:takumi:yamato_watase"
+        }
+      ]
+    },
+    {
+      "type": "key_technology",
+      "total_share": 50,
+      "distribution_rule": "equal",
+      "contributors": [
+        {
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved"
+        },
+        {
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
+        },
+        {
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet"
+        }
+      ]
+    },
+    {
+      "type": "essential_utility",
+      "total_share": 10,
+      "distribution_rule": "equal",
+      "contributors": [
+        {
+          "component_id": "https://github.com/comfyanonymous/ComfyUI",
+          "role": "core_platform"
+        },
+        {
+          "component_id": "https://github.com/ltdrdata/ComfyUI-Manager"
+        },
+        {
+          "component_id": "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
+        },
+        {
+          "component_id": "https://github.com/Fannovel16/comfyui_controlnet_aux"
+        }
+      ]
+    },
+    {
+      "type": "platform",
+      "total_share": 10,
+      "distribution_rule": "equal",
+      "contributors": [
+        {
+          "id": "did:takumi:treasury"
+        }
+      ]
+    }
+  ],
   "environment": {
     "name": "animatediff_env",
     "engine": "conda",
     "components": [
-      { "type": "conda", "source": "python", "version": "3.10" },
-      { "type": "conda", "source": "pip" },
-      { "type": "conda", "source": "pytorch-cuda", "version": "12.1", "channel": "pytorch" },
-      { "type": "conda", "source": "pytorch", "version": "2.1.2", "channel": "pytorch" },
-      { "type": "conda", "source": "torchvision", "version": "0.16.2", "channel": "pytorch" },
-      { "type": "conda", "source": "torchaudio", "version": "2.1.2", "channel": "pytorch" },
-      { "type": "conda", "source": "cuda-libraries", "version": "12.1", "channel": "nvidia" },
-      { "type": "conda", "source": "ffmpeg", "version": ">=6.0", "channel": "conda-forge" }
+      {
+        "type": "conda",
+        "source": "python",
+        "version": "3.10"
+      },
+      {
+        "type": "conda",
+        "source": "pip"
+      },
+      {
+        "type": "conda",
+        "source": "pytorch-cuda",
+        "version": "12.1",
+        "channel": "pytorch"
+      },
+      {
+        "type": "conda",
+        "source": "cuda-libraries",
+        "version": "12.1",
+        "channel": "nvidia"
+      },
+      {
+        "type": "conda",
+        "source": "ffmpeg",
+        "version": ">=6.0",
+        "channel": "conda-forge"
+      }
     ]
   },
   "components": [
@@ -26,65 +103,213 @@
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-AnimateDiff-Evolved",
+      "source": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-VideoHelperSuite",
+      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-Advanced-ControlNet",
+      "source": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-Manager",
+      "source": "https://github.com/ltdrdata/ComfyUI-Manager.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI_IPAdapter_plus",
+      "source": "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "comfyui_controlnet_aux",
+      "source": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
       "version": "main"
     },
-    { "type": "pip", "source": "tqdm" },
-    { "type": "pip", "source": "imageio[ffmpeg]" },
-    { "type": "pip", "source": "numpy", "version": "<2" },
-    { "type": "pip", "source": "aiohttp" },
-    { "type": "pip", "source": "safetensors" },
-    { "type": "pip", "source": "pyyaml" },
-    { "type": "pip", "source": "packaging" },
-    { "type": "pip", "source": "pillow" },
-    { "type": "pip", "source": "requests" },
-    { "type": "pip", "source": "psutil" },
-    { "type": "pip", "source": "huggingface_hub" },
-    { "type": "pip", "source": "einops" },
-    { "type": "pip", "source": "transformers", "version": "==4.38.2" },
-    { "type": "pip", "source": "accelerate", "version": "==0.27.2" },
-    { "type": "pip", "source": "diffusers", "version": "==0.24.0" },
-    { "type": "pip", "source": "insightface" },
-    { "type": "pip", "source": "onnxruntime-gpu" },
-    { "type": "pip", "source": "torchsde" },
-    { "type": "pip", "source": "kornia" },
-    { "type": "pip", "source": "spandrel" },
-    { "type": "pip", "source": "soundfile" },
-    { "type": "pip", "source": "av" },
-    { "type": "pip", "source": "opencv-python" },
-    { "type": "pip", "source": "scipy" },
-    { "type": "pip", "source": "filelock" },
-    { "type": "pip", "source": "gitpython" },
-    { "type": "pip", "source": "matrix-client" },
-    { "type": "pip", "source": "pydantic" },
-    { "type": "pip", "source": "pydantic-settings" },
-    { "type": "pip", "source": "alembic" },
-    { "type": "pip", "source": "comfyui-workflow-templates" },
-    { "type": "pip", "source": "comfyui-frontend-package" }
+    {
+      "type": "pip",
+      "source": "torch",
+      "version": "==2.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchvision",
+      "version": "==0.19.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchaudio",
+      "version": "==2.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "xformers",
+      "version": ">=0.0.27"
+    },
+    {
+      "type": "pip",
+      "source": "diffusers",
+      "version": "==0.24.0"
+    },
+    {
+      "type": "pip",
+      "source": "transformers",
+      "version": "==4.38.2"
+    },
+    {
+      "type": "pip",
+      "source": "accelerate",
+      "version": "==0.27.2"
+    },
+    {
+      "type": "pip",
+      "source": "insightface",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "onnxruntime-gpu",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "numpy",
+      "version": "<2"
+    },
+    {
+      "type": "pip",
+      "source": "imageio[ffmpeg]",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "tqdm",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "aiohttp",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "safetensors",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pyyaml",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "packaging",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pillow",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "requests",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "psutil",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "huggingface_hub",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "einops",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "torchsde",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "kornia",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "spandrel",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "soundfile",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "av",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "opencv-python",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "scipy",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "filelock",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "gitpython",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "matrix-client",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pydantic",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pydantic-settings",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "alembic",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-workflow-templates",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-frontend-package",
+      "version": ""
+    }
   ]
 }
