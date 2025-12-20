@@ -20,16 +20,16 @@
       "distribution_rule": "equal",
       "contributors": [
         {
-          "component_id": "ComfyUI_MagicClothing"
+          "component_id": "https://github.com/frankchieng/ComfyUI_MagicClothing"
         },
         {
-          "component_id": "ComfyUI_IPAdapter_plus"
+          "component_id": "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
         },
         {
-          "component_id": "comfyui_segment_anything"
+          "component_id": "https://github.com/storyicon/comfyui_segment_anything"
         },
         {
-          "component_id": "comfyui_controlnet_aux"
+          "component_id": "https://github.com/Fannovel16/comfyui_controlnet_aux"
         }
       ]
     },
@@ -39,16 +39,20 @@
       "distribution_rule": "equal",
       "contributors": [
         {
-          "component_id": "ComfyUI-Manager"
+          "component_id": "https://github.com/comfyanonymous/ComfyUI",
+          "role": "core_platform"
         },
         {
-          "component_id": "ComfyUI_essentials"
+          "component_id": "https://github.com/ltdrdata/ComfyUI-Manager"
         },
         {
-          "component_id": "ComfyUI-KJNodes"
+          "component_id": "https://github.com/cubiq/ComfyUI_essentials"
         },
         {
-          "component_id": "ComfyUI-VideoHelperSuite"
+          "component_id": "https://github.com/kijai/ComfyUI-KJNodes"
+        },
+        {
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
         }
       ]
     },
@@ -99,193 +103,63 @@
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI_MagicClothing",
+      "source": "https://github.com/frankchieng/ComfyUI_MagicClothing.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI_IPAdapter_plus",
+      "source": "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "comfyui_segment_anything",
+      "source": "https://github.com/storyicon/comfyui_segment_anything.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "comfyui_controlnet_aux",
+      "source": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-Manager",
+      "source": "https://github.com/ltdrdata/ComfyUI-Manager.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI_essentials",
+      "source": "https://github.com/cubiq/ComfyUI_essentials.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-KJNodes",
+      "source": "https://github.com/kijai/ComfyUI-KJNodes.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "ComfyUI-VideoHelperSuite",
+      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
       "version": "main"
     },
     {
       "type": "pip",
       "source": "torch",
-      "version": "==2.7.0"
+      "version": "==2.1.2"
     },
     {
       "type": "pip",
       "source": "torchvision",
-      "version": "==0.22.0"
+      "version": "==0.16.2"
     },
     {
       "type": "pip",
       "source": "torchaudio",
-      "version": "==2.7.0"
+      "version": "==2.1.2"
     },
     {
       "type": "pip",
       "source": "xformers",
-      "version": ">=0.0.30,<0.0.31"
-    },
-    {
-      "type": "pip",
-      "source": "comfyui-frontend-package",
-      "version": ">=1.23.4"
-    },
-    {
-      "type": "pip",
-      "source": "comfyui-workflow-templates",
-      "version": "==0.1.22"
-    },
-    {
-      "type": "pip",
-      "source": "einops",
-      "version": ">=0.8.1,<0.9.0"
-    },
-    {
-      "type": "pip",
-      "source": "transformers",
-      "version": "==4.38.2"
-    },
-    {
-      "type": "pip",
-      "source": "tokenizers",
-      "version": ">=0.13.3"
-    },
-    {
-      "type": "pip",
-      "source": "sentencepiece",
-      "version": ">=0.2.0,<0.3.0"
-    },
-    {
-      "type": "pip",
-      "source": "safetensors",
-      "version": ">=0.5.3,<0.6.0"
-    },
-    {
-      "type": "pip",
-      "source": "aiohttp",
-      "version": ">=3.11.8"
-    },
-    {
-      "type": "pip",
-      "source": "yarl",
-      "version": ">=1.18.0"
-    },
-    {
-      "type": "pip",
-      "source": "pyyaml",
-      "version": ">=6.0.2,<7.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "pillow",
-      "version": ">=10.3.0"
-    },
-    {
-      "type": "pip",
-      "source": "scipy",
-      "version": ">=1.15.3,<2.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "tqdm",
-      "version": ">=4.67.1,<5.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "psutil",
-      "version": ">=7.0.0,<8.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "kornia",
-      "version": ">=0.7.1"
-    },
-    {
-      "type": "pip",
-      "source": "pysoundfile",
-      "version": ">=0.9.0.post1,<0.10.0"
-    },
-    {
-      "type": "pip",
-      "source": "av",
-      "version": ">=14.2.0"
-    },
-    {
-      "type": "pip",
-      "source": "pydantic",
-      "version": ">=2.0,<3.0"
-    },
-    {
-      "type": "pip",
-      "source": "spandrel",
-      "version": ">=0.4.1,<0.5.0"
-    },
-    {
-      "type": "pip",
-      "source": "torchsde",
-      "version": ">=0.2.6,<0.3.0"
-    },
-    {
-      "type": "pip",
-      "source": "numba",
-      "version": ">=0.61.2,<0.62.0"
-    },
-    {
-      "type": "pip",
-      "source": "colour-science",
-      "version": ">=0.4.6,<0.5.0"
-    },
-    {
-      "type": "pip",
-      "source": "rembg",
-      "version": ">=2.0.66,<3.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "transparent-background",
-      "version": ">=1.3.4,<2.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "insightface",
-      "version": "==0.7.3"
-    },
-    {
-      "type": "pip",
-      "source": "onnxruntime-gpu",
-      "version": "==1.17.1"
+      "version": "==0.0.23.post1"
     },
     {
       "type": "pip",
@@ -294,18 +168,13 @@
     },
     {
       "type": "pip",
-      "source": "controlnet-aux",
-      "version": "==0.0.6"
+      "source": "transformers",
+      "version": "==4.38.2"
     },
     {
       "type": "pip",
       "source": "accelerate",
-      "version": "==0.25.0"
-    },
-    {
-      "type": "pip",
-      "source": "numpy",
-      "version": ">=1.26.0,<1.27.0"
+      "version": "==0.27.2"
     },
     {
       "type": "pip",
@@ -314,168 +183,73 @@
     },
     {
       "type": "pip",
-      "source": "color-matcher",
-      "version": ">=0.6.0,<0.7.0"
-    },
-    {
-      "type": "pip",
-      "source": "matplotlib",
-      "version": ">=3.10.3,<4.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "mss",
-      "version": ">=10.0.0,<11.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "huggingface-hub",
-      "version": "==0.23.0"
-    },
-    {
-      "type": "pip",
-      "source": "gitpython",
-      "version": ">=3.1.44,<4.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "pygithub",
-      "version": ">=2.6.1,<3.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "matrix-client",
-      "version": "==0.4.0"
-    },
-    {
-      "type": "pip",
-      "source": "typer",
-      "version": ">=0.16.0,<0.17.0"
-    },
-    {
-      "type": "pip",
-      "source": "rich",
-      "version": ">=14.0.0,<15.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "toml",
-      "version": ">=0.10.2,<0.11.0"
-    },
-    {
-      "type": "pip",
-      "source": "uv",
-      "version": ">=0.7.13,<0.8.0"
-    },
-    {
-      "type": "pip",
-      "source": "typing-extensions",
-      "version": ">=4.14.0,<5.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "chardet",
-      "version": ">=5.2.0,<6.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "imageio-ffmpeg",
-      "version": ">=0.6.0,<0.7.0"
-    },
-    {
-      "type": "pip",
-      "source": "pydantic-settings",
-      "version": ">=2.10.0,<3.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "alembic",
-      "version": ">=1.16.2,<2.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "segment-anything",
-      "version": ">=1.0,<2.0"
-    },
-    {
-      "type": "pip",
-      "source": "timm",
-      "version": ">=1.0.16,<2.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "addict",
-      "version": ">=2.4.0,<3.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "yapf",
-      "version": ">=0.43.0,<0.44.0"
-    },
-    {
-      "type": "pip",
-      "source": "importlib-metadata",
-      "version": ">=8.7.0,<9.0.0"
-    },
-    {
-      "type": "pip",
-      "source": "filelock",
-      "version": ">=3.18.0,<4.0.0"
+      "source": "pillow",
+      "version": ">=10.3.0"
     },
     {
       "type": "pip",
       "source": "scikit-image",
-      "version": ">=0.25.2,<0.26.0"
+      "version": ">=0.21.0"
     },
     {
       "type": "pip",
-      "source": "python-dateutil",
-      "version": ">=2.9.0.post0,<3.0.0"
+      "source": "rembg",
+      "version": ">=2.0.50"
     },
     {
       "type": "pip",
-      "source": "mediapipe",
-      "version": ">=0.10.21,<0.11.0"
+      "source": "matplotlib",
+      "version": ">=3.7.0"
     },
     {
       "type": "pip",
-      "source": "svglib",
-      "version": ">=1.5.1,<2.0.0"
+      "source": "numpy",
+      "version": "<2"
     },
     {
       "type": "pip",
-      "source": "fvcore",
-      "version": ">=0.1.5.post20221221,<0.2.0"
+      "source": "tqdm",
+      "version": ">=4.66.0"
     },
     {
       "type": "pip",
-      "source": "omegaconf",
-      "version": ">=2.3.0,<3.0.0"
+      "source": "psutil",
+      "version": ">=5.9.0"
     },
     {
       "type": "pip",
-      "source": "ftfy",
-      "version": ">=6.3.1,<7.0.0"
+      "source": "gitpython",
+      "version": ">=3.1.30"
     },
     {
       "type": "pip",
-      "source": "yacs",
-      "version": ">=0.1.8,<0.2.0"
+      "source": "huggingface-hub",
+      "version": ">=0.20.0"
     },
     {
       "type": "pip",
-      "source": "trimesh[easy]",
-      "version": ">=4.6.13,<5.0.0"
+      "source": "safetensors",
+      "version": ">=0.4.0"
     },
     {
       "type": "pip",
-      "source": "albumentations",
-      "version": ">=2.0.8,<3.0.0"
+      "source": "einops",
+      "version": ">=0.7.0"
     },
     {
       "type": "pip",
-      "source": "scikit-learn",
-      "version": ">=1.7.0,<2.0.0"
+      "source": "onnxruntime-gpu",
+      "version": ">=1.16.0"
+    },
+    {
+      "type": "pip",
+      "source": "insightface",
+      "version": ">=0.7.3"
+    },
+    {
+      "type": "pip",
+      "source": "segment-anything",
+      "version": ""
     }
   ]
 }
