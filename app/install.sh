@@ -45,6 +45,12 @@ trap 'cleanup_and_report' EXIT
 main() {
     log_info "Takumi Installer Engine v4.0 starting..."
 
+    # Change permissions of .conda directory (owned by root due to volume mount) to takumi user
+    if [ -d "/home/takumi/.conda" ]; then
+        log_info "Fixing permissions for .conda directory..."
+        sudo chown -R $(id -u):$(id -g) /home/takumi/.conda
+    fi
+
     # --- Phase 1: Preparation ---
     # Now 'try_with_ai' is available via source /app/lib/brain.sh
     if ! try_with_ai "fetch_external_catalogs" "Fetching external catalogs"; then
@@ -66,6 +72,15 @@ main() {
     if ! run_install_flow; then
         log_error "Installation failed."
         exit 1
+    fi
+
+    # Ensure Takumi Bridge is linked during install
+    if [ -d "/app/takumi_bridge" ]; then
+        target_link="/app/ComfyUI/custom_nodes/ComfyUI-Takumi-Bridge"
+        if [ ! -L "$target_link" ]; then
+            log_info "Linking Takumi Bridge..."
+            ln -s "/app/takumi_bridge" "$target_link"
+        fi
     fi
 
     # --- Phase 4: Finalization ---
