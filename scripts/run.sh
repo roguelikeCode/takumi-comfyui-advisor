@@ -107,25 +107,6 @@ start_brain_service() {
     sleep 3
 }
 
-# [Why] To provide analytics and telemetry (Enterprise Only).
-# [What] Checks if the Enterprise app exists and starts Streamlit in the background.
-start_dashboard_service() {
-    # [ENTERPRISE] Logic
-    local dashboard_app="/app/dashboard/app_enterprise.py"
-    
-    if [ -f "$dashboard_app" ]; then
-        log_info "Starting Enterprise Dashboard..."
-        streamlit run "$dashboard_app" \
-            --server.port 8501 \
-            --server.address 0.0.0.0 \
-            --theme.base="dark" \
-            --theme.primaryColor="#4cc9f0" \
-            > /app/logs/dashboard.log 2>&1 &
-    else
-        log_info "Enterprise Dashboard not found. Skipping. (OSS Mode)"
-    fi
-}
-
 # ==============================================================================
 # [3] Main Execution
 # ==============================================================================
@@ -155,7 +136,13 @@ main() {
     trap 'terminate_services' EXIT
     
     start_brain_service
-    start_dashboard_service
+
+    # [Extension Slot] Launch Commercial Services
+    # If there are any extension scripts that should be run at startup, run them in the background
+    if [ -f "/app/extensions/hooks/on_boot/run.sh" ]; then
+        log_info "🚀 Launching Commercial Extension..."
+        bash "/app/extensions/hooks/on_boot/run.sh" &
+    fi
 
     # 4. Launch Main Application (Blocking)
     log_info "Launching ComfyUI..."
