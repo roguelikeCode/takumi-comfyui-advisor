@@ -39,7 +39,7 @@ DOCKER_RUN_OPTS := \
 	-v $(shell pwd)/logs:/app/logs \
 	-v $(shell pwd)/external:/app/external \
 	-v $(shell pwd)/app:/app \
-	-v $(shell pwd)/scripts:/app/scripts \
+	-v $(shell pwd)/scripts:/app/scripts:ro \
 	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs \
 	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs \
 	-v $(shell pwd)/storage/ollama:/home/takumi/.ollama \
@@ -138,7 +138,9 @@ run: build
 	if command -v dotenvx >/dev/null 2>&1; then \
 		LAUNCHER="dotenvx run --"; \
 	fi; \
-	$$LAUNCHER docker run -it $(DOCKER_RUN_OPTS) \
+	$$LAUNCHER docker run \
+		--cap-drop ALL \
+		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run.sh
 
@@ -150,13 +152,18 @@ run: build
 shell: build
 	@echo ">>> Starting interactive shell..."
 	@touch .install_history
-	@docker run -it $(DOCKER_RUN_OPTS) $(IMAGE_NAME):$(IMAGE_TAG) bash
+	@docker run \
+		-it $(DOCKER_RUN_OPTS) \
+		$(IMAGE_NAME):$(IMAGE_TAG) \
+		bash
 
 #[Note] If there is no .install_history file, Docker will create the directory
 test: build
 	@echo ">>> Running tests..."
 	@touch .install_history
-	@docker run $(DOCKER_RUN_OPTS) \
+	@docker run \
+		--cap-drop ALL \
+		$(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run_tests.sh
 
