@@ -27,6 +27,7 @@ RUN apt-get update && \
     jq \
     unzip \
     bzip2 \
+    sudo \
     # --- Build Essentials (For compiling C++ extensions) ---
     build-essential \
     cmake \
