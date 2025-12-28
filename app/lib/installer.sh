@@ -266,7 +266,7 @@ run_install_flow() {
         esac
     done < <(jq -r '.components[] | [.type, .source, .version, .path // ""] | @tsv' "$use_case_path")
 
-    # 2.1 Pip Installation
+    # 3. Pip Installation
     if [ ${#pip_deps[@]} -gt 0 ]; then
         log_info "Installing pip packages into '${env_name}' via uv..."
         
@@ -287,10 +287,7 @@ run_install_flow() {
         log_success "All pip packages materialized."
     fi
 
-    # 2.2 Enterprise Modules (Optional, if recipe exists)
-    install_pip_from_recipe "${CONFIG_DIR}/takumi_meta/recipes/system/dashboard.json"
-
-    # 3. Asset Manager
+    # 4. Asset Manager
     # [Why] Determine the correct asset recipe based on the selected use case
     local asset_recipe=""
     
@@ -325,7 +322,7 @@ run_install_flow() {
         fi
     fi
 
-    # 4. Brain
+    # 5. Brain
     setup_ollama_model
 
     # Save the active environment name for run.sh
@@ -333,4 +330,26 @@ run_install_flow() {
 
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
+}
+
+# [Why] To execute external extension scripts overlaid by commercial editions.
+# [What] Scans the hook directory and sources any .sh files found.
+# [Input] $1: hook_name (e.g., "post_install", "on_boot")
+run_extension_hooks() {
+    local hook_name="$1"
+    # Commercial version mounted directory
+    local hook_dir="/app/extensions/hooks/${hook_name}"
+
+    if [ -d "$hook_dir" ]; then
+        log_info "🔌 Running extensions for: ${hook_name}"
+        
+        # Run in alphabetical order (01_init.sh, 02_setup.sh ...)
+        for script in $(find "$hook_dir" -maxdepth 1 -name "*.sh" | sort); do
+            if [ -f "$script" ]; then
+                log_info "  -> Executing extension: $(basename "$script")"
+                # By executing source, the current context (variables and functions) is shared.
+                source "$script"
+            fi
+        done
+    fi
 }

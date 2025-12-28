@@ -83,7 +83,10 @@ main() {
         fi
     fi
 
-    # --- Phase 4: Finalization ---
+    # --- Phase 5: [Extension Slot] Commercial / Custom Hooks --- 
+    run_extension_hooks "post_install"
+
+    # --- Phase 6: Finalization ---
     log_success "All processes completed successfully!"
     exit 0
 }
