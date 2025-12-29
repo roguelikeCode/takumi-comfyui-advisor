@@ -5,11 +5,13 @@
 
 # --- File Paths (In Docker) ---
 readonly APP_ROOT="/app"
-readonly HISTORY_FILE="${APP_ROOT}/.install_history"
+readonly CACHE_DIR="${APP_ROOT}/cache"
 readonly CONFIG_DIR="${APP_ROOT}/config"
 readonly EXTERNAL_DIR="${APP_ROOT}/external"
-readonly CACHE_DIR="${APP_ROOT}/cache"
 readonly LOG_DIR="${APP_ROOT}/logs"
+
+readonly ACTIVE_ENV_FILE="${APP_ROOT}/cache/.active_env"
+readonly HISTORY_FILE="${APP_ROOT}/cache/.install_history"
 readonly INSTALL_LOG="${LOG_DIR}/install.log"
 
 # --- Global Configuration (Defaults) ---

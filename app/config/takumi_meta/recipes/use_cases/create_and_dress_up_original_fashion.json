@@ -250,6 +250,16 @@
       "type": "pip",
       "source": "segment-anything",
       "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-workflow-templates",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-frontend-package",
+      "version": ""
     }
   ]
 }

@@ -17,11 +17,11 @@ set -euo pipefail
 # Container Settings
 readonly IMAGE_NAME="takumi-comfyui"
 readonly IMAGE_TAG="latest"
-readonly CONTAINER_NAME="takumi-comfyui-dev"
+readonly CONTAINER_NAME="takumi-comfyui-oss"
 
 # File Paths
 readonly CURRENT_DIR="$(pwd)"
-readonly HISTORY_FILE=".install_history"
+readonly HISTORY_FILE="cache/.install_history"
 
 # [Why] To define volume mappings in a readable, maintainable format.
 # [What] Returns an array of Docker volume arguments.

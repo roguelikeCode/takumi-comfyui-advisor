@@ -31,10 +31,9 @@ activate_conda_environment() {
     source /opt/conda/etc/profile.d/conda.sh
 
     # Priority 1: Check for the last installed environment to ensure consistency.
-    local active_env_file="/app/.active_env"
-    if [ -f "$active_env_file" ]; then
+    if [ -f "$ACTIVE_ENV_FILE" ]; then
         local last_env
-        last_env=$(cat "$active_env_file" | tr -d '[:space:]')
+        last_env=$(cat "$ACTIVE_ENV_FILE" | tr -d '[:space:]')
         
         if conda env list | grep -q "${last_env}"; then
             log_success "Activating last used environment: ${last_env}"
@@ -137,7 +136,7 @@ main() {
     
     start_brain_service
 
-    # [Extension Slot] Launch Commercial Services
+    #  [Extension Slot] Launch Commercial Services
     # If there are any extension scripts that should be run at startup, run them in the background
     if [ -f "/app/extensions/hooks/on_boot/run.sh" ]; then
         log_info "🚀 Launching Commercial Extension..."
@@ -145,10 +144,20 @@ main() {
     fi
 
     # 4. Launch Main Application (Blocking)
-    log_info "Launching ComfyUI..."
-    
-    cd /app/ComfyUI
-    python main.py --listen 0.0.0.0 --port "$COMFY_PORT"
+    # Skip ComfyUI (Memory Saver for Enterprise)
+    if [ "${SKIP_COMFYUI:-false}" == "true" ]; then
+        log_warn "SKIP_COMFYUI is set. ComfyUI will NOT start."
+        log_info "Container is standing by for Enterprise tasks..."
+        
+        # Wait indefinitely to prevent the container from terminating
+        tail -f /dev/null
+    else
+        # Launch ComfyUI
+        log_info "Launching ComfyUI..."
+        
+        cd /app/ComfyUI
+        python main.py --listen 0.0.0.0 --port "$COMFY_PORT"
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
