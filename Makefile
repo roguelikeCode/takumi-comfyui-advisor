@@ -51,7 +51,7 @@ DOCKER_RUN_OPTS := \
 	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs
 
 # --- Pre-flight Checks ---
-REQUIRED_DIRS := cache external logs storage/pkgs storage/envs storage/ollama
+REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs
 PURGE_DIRS    := cache external logs storage
 
 # ==============================================================================
