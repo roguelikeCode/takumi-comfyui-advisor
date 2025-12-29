@@ -15,12 +15,16 @@ SHELL := /bin/bash
 DOTENVX_VERSION := v1.51.1
 
 # --- Container Settings ---
-IMAGE_NAME      := takumi-comfyui
-IMAGE_TAG       := latest
-CONTAINER_NAME  := takumi-comfyui-dev
+IMAGE_NAME     := takumi-comfyui
+IMAGE_TAG      := latest
+CONTAINER_NAME := takumi-comfyui-oss
+
+# --- State Files ---
+CACHE_DIR            := cache
+HISTORY_FILEPATH_OSS := $(CACHE_DIR)/.install_history
 
 # --- Ports ---
-WEB_PORT        := 8188
+WEB_PORT := 8188
 
 # --- Docker Runtime Options (Encapsulation) ---
 # [Why] Defined as a multiline variable for readability and easier maintenance.
@@ -35,18 +39,20 @@ DOCKER_RUN_OPTS := \
 	-e HOME=/home/takumi \
 	-e HF_TOKEN \
 	--env-file .env \
-	-v $(shell pwd)/cache:/app/cache \
-	-v $(shell pwd)/logs:/app/logs \
-	-v $(shell pwd)/external:/app/external \
 	-v $(shell pwd)/app:/app \
 	-v $(shell pwd)/scripts:/app/scripts:ro \
-	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs \
+	\
+	-v $(shell pwd)/cache:/app/cache \
+	-v $(shell pwd)/$(HISTORY_FILEPATH_OSS):/app/$(HISTORY_FILEPATH_OSS) \
+	-v $(shell pwd)/external:/app/external \
+	-v $(shell pwd)/logs:/app/logs \
 	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs \
 	-v $(shell pwd)/storage/ollama:/home/takumi/.ollama \
-	-v $(shell pwd)/.install_history:/app/.install_history
+	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs
 
 # --- Pre-flight Checks ---
-REQUIRED_DIRS := logs cache external config storage/pkgs storage/envs storage/ollama
+REQUIRED_DIRS := cache external logs storage/pkgs storage/envs storage/ollama
+PURGE_DIRS    := cache external logs storage
 
 # ==============================================================================
 # Targets
@@ -113,6 +119,7 @@ encrypt:
 .PHONY: ensure-dirs build install run
 ensure-dirs:
 	@mkdir -p $(REQUIRED_DIRS)
+	@touch $(HISTORY_FILEPATH_OSS)
 
 build: ensure-dirs
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
@@ -129,11 +136,9 @@ install: build
 
 # [Why] To run the application with optional secret decryption.
 # [What] Dynamically prepends 'dotenvx run --' if the tool is available.
-# [Note] Ensure that the `.install_history` file is created before executing the run target
 run: build
 	@echo ">>> Starting ComfyUI..."
 	@echo ">>> Open http://localhost:$(WEB_PORT) for ComfyUI"
-	@touch .install_history
 	@LAUNCHER=""; \
 	if command -v dotenvx >/dev/null 2>&1; then \
 		LAUNCHER="dotenvx run --"; \
@@ -148,19 +153,15 @@ run: build
 # 3. Development Utilities
 # ==============================================================================
 .PHONY: shell test clean purge
-#[Note] If there is no .install_history file, Docker will create the directory
 shell: build
 	@echo ">>> Starting interactive shell..."
-	@touch .install_history
 	@docker run \
 		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash
 
-#[Note] If there is no .install_history file, Docker will create the directory
 test: build
 	@echo ">>> Running tests..."
-	@touch .install_history
 	@docker run \
 		--cap-drop ALL \
 		$(DOCKER_RUN_OPTS) \
@@ -177,20 +178,12 @@ clean:
 # [Why] Nuclear option. Wipes EVERYTHING including persistent storage (Conda envs, Models).
 # [Note] Use this when you want to start from absolute zero.
 # [Note] This will cause the download time to increase.
-purge:
+purge: clean
 	@echo ">>> ☢️  INITIATING TOTAL PURGE... ☢️"
 	@echo ">>> This will delete ALL environments, downloaded models, and caches."
 	@echo ">>> Use sudo to delete the root privilege files created by Docker."
 
-	@sudo rm -rf \
-		app/ComfyUI \
-		external \
-		cache \
-		logs \
-		storage \
-		.install_history \
-		app/.active_env
-	
-	@mkdir -p logs cache external storage/pkgs storage/envs storage/ollama
+	@sudo rm -rf $(PURGE_DIRS)
+	@make ensure-dirs
 	
 	@echo "✅ Project has been reset to factory settings."

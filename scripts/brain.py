@@ -22,7 +22,7 @@ class BrainConfig:
     API_URL = "http://localhost:11434/api/generate"
     
     # Model Selection
-    MODEL_NAME = "gemma3"
+    MODEL_NAME = "gemma2:2b"
     
     # Paths
     # [Note] Relative path from this script to the config file
