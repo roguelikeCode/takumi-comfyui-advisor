@@ -17,7 +17,6 @@
 # ------------------------------------------------------------------------------
 # Installer downloads & runtime mounts
 app/ComfyUI/
-app/.active_env
 external/
 cache/
 storage/
@@ -37,7 +36,6 @@ storage/
 *.log
 logs/
 *.jsonl
-.install_history
 
 # ------------------------------------------------------------------------------
 # 4. Language Runtime & Environment

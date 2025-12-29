@@ -143,7 +143,12 @@ install_pip_from_recipe() {
 
     if [ ${#pip_deps[@]} -gt 0 ]; then
         log_info "  -> Installing extra pip packages..."
-        if ! conda run -n "${state[use_case_env]}" --no-capture-output uv pip install "${pip_deps[@]}"; then
+        
+        if ! UV_LINK_MODE=copy conda run \
+            -n "${state[use_case_env]}" \
+            --no-capture-output \
+            uv pip install "${pip_deps[@]}"; then
+            
             log_error "Failed to install packages from $recipe_path"
             return 1
         fi
@@ -243,15 +248,31 @@ run_install_flow() {
         case "$type" in
             "git-clone")
                 if [ -z "$path" ]; then log_error "Path required for git-clone: ${source}"; continue; fi
-                log_info "  -> Cloning repo to ${path}..."
-                if [ ! -d "$path" ]; then
-                    if [ -n "$version" ] && [ "$version" != "main" ] && [ "$version" != "master" ]; then
-                         git clone --branch "$version" "$source" "$path"
-                    else
-                         git clone "$source" "$path"
+                
+                # Check if valid repo exists (.git check)
+                # If the directory does not exist or .git does not exist, it will be cloned.
+                if [ ! -d "$path/.git" ]; then
+                    log_info "  -> Cloning repo to ${path}..."
+                    
+                    # Cleaning up mounted empty directories
+                    if [ -d "$path" ]; then
+                        log_info "    (Cleaning existing directory to ensure clean clone...)"
+                        find "$path" -mindepth 1 -delete 2>/dev/null || true
                     fi
+
+                    # Building Command Arguments (Builder Pattern)
+                    local git_args=("--recursive")
+                    
+                    # Add branch argument only if version is specified
+                    if [ -n "$version" ] && [ "$version" != "main" ] && [ "$version" != "master" ]; then
+                        git_args+=("--branch" "$version")
+                    fi
+
+                    # Execution
+                    # "${git_args[@]}" is expanded and passed as options
+                    git clone "${git_args[@]}" "$source" "$path"
                 else
-                    log_warn "    Directory ${path} already exists. Skipping."
+                    log_info "    Repository valid at ${path}. Skipping."
                 fi
                 ;;
             "custom-node")
@@ -277,6 +298,7 @@ run_install_flow() {
             set +u
             conda activate "$env_name"
             set -u
+            export UV_LINK_MODE=copy
             uv pip install "${pip_deps[@]}"
         ); then
              consult_ai_on_complex_failure \
@@ -326,7 +348,7 @@ run_install_flow() {
     setup_ollama_model
 
     # Save the active environment name for run.sh
-    echo "${env_name}" > "${APP_ROOT}/.active_env"
+    echo "${env_name}" > "${ACTIVE_ENV_FILE}"
 
     log_success "Asset materialization for '${use_case_name}' is complete."
     return 0
