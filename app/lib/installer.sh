@@ -75,7 +75,7 @@ build_merged_catalog() {
 install_component_custom_node() {
     local source="$1"  # ID or URL
     local version="$2"
-    local comfyui_nodes_dir="/app/ComfyUI/custom_nodes"
+    local comfyui_nodes_dir="${COMFYUI_CUSTOM_NODES_DIR}"
     
     local url=""
     
@@ -247,6 +247,12 @@ run_install_flow() {
 
         case "$type" in
             "git-clone")
+                # To dynamically override the ComfyUI installation path.
+                # If the source is the main ComfyUI repo, force the path to use our global variable.
+                if [[ "$source" == *"comfyanonymous/ComfyUI.git"* ]]; then
+                    path="${COMFYUI_ROOT_DIR}"
+                fi
+
                 if [ -z "$path" ]; then log_error "Path required for git-clone: ${source}"; continue; fi
                 
                 # Check if valid repo exists (.git check)
@@ -331,6 +337,9 @@ run_install_flow() {
                 set +u
                 conda activate "$env_name"
                 set -u
+                # To pass shell variables to the Python script.
+                # Exports the ComfyUI root directory as an environment variable.
+                export COMFYUI_ROOT_DIR="${COMFYUI_ROOT_DIR}"
                 # Pass the recipe path as an argument
                 python -u "$manager_script" "$asset_recipe"
             )

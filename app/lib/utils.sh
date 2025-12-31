@@ -9,6 +9,8 @@ readonly CACHE_DIR="${APP_ROOT}/cache"
 readonly CONFIG_DIR="${APP_ROOT}/config"
 readonly EXTERNAL_DIR="${APP_ROOT}/external"
 readonly LOG_DIR="${APP_ROOT}/logs"
+COMFYUI_ROOT_DIR="${EXTERNAL_DIR}/ComfyUI"
+COMFYUI_CUSTOM_NODES_DIR="${COMFYUI_ROOT_DIR}/custom_nodes"
 
 readonly ACTIVE_ENV_FILE="${APP_ROOT}/cache/.active_env"
 readonly HISTORY_FILE="${APP_ROOT}/cache/.install_history"

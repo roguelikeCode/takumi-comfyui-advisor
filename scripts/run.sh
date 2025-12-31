@@ -76,7 +76,7 @@ activate_conda_environment() {
 # [Why] To expose the Chat UI extension to ComfyUI.
 # [What] Creates a symbolic link from the source code to the ComfyUI custom_nodes folder.
 setup_bridge_node() {
-    local target_link="/app/ComfyUI/custom_nodes/ComfyUI-Takumi-Bridge"
+    local target_link="${COMFYUI_CUSTOM_NODES_DIR}/ComfyUI-Takumi-Bridge"
     local source_dir="/app/takumi_bridge"
 
     log_info "Configuring Takumi Bridge..."
@@ -155,7 +155,7 @@ main() {
         # Launch ComfyUI
         log_info "Launching ComfyUI..."
         
-        cd /app/ComfyUI
+        cd "${COMFYUI_ROOT_DIR}"
         python main.py --listen 0.0.0.0 --port "$COMFY_PORT"
     fi
 }
