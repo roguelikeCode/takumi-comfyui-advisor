@@ -76,7 +76,7 @@ main() {
 
     # Ensure Takumi Bridge is linked during install
     if [ -d "/app/takumi_bridge" ]; then
-        target_link="/app/ComfyUI/custom_nodes/ComfyUI-Takumi-Bridge"
+        target_link="${COMFYUI_CUSTOM_NODES_DIR}/ComfyUI-Takumi-Bridge"
         if [ ! -L "$target_link" ]; then
             log_info "Linking Takumi Bridge..."
             ln -s "/app/takumi_bridge" "$target_link"
