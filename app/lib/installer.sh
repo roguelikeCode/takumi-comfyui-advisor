@@ -191,6 +191,15 @@ run_install_flow() {
     fi
     
     log_info "Starting asset materialization for use-case: '${use_case_name}'..."
+
+    # 0. Install System Foundation (ComfyUI)
+    log_info "Materializing system foundation (ComfyUI)..."
+    if [ ! -d "${COMFYUI_ROOT_DIR}/.git" ]; then
+        log_info "  -> Cloning ComfyUI repository to ${COMFYUI_ROOT_DIR}..."
+        git clone "https://github.com/comfyanonymous/ComfyUI.git" "${COMFYUI_ROOT_DIR}"
+    else
+        log_info "  -> ComfyUI repository already exists. Skipping clone."
+    fi
     
     local use_case_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.json"
     
