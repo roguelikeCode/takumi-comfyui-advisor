@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import List, Dict, Any
 from huggingface_hub import hf_hub_download, login
 
+# [Why] To make the script's behavior configurable from the outside (e.g., shell scripts).
+# [Note] Reads the root directory for ComfyUI from an environment variable, with a fallback to the new default.
+COMFYUI_ROOT = os.environ.get("COMFYUI_ROOT_DIR", "/app/external/ComfyUI")
+
 # The progress bar disappears when running via Docker or a script, so we force it to be displayed
 if not sys.stdout.isatty():
     sys.stdout.isatty = lambda: True
@@ -96,10 +100,18 @@ class AssetProcessor:
                 AssetProcessor._download_huggingface(item)
 
     @staticmethod
+    def _resolve_path(path_str: str) -> Path:
+        """[Why] To resolve paths relative to the dynamic ComfyUI root."""
+        # [What] Replaces the placeholder "/app/ComfyUI" with the actual COMFYUI_ROOT.
+        if path_str.startswith("/app/ComfyUI/"):
+            return Path(COMFYUI_ROOT) / path_str.replace("/app/ComfyUI/", "", 1)
+        return Path(path_str)
+
+    @staticmethod
     def _download_huggingface(item: Dict[str, str]) -> None:
         repo_id = item["repo_id"]
         filename = item["filename"]
-        target_dir = Path(item["target_dir"])
+        target_dir = AssetProcessor._resolve_path(item["target_dir"])
         
         try:
             print(f"  - Downloading {filename} from {repo_id}...")
@@ -130,8 +142,8 @@ class AssetProcessor:
         """
         print("🔗 Processing symlinks...")
         for item in items:
-            src = Path(item["src"])
-            dest = Path(item["dest"])
+            src = AssetProcessor._resolve_path(item["src"])
+            dest = AssetProcessor._resolve_path(item["dest"])
             
             if not src.exists():
                 print(f"    ⚠️ Source not found: {src}")
@@ -158,7 +170,7 @@ class AssetProcessor:
         """
         print("🩹 Processing patches...")
         for item in items:
-            file_path = Path(item["file"])
+            file_path = AssetProcessor._resolve_path(item["file"])
             find_str = item["find"]
             replace_str = item["replace"]
 
