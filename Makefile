@@ -79,9 +79,9 @@ help:
 	@echo "    make purge       : [DANGER] Delete ALL data and reset to factory settings."
 
 # ==============================================================================
-# 1. Setup & Security
+# 1. Security & Setup
 # ==============================================================================
-.PHONY: setup-env encrypt
+.PHONY: setup-env encrypt ensure-dirs
 setup-env:
 	@echo ">>> Setting up environment..."
 	@if [ ! -f .env ]; then \
@@ -113,14 +113,14 @@ encrypt:
 		echo "❌ dotenvx not found. Please run 'make setup-env' first."; \
 	fi
 
-# ==============================================================================
-# 2. Main (Dockerfile Wrapper Recipes)
-# ==============================================================================
-.PHONY: ensure-dirs build install run
 ensure-dirs:
 	@mkdir -p $(REQUIRED_DIRS)
 	@touch $(HISTORY_FILEPATH_OSS)
 
+# ==============================================================================
+# 2. Main (Dockerfile Wrapper Recipes)
+# ==============================================================================
+.PHONY: build install run
 build: ensure-dirs
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
 	@docker build \

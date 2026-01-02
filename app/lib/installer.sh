@@ -69,6 +69,56 @@ build_merged_catalog() {
 
 # --- Component Installers ---
 
+# [Why] To prevent 'IncompleteRead' errors on unstable connections.
+# [What] Temporarily boosts Conda's timeout and retry settings.
+enhance_conda_network() {
+    log_info "  -> 🛡️  Activating network resilience patch..."
+    conda config --set remote_connect_timeout_secs 60.0
+    conda config --set remote_max_retries 5
+}
+
+# [Why] To restore default Conda settings after operations.
+# [What] Removes the temporary overrides.
+restore_conda_network() {
+    log_info "  -> 🛡️  Restoring default network settings..."
+    conda config --remove-key remote_connect_timeout_secs > /dev/null 2>&1 || true
+    conda config --remove-key remote_max_retries > /dev/null 2>&1 || true
+}
+
+# [Why] To clone repositories safely without overwriting mounted data.
+# [What] Checks for existing .git or non-empty directories (mounts) before cloning.
+# [Input] $1: source_url, $2: target_path, $3: branch (optional)
+git_clone_safely() {
+    local source="$1"
+    local path="$2"
+    local branch="$3"
+
+    # Case 1: Valid Repo exists (Idempotency)
+    if [ -d "$path/.git" ]; then
+        log_info "  -> Valid repository exists at ${path}. Skipping clone."
+        return 0
+    fi
+
+    # Case 2: Directory exists and is NOT empty (Likely a Volume Mount)
+    # [Note] `ls -A` returns contents including hidden files. If content exists, we protect it.
+    if [ -d "$path" ] && [ "$(ls -A "$path")" ]; then
+        log_warn "  -> Target '${path}' is not empty (likely mounted data)."
+        log_warn "     Skipping clone to protect your data."
+        return 0
+    fi
+
+    # Case 3: Pristine or Empty Directory (Safe to Clone)
+    log_info "  -> Cloning into pristine directory: ${path}..."
+    mkdir -p "$path"
+    
+    local git_args=("--recursive")
+    if [ -n "$branch" ] && [ "$branch" != "main" ] && [ "$branch" != "master" ] && [ "$branch" != "null" ]; then
+        git_args+=("--branch" "$branch")
+    fi
+    
+    git clone "${git_args[@]}" "$source" "$path"
+}
+
 # [Why] To install a specific Custom Node from the catalog.
 # [What] Resolves URL from catalog ID and git clones it.
 # [Input] $1: id, $2: version
@@ -216,6 +266,8 @@ run_install_flow() {
         log_info "Conda environment '${env_name}' already exists. Skipping creation."
     else
         log_info "Materializing Conda environment '${env_name}'..."
+        
+        # --- Parameter Parsing (Conda) ---
         local conda_pkgs=()
         local channels=()
 
@@ -235,12 +287,19 @@ run_install_flow() {
             fi
         done < <(jq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
 
+        # --- Execution with Network Patch ---
+        enhance_conda_network
+        
         if ! conda create -n "$env_name" "${channels[@]}" "${conda_pkgs[@]}" -y; then
+             restore_conda_network # Ensure cleanup on failure
+             
              consult_ai_on_complex_failure \
                 "Failed to create Conda environment '${env_name}'." \
                 "Packages: ${conda_pkgs[*]}"
             return 1
         fi
+
+        restore_conda_network
         log_success "Conda environment '${env_name}' materialized."
     fi
 
@@ -248,6 +307,7 @@ run_install_flow() {
     log_info "Materializing application components into '${env_name}'..."
     local pip_deps=()
 
+    # --- Component Loop (Git/Pip) ---
     while IFS=$'\t' read -r type source version path; do
         if [ "$version" == "null" ]; then version=""; fi
         if [ "$path" == "null" ]; then path=""; fi
@@ -256,40 +316,20 @@ run_install_flow() {
 
         case "$type" in
             "git-clone")
-                # To dynamically override the ComfyUI installation path.
-                # If the source is the main ComfyUI repo, force the path to use our global variable.
+                # Override path for ComfyUI root if necessary
                 if [[ "$source" == *"comfyanonymous/ComfyUI.git"* ]]; then
                     path="${COMFYUI_ROOT_DIR}"
                 fi
 
-                if [ -z "$path" ]; then log_error "Path required for git-clone: ${source}"; continue; fi
-                
-                # Check if valid repo exists (.git check)
-                # If the directory does not exist or .git does not exist, it will be cloned.
-                if [ ! -d "$path/.git" ]; then
-                    log_info "  -> Cloning repo to ${path}..."
-                    
-                    # Cleaning up mounted empty directories
-                    if [ -d "$path" ]; then
-                        log_info "    (Cleaning existing directory to ensure clean clone...)"
-                        find "$path" -mindepth 1 -delete 2>/dev/null || true
-                    fi
-
-                    # Building Command Arguments (Builder Pattern)
-                    local git_args=("--recursive")
-                    
-                    # Add branch argument only if version is specified
-                    if [ -n "$version" ] && [ "$version" != "main" ] && [ "$version" != "master" ]; then
-                        git_args+=("--branch" "$version")
-                    fi
-
-                    # Execution
-                    # "${git_args[@]}" is expanded and passed as options
-                    git clone "${git_args[@]}" "$source" "$path"
-                else
-                    log_info "    Repository valid at ${path}. Skipping."
+                if [ -z "$path" ]; then 
+                    log_error "Path required for git-clone: ${source}"
+                    continue
                 fi
+                
+                # Call the safe clone function
+                git_clone_safely "$source" "$path" "$version"
                 ;;
+                
             "custom-node")
                 install_component_custom_node "$source" "$version"
                 ;;
