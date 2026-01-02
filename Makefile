@@ -144,7 +144,7 @@ run: build
 		LAUNCHER="dotenvx run --"; \
 	fi; \
 	$$LAUNCHER docker run \
-		--cap-drop ALL \
+		--cap-drop=ALL \
 		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run.sh
@@ -163,7 +163,7 @@ shell: build
 test: build
 	@echo ">>> Running tests..."
 	@docker run \
-		--cap-drop ALL \
+		--cap-drop=ALL \
 		$(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run_tests.sh
