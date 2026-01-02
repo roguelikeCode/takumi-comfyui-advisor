@@ -1,9 +1,17 @@
 #!/bin/bash
 
+# --- Include Guard ---
+# [Why] To prevent 'readonly variable' errors when sourced multiple times.
+
+if [ -n "${LOGGER_SH_LOADED:-}" ]; then
+    return 0
+fi
+readonly LOGGER_SH_LOADED=true
+
+# --- Constants: Colors ---
 # [Why] To unify log formats/colors and handle errors/telemetry centrally.
 # [What] Provides logging functions, color definitions, and the error trap handler.
 
-# --- Constants: Colors ---
 readonly COLOR_BLUE='\033[1;36m'
 readonly COLOR_GREEN='\033[0;32m'
 readonly COLOR_YELLOW='\033[1;33m'
