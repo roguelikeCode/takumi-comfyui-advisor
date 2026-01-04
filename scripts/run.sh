@@ -16,7 +16,7 @@ set -euo pipefail
 
 # --- Configuration ---
 # Prioritized list of environments to look for
-readonly TARGET_ENVS=("animatediff_env" "magic_clothing_env" "foundation")
+readonly TARGET_ENVS=("wan_video_env" "animatediff_env" "magic_clothing_env" "foundation")
 readonly COMFY_PORT=8188
 
 # ==============================================================================

@@ -8,4 +8,3 @@ dependencies:
   - torchvision
   - torchaudio
   - pytorch-cuda=12.4 # [Target] Cutting edge. For newer hardware (RTX 40/50 series)
-  - xformers
