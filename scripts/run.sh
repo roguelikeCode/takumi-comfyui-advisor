@@ -15,9 +15,32 @@ source /app/lib/logger.sh
 set -euo pipefail
 
 # --- Configuration ---
-# Prioritized list of environments to look for
-readonly TARGET_ENVS=("wan_video_env" "animatediff_env" "magic_clothing_env" "foundation")
 readonly COMFY_PORT=8188
+readonly RECIPES_DIR="/app/config/takumi_meta/recipes/use_cases"
+
+# [Dynamic] Build Target Envs List from Recipes
+# レシピ内の environment.name を抽出してリスト化する
+TARGET_ENVS=()
+
+# 1. recipesディレクトリが存在する場合のみスキャン
+if [ -d "$RECIPES_DIR" ]; then
+    # findの結果をループ処理
+    while IFS= read -r file; do
+        if [ -f "$file" ]; then
+            env_name=$(jq -r '.environment.name // empty' "$file")
+            if [ -n "$env_name" ]; then
+                # 配列に追加 (重複排除は後続のcondaチェックで自然に行われるため気にしない)
+                TARGET_ENVS+=("$env_name")
+            fi
+        fi
+    done < <(find "$RECIPES_DIR" -maxdepth 1 -name "*.json")
+fi
+
+# Fallback (最低限の保証)
+TARGET_ENVS+=("foundation")
+
+# Debug: 認識した環境を表示
+# echo "Debug: Detectable environments: ${TARGET_ENVS[*]}"
 
 # ==============================================================================
 # [1] Environment Management
