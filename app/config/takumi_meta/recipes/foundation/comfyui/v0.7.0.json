@@ -1,0 +1,172 @@
+{
+  "id": "takumi-foundation-comfyui-v0.7.0",
+  "description": "Core dependencies for ComfyUI v0.7.0 (Python 3.11/Torch 2.4/CUDA 12.1)",
+  "components": [
+    {
+      "type": "git-clone",
+      "source": "https://github.com/comfyanonymous/ComfyUI.git",
+      "version": "v0.7.0",
+      "path": "/app/ComfyUI"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/ltdrdata/ComfyUI-Manager.git",
+      "version": "main"
+    },
+    {
+      "type": "pip",
+      "source": "torch",
+      "version": "==2.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchvision",
+      "version": "==0.19.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchaudio",
+      "version": "==2.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchsde",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "huggingface_hub",
+      "version": ">=0.24.0"
+    },
+    {
+      "type": "pip",
+      "source": "transformers",
+      "version": ">=4.50.3"
+    },
+    {
+      "type": "pip",
+      "source": "tokenizers",
+      "version": ">=0.13.3"
+    },
+    {
+      "type": "pip",
+      "source": "diffusers",
+      "version": ">=0.30.0"
+    },
+    {
+      "type": "pip",
+      "source": "accelerate",
+      "version": ">=0.33.0"
+    },
+    {
+      "type": "pip",
+      "source": "numpy",
+      "version": ">=1.25.0"
+    },
+    {
+      "type": "pip",
+      "source": "scipy",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pillow",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "tqdm",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "psutil",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pyyaml",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "requests",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "safetensors",
+      "version": ">=0.4.2"
+    },
+    {
+      "type": "pip",
+      "source": "aiohttp",
+      "version": ">=3.11.8"
+    },
+    {
+      "type": "pip",
+      "source": "yarl",
+      "version": ">=1.18.0"
+    },
+    {
+      "type": "pip",
+      "source": "einops",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "sentencepiece",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "av",
+      "version": ">=14.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "alembic",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "SQLAlchemy",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-frontend-package",
+      "version": "==1.35.9"
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-workflow-templates",
+      "version": "==0.7.64"
+    },
+    {
+      "type": "pip",
+      "source": "comfyui-embedded-docs",
+      "version": "==0.3.1"
+    },
+    {
+      "type": "pip",
+      "source": "kornia",
+      "version": ">=0.7.1"
+    },
+    {
+      "type": "pip",
+      "source": "spandrel",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pydantic",
+      "version": "~=2.0"
+    },
+    {
+      "type": "pip",
+      "source": "pydantic-settings",
+      "version": "~=2.0"
+    }
+  ]
+}
