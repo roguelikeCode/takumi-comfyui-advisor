@@ -6,7 +6,7 @@
       "type": "git-clone",
       "source": "https://github.com/comfyanonymous/ComfyUI.git",
       "version": "v0.7.0",
-      "path": "/app/ComfyUI"
+      "path": "/app/external/ComfyUI" 
     },
     {
       "type": "custom-node",
