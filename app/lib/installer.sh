@@ -468,12 +468,12 @@ run_install_flow() {
     return 0
 }
 
-# [Why] To execute external extension scripts overlaid by commercial editions.
+# [Why] To execute external extension scripts overlaid by enterprise editions.
 # [What] Scans the hook directory and sources any .sh files found.
 # [Input] $1: hook_name (e.g., "post_install", "on_boot")
 run_extension_hooks() {
     local hook_name="$1"
-    # Commercial version mounted directory
+    # enterprise version mounted directory
     local hook_dir="/app/extensions/hooks/${hook_name}"
 
     if [ -d "$hook_dir" ]; then

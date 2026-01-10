@@ -159,10 +159,10 @@ main() {
     
     start_brain_service
 
-    #  [Extension Slot] Launch Commercial Services
+    #  [Extension Slot] Launch enterprise Services
     # If there are any extension scripts that should be run at startup, run them in the background
     if [ -f "/app/extensions/hooks/on_boot/run.sh" ]; then
-        log_info "🚀 Launching Commercial Extension..."
+        log_info "🚀 Launching enterprise Extension..."
         bash "/app/extensions/hooks/on_boot/run.sh" &
     fi
 
