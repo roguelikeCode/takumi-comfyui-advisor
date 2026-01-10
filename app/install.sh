@@ -83,7 +83,7 @@ main() {
         fi
     fi
 
-    # --- Phase 4: [Extension Slot] Commercial / Custom Hooks --- 
+    # --- Phase 4: [Extension Slot] enterprise / Custom Hooks --- 
     run_extension_hooks "post_install"
 
     # --- Phase 5: Finalization ---
