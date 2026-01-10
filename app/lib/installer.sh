@@ -364,7 +364,63 @@ run_install_flow() {
         log_success "All pip packages materialized."
     fi
 
-    # 4. Asset Manager
+    # 4. Dependency Resolver
+    # [Why] To ensure environment stability by verifying installed nodes
+    # [What] Scans for requirements.txt and attempts to resolve missing packages locally
+    local resolver_script="/app/scripts/resolve_dependencies.py"
+    
+    if [ -f "$resolver_script" ]; then
+        log_info "🛡️  Verifying dependencies..."
+        
+        # Execute (Do not stop the installation even if an error occurs)
+        if ! python3 "$resolver_script"; then
+            log_warn "Dependency check finished with warnings. See logs/resolver_report.json."
+        else
+            log_success "Dependencies verified."
+        fi
+    else
+        log_info "Verifying dependencies script not found."
+    fi
+
+    # 5. Telemetry Uplink (AWS)
+    # [Why] To send diagnostic reports to the cloud for analysis.
+    # [What] Uploads resolver_report.json to AWS API Gateway.
+    local report_file="/app/logs/resolver_report.json"
+    local api_url="https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
+
+    # [Why] To prevent user accidents (infinite loops and rapid tapping)
+    # [Input] Timestamp file, 30 seconds
+    local last_upload_file="/app/logs/.last_telemetry_upload"
+    local cooldown_seconds=30
+
+    if [ -f "$report_file" ]; then
+        # Frequency limit check
+        local should_upload=true
+        if [ -f "$last_upload_file" ]; then
+            local last_time=$(date -r "$last_upload_file" +%s)
+            local current_time=$(date +%s)
+            if (( current_time - last_time < cooldown_seconds )); then
+                log_info "⏳ Diagnostics upload skipped (Cooldown active)."
+                should_upload=false
+            fi
+        fi
+
+        if [ "$should_upload" = true ]; then
+            log_info "📡 Uploading diagnostics..."
+            # Send execution (-s: Silent, -o /dev/null: Hide response)
+            local status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+                 -H "Content-Type: application/json" \
+                 -d @"$report_file" \
+                 "$api_url")
+            
+            # If the number is in the 200 range, it is considered successful and the timestamp is updated.
+            if [[ "$status_code" =~ ^2 ]]; then
+                touch "$last_upload_file"
+            fi
+        fi
+    fi
+
+    # 6. Asset Manager
     # [Why] Determine the correct asset recipe based on the selected use case
     local asset_recipe=""
     
@@ -402,7 +458,7 @@ run_install_flow() {
         fi
     fi
 
-    # 5. Brain
+    # 7. Brain
     setup_ollama_model
 
     # Save the active environment name for run.sh
