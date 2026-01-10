@@ -34,7 +34,7 @@ ask_takumi() {
 # [Input] $1: command_string, $2: description
 try_with_ai() {
     local command="$1"
-    local description="$2"
+    local description="${2:-No description}"
     
     log_info "$description"
     

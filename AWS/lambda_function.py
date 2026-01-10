@@ -10,6 +10,7 @@ from typing import Dict, Any, Union
 # [Why] To allow infrastructure changes without modifying code. (AWS management screen)
 # [What] Get bucket name from environment variable, fallback to default.
 BUCKET_NAME = os.environ.get('LOG_BUCKET_NAME', 'takumi-logbook-v1')
+MAX_PAYLOAD_SIZE = 1024 * 1024  # 1MB
 
 # --- Initialization ---
 s3_client = boto3.client('s3')
@@ -40,6 +41,10 @@ def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
 # [Output] dict (Parsed JSON data)
 def parse_payload(event: Dict[str, Any]) -> Dict[str, Any]:
     body = event.get('body', '{}')
+
+    # To prevent DoS attacks via massive payloads.
+    if len(body) > MAX_PAYLOAD_SIZE:
+        raise ValueError("Payload too large")
     
     # API Gateway might send body as string or dict depending on configuration
     if isinstance(body, str):
@@ -81,6 +86,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # 1. Parse Input
         try:
             payload = parse_payload(event)
+
+        except ValueError as e:
+            if str(e) == "Payload too large":
+                logger.warning("Rejected large payload.")
+                return create_response(413, {'error': 'Payload too large (Limit: 1MB)'})
+            raise e # Other valueErrors are passed down
+
         except json.JSONDecodeError:
             logger.warning("Invalid JSON format received.")
             return create_response(400, {'error': 'Invalid JSON format'})
