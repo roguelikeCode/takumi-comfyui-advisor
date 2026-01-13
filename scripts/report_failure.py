@@ -8,11 +8,33 @@ import os
 import platform
 import urllib.request
 import subprocess
+import gzip
+import base64
 from datetime import datetime, timezone
 
 # --- Configuration ---
-# API endpoint for the Data Lake
 API_URL = "https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
+
+def read_full_log(log_path, max_size=900*1024): # 900KB limit (Leave room for metadata)
+    """
+    [Why] Reads the log file as much as possible.
+    """
+    if not os.path.exists(log_path):
+        return "Log file not found."
+    
+    try:
+        file_size = os.path.getsize(log_path)
+        
+        with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+            if file_size > max_size:
+                # If the file is too large, read from the end
+                f.seek(file_size - max_size)
+                content = f.read()
+                return "...(truncated)...\n" + sanitize_path(content)
+            else:
+                return sanitize_path(f.read())
+    except Exception as e:
+        return f"Error reading log: {str(e)}"
 
 def sanitize_path(text):
     """
@@ -73,19 +95,6 @@ def get_system_info():
         "python_packages": get_python_packages() # [New]
     }
 
-def read_last_logs(log_path, lines=100):
-    """[Why] Reads the tail of the log file."""
-    if not os.path.exists(log_path):
-        return ["Log file not found."]
-    
-    try:
-        with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
-            # Read all and take the last N lines (Simple implementation)
-            content = f.readlines()
-            return [sanitize_path(line.strip()) for line in content[-lines:]]
-    except Exception as e:
-        return [f"Error reading log: {str(e)}"]
-
 def load_recipe(recipe_path):
     """[Why] Loads the target recipe to understand user intent."""
     if recipe_path and os.path.exists(recipe_path):
@@ -95,6 +104,19 @@ def load_recipe(recipe_path):
         except Exception:
             return {"error": "Failed to load recipe"}
     return None
+
+def compress_payload(data_dict):
+    """
+    JSON -> Bytes -> Gzip -> Base64 String
+    [Why] To reduce payload size (save bandwidth/tokens).
+    """
+    # 1. JSON Stringification
+    json_str = json.dumps(data_dict, ensure_ascii=False)
+    # 2. Gzip compression
+    compressed_data = gzip.compress(json_str.encode('utf-8'))
+    # 3. Base64 encoding (converted to a string to send in JSON)
+    b64_str = base64.b64encode(compressed_data).decode('utf-8')
+    return b64_str
 
 def send_report(payload):
     """[Why] Sends the JSON payload to AWS Lambda."""
@@ -106,7 +128,7 @@ def send_report(payload):
         })
         with urllib.request.urlopen(req) as res:
             response = res.read().decode('utf-8')
-            print(f">>> [Report] Failure log sent. ID: {response}")
+            print(f">>> [Report] Log sent. ID: {response}")
     except Exception as e:
         # Sending failures are handled silently, without disrupting the user experience.
         print(f">>> [Report] Failed to send log (Network issue?): {e}")
@@ -119,20 +141,20 @@ def main():
     log_file = sys.argv[1]
     recipe_file = sys.argv[2] if len(sys.argv) > 2 else None
 
-    print("\n>>> [Takumi] ⚠️  Installation failed. Gathering diagnostics...")
+    print("\n>>> [Takumi] 📡 Uploading installation log to Data Lake...")
 
     payload = {
+        "log_type": "install_log", 
         "event_type": "install_failure",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "system_info": get_system_info(),
-        "error_log": read_last_logs(log_file),
+        "install_log_content": read_full_log(log_file), 
         "target_recipe": load_recipe(recipe_file)
     }
 
     # Debug: Print summary locally
     # print(json.dumps(payload, indent=2))
 
-    print(">>> [Takumi] Sending anonymous crash report to improve future versions...")
     send_report(payload)
 
 if __name__ == "__main__":

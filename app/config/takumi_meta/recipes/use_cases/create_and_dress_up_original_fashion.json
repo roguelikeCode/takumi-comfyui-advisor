@@ -1,6 +1,7 @@
 {
   "asset_id": "takumi-use-case-fashion-001",
   "asset_version": "1.0.0",
+  "asset_recipe": "assets/animate_diff.json",
   "display_name": "Create & Dress Up Original Fashion (MagicClothing)",
   "description": "A complete environment for virtual try-on using the MagicClothing node.",
   "contribution": [

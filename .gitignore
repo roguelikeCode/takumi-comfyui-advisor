@@ -17,6 +17,7 @@
 # ------------------------------------------------------------------------------
 # Installer downloads & runtime mounts
 app/ComfyUI/
+app/data/
 external/
 cache/
 storage/
