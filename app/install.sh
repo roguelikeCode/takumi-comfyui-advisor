@@ -87,6 +87,17 @@ main() {
     run_extension_hooks "post_install"
 
     # --- Phase 5: Finalization ---
+    # Reconstruct `recipe_path` from `state``
+    local recipe_path=""
+    if [ -n "${state[use_case]}" ]; then
+        recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${state[use_case]}.json"
+    fi
+
+    # Sending logs on success (using `report_failure.py` as a general-purpose log sender)
+    if command -v python3 >/dev/null; then
+        python3 "${APP_ROOT}/scripts/report_failure.py" "$INSTALL_LOG" "$recipe_path"
+    fi
+
     log_success "All processes completed successfully!"
     exit 0
 }

@@ -251,11 +251,20 @@ run_install_flow() {
         log_info "  -> ComfyUI repository already exists. Skipping clone."
     fi
     
-    local use_case_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.json"
+    local raw_recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.json"
+    if [ ! -f "$raw_recipe_path" ]; then log_error "Recipe not found"; return 1; fi
+
+    # Recipe Integration with Python
+    log_info "🧬 Fusing recipes (Base + Main)..."
+    local merged_recipe_path="/tmp/merged_recipe.json"
     
-    if [ ! -f "$use_case_path" ]; then
-        log_error "Asset manifest file not found: ${use_case_path}"; return 1;
+    if ! python3 /app/scripts/merge_recipes.py "$raw_recipe_path" > "$merged_recipe_path"; then
+        log_error "Failed to merge recipes."
+        return 1
     fi
+    
+    # Use merged JSON from now on
+    local use_case_path="$merged_recipe_path"
 
     # 1. Conda Environment
     local env_name
@@ -372,94 +381,113 @@ run_install_flow() {
     if [ -f "$resolver_script" ]; then
         log_info "🛡️  Verifying dependencies..."
         
-        # Execute (Do not stop the installation even if an error occurs)
-        if ! python3 "$resolver_script"; then
-            log_warn "Dependency check finished with warnings. See logs/resolver_report.json."
-        else
-            log_success "Dependencies verified."
-        fi
-    else
-        log_info "Verifying dependencies script not found."
-    fi
-
-    # 5. Telemetry Uplink (AWS)
-    # [Why] To send diagnostic reports to the cloud for analysis.
-    # [What] Uploads resolver_report.json to AWS API Gateway.
-    local report_file="/app/logs/resolver_report.json"
-    local api_url="https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
-
-    # [Why] To prevent user accidents (infinite loops and rapid tapping)
-    # [Input] Timestamp file, 30 seconds
-    local last_upload_file="/app/logs/.last_telemetry_upload"
-    local cooldown_seconds=30
-
-    if [ -f "$report_file" ]; then
-        # Frequency limit check
-        local should_upload=true
-        if [ -f "$last_upload_file" ]; then
-            local last_time=$(date -r "$last_upload_file" +%s)
-            local current_time=$(date +%s)
-            if (( current_time - last_time < cooldown_seconds )); then
-                log_info "⏳ Diagnostics upload skipped (Cooldown active)."
-                should_upload=false
-            fi
-        fi
-
-        if [ "$should_upload" = true ]; then
-            log_info "📡 Uploading diagnostics..."
-            # Send execution (-s: Silent, -o /dev/null: Hide response)
-            local status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-                 -H "Content-Type: application/json" \
-                 -d @"$report_file" \
-                 "$api_url")
+        # Execute Resolver inside the environment
+        (
+            source /opt/conda/etc/profile.d/conda.sh
+            set +u
+            conda activate "${state[use_case_env]}"
+            set -u
             
-            # If the number is in the 200 range, it is considered successful and the timestamp is updated.
-            if [[ "$status_code" =~ ^2 ]]; then
-                touch "$last_upload_file"
-            fi
-        fi
+            # Use python instead of python3
+            # (Because python takes precedence as shim in a Conda environment)
+            python "$resolver_script"
+        ) || log_warn "Dependency check finished with warnings. See logs/resolver_report.json."
+        
+        # Note: The '||' above catches the exit code if python script fails (returns non-zero),
+        # allowing the installer to proceed instead of stopping immediately.
+        # Original logic:
+        # if ! python3 "$resolver_script"; then
+        #    log_warn ...
+        # else
+        #    log_success ...
+        # fi
+        # The subshell approach simplifies this flow.
     fi
 
-    # 6. Asset Manager
+    # 5. Asset Manager
     # [Why] Determine the correct asset recipe based on the selected use case
-    local asset_recipe=""
+    # [Note] Dynamically read from the recipe JSON
     
-    if [[ "$use_case_name" == *"fashion"* ]] || [[ "$use_case_name" == *"magic"* ]]; then
-        asset_recipe="${CONFIG_DIR}/takumi_meta/recipes/assets/magic_clothing.json"
-    elif [[ "$use_case_name" == *"video"* ]] || [[ "$use_case_name" == *"animation"* ]]; then
-        asset_recipe="${CONFIG_DIR}/takumi_meta/recipes/assets/animate_diff.json"
-    fi
-
-    if [ -n "$asset_recipe" ]; then
-        log_info "Launching Takumi Asset Manager with recipe: $(basename "$asset_recipe")..."
+    local asset_recipe_file=""
+    
+    # Read the "asset_recipe" field from the merged recipe
+    asset_recipe_file=$(jq -r '.asset_recipe // empty' "$use_case_path")
+    
+    if [ -n "$asset_recipe_file" ]; then
+        # Convert relative paths to absolute paths (based on the config directory)
+        # "assets/wan_video.json" -> "/app/config/takumi_meta/recipes/assets/wan_video.json" etc.
+        local asset_recipe_full_path="${CONFIG_DIR}/takumi_meta/recipes/${asset_recipe_file}"
+        
+        log_info "Launching Takumi Asset Manager..."
+        log_info "  -> Target Asset Recipe: ${asset_recipe_file}"
+        
         local manager_script="${APP_ROOT}/scripts/asset_manager.py"
         
-        if [ -f "$manager_script" ] && [ -f "$asset_recipe" ]; then
-            # To ensure progress bars are visible and environment is correctly activated
-            # Run in subshell with unbuffered output (-u)
+        if [ -f "$manager_script" ] && [ -f "$asset_recipe_full_path" ]; then
             (
                 source /opt/conda/etc/profile.d/conda.sh
                 set +u
                 conda activate "$env_name"
                 set -u
-                # To pass shell variables to the Python script.
-                # Exports the ComfyUI root directory as an environment variable.
                 export COMFYUI_ROOT_DIR="${COMFYUI_ROOT_DIR}"
-                # Pass the recipe path as an argument
-                python -u "$manager_script" "$asset_recipe"
+                
+                # Execute Asset Manager
+                python -u "$manager_script" "$asset_recipe_full_path"
             )
-            
             if [ $? -ne 0 ]; then
-                log_error "Asset Manager encountered an issue (check logs)."
+                log_error "Asset Manager encountered an issue."
                 return 1
             fi
         else
-            log_warn "Asset Manager script or Recipe not found."
+            log_warn "Asset Manager script or Asset Recipe not found at: $asset_recipe_full_path"
         fi
+    else
+        log_info "No asset recipe defined for this use case. Skipping Asset Manager."
     fi
 
-    # 7. Brain
-    setup_ollama_model
+    # 6. Brain
+    setup_ollama_model() {
+        local model_name="gemma2:2b"
+        log_info "Setting up AI Model (${model_name})..."
+
+        # 1. Start the server if it is not running
+        if ! pgrep -x "ollama" > /dev/null; then
+            log_info "  -> Starting Ollama server..."
+            # Prevent buffer congestion by discarding logs & background execution
+            ollama serve > /dev/null 2>&1 &
+        fi
+
+        # 2. Startup wait loop (Heartbeat Check)
+        # Instead of simply sleeping, it actually waits up to 20 seconds until it can connect.
+        log_info "  -> Waiting for Ollama API to be ready..."
+        local max_retries=20
+        local count=0
+        
+        # Check if you can connect to 127.0.0.1:11434
+        while ! curl -s http://127.0.0.1:11434 > /dev/null; do
+            sleep 2
+            ((count++))
+            if [ "$count" -ge "$max_retries" ]; then
+                log_warn "Ollama server failed to start within timeout."
+                # Failure does not stop the entire installation (because it is a non-essential component)
+                return 0 
+            fi
+            echo -n "."
+        done
+        echo "" # Line breaks
+
+        # 3. Checking and Pulling the Model
+        if ollama list | grep -q "${model_name}"; then
+            log_info "  -> Model '${model_name}' is already installed."
+        else
+            log_info "  -> Pulling '${model_name}'..."
+            if ! ollama pull "${model_name}"; then
+                log_warn "Failed to pull model '${model_name}'. Run 'ollama pull ${model_name}' manually."
+            else
+                log_success "Model '${model_name}' installed."
+            fi
+        fi
+    }
 
     # Save the active environment name for run.sh
     echo "${env_name}" > "${ACTIVE_ENV_FILE}"
