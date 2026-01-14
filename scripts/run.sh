@@ -120,13 +120,43 @@ setup_bridge_node() {
 # [What] Starts Ollama in the background.
 start_brain_service() {
     log_info "Starting The Brain (Ollama)..."
-    
-    # Start in background
+
+    # 1. Check if it is already running (prevent double startup)
+    if pgrep -x "ollama" > /dev/null; then
+        log_info "  -> Ollama is already running."
+        return
+    fi
+
+    # 2. Launch in background
+    # Log to a file and run in the background (&)
     ollama serve > /app/logs/ollama.log 2>&1 &
     
-    # Wait for wakeup
+    # 3. Startup wait loop (Heartbeat Check)
+    # Wait until connection is established (up to 30 seconds) instead of simply sleeping
     log_info "  -> Waiting for neural network to initialize..."
-    sleep 3
+    local max_retries=30
+    local count=0
+
+    # Strict mode is disabled
+    set +e 
+    
+    # /api/tags (Hit the endpoint to check if it is alive)
+    while ! curl -s http://127.0.0.1:11434/api/tags > /dev/null; do
+        sleep 1
+        ((count++))
+        if [ "$count" -ge "$max_retries" ]; then
+            log_warn "Ollama server failed to start within timeout. Check /app/logs/ollama.log"
+            cat /app/logs/ollama.log
+            set -e # Strict mode reversion
+            return 1 
+        fi
+        echo -n "."
+    done
+
+    set -e # Strict mode reversion
+
+    echo "" # Line breaks
+    log_success "  -> Brain is active."
 }
 
 # ==============================================================================
