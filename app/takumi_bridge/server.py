@@ -41,14 +41,35 @@ class ResourceManager:
 
     @staticmethod
     def load_workflow_catalog() -> Dict[str, Any]:
-        """[What] Loads the workflow definitions from JSON file."""
-        if os.path.exists(TakumiConfig.WORKFLOW_META_PATH):
+        """[What] Loads main catalog AND extension catalogs (merge)."""
+        
+        # 1. Load Main Catalog (OSS)
+        catalog = {}
+        main_path = TakumiConfig.WORKFLOW_META_PATH
+        
+        if os.path.exists(main_path):
             try:
-                with open(TakumiConfig.WORKFLOW_META_PATH, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                with open(main_path, 'r', encoding='utf-8') as f:
+                    catalog = json.load(f)
             except Exception as e:
-                print(f"[TakumiBridge] Error loading catalog: {e}", file=sys.stderr)
-        return {}
+                print(f"[TakumiBridge] Error loading main catalog: {e}", file=sys.stderr)
+
+        # 2. Load Extension Catalogs (Enterprise/Custom)
+        # 同じディレクトリにある workflows_meta_*.json を全て読み込んでマージする
+        base_dir = os.path.dirname(main_path)
+        if os.path.exists(base_dir):
+            for filename in os.listdir(base_dir):
+                if filename.startswith("workflows_meta_") and filename.endswith(".json"):
+                    ext_path = os.path.join(base_dir, filename)
+                    try:
+                        print(f"[TakumiBridge] Loading extension: {filename}")
+                        with open(ext_path, 'r', encoding='utf-8') as f:
+                            ext_data = json.load(f)
+                            catalog.update(ext_data) # Merge (Overwrite if duplicate key)
+                    except Exception as e:
+                        print(f"[TakumiBridge] Error loading extension {filename}: {e}", file=sys.stderr)
+
+        return catalog
 
     @staticmethod
     def _read_text_file(path: str) -> str:
