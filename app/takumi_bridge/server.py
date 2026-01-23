@@ -40,35 +40,40 @@ class ResourceManager:
     """Handles loading of static resources like prompts and metadata."""
 
     @staticmethod
+    def _get_best_path(filename: str) -> str:
+        """
+        [Why] Find the file in Enterprise first, then Core.
+        [Input] filename (e.g. "prompts/capabilities.txt")
+        """
+        # 1. Enterprise
+        ent_path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, "enterprise", filename)
+        if os.path.exists(ent_path):
+            return ent_path
+        
+        # 2. Core
+        core_path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, "core", filename)
+        return core_path
+
+    @staticmethod
     def load_workflow_catalog() -> Dict[str, Any]:
-        """[What] Loads main catalog AND extension catalogs (merge)."""
-        
-        # 1. Load Main Catalog (OSS)
         catalog = {}
-        main_path = TakumiConfig.WORKFLOW_META_PATH
+        # Search order: Core (Basic) -> Enterprise (Overwrite/Append)
+        # Namespace List
+        namespaces = ["core", "enterprise"]
         
-        if os.path.exists(main_path):
-            try:
-                with open(main_path, 'r', encoding='utf-8') as f:
-                    catalog = json.load(f)
-            except Exception as e:
-                print(f"[TakumiBridge] Error loading main catalog: {e}", file=sys.stderr)
-
-        # 2. Load Extension Catalogs (Enterprise/Custom)
-        # 同じディレクトリにある workflows_meta_*.json を全て読み込んでマージする
-        base_dir = os.path.dirname(main_path)
-        if os.path.exists(base_dir):
-            for filename in os.listdir(base_dir):
-                if filename.startswith("workflows_meta_") and filename.endswith(".json"):
-                    ext_path = os.path.join(base_dir, filename)
-                    try:
-                        print(f"[TakumiBridge] Loading extension: {filename}")
-                        with open(ext_path, 'r', encoding='utf-8') as f:
-                            ext_data = json.load(f)
-                            catalog.update(ext_data) # Merge (Overwrite if duplicate key)
-                    except Exception as e:
-                        print(f"[TakumiBridge] Error loading extension {filename}: {e}", file=sys.stderr)
-
+        for ns in namespaces:
+            # New Path Structure: takumi_meta/{ns}/entities/workflows_meta.json
+            meta_path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, ns, "entities", "workflows_meta.json")
+            
+            if os.path.exists(meta_path):
+                try:
+                    print(f"[TakumiBridge] Loading catalog from: {ns}")
+                    with open(meta_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        catalog.update(data) # Merge (Ent can overwrite Core)
+                except Exception as e:
+                    print(f"[TakumiBridge] Error loading {ns}: {e}", file=sys.stderr)
+        
         return catalog
 
     @staticmethod
@@ -84,30 +89,56 @@ class ResourceManager:
 
     @classmethod
     def build_full_system_prompt(cls) -> str:
-        """
-        [Why] To combine Persona (Soul) and Capabilities (Skill) into a single prompt.
-        [What] Loads text files, injects catalog data, and merges them.
-        """
         
-        # 1. Load Components
-        persona = cls._read_text_file(TakumiConfig.PERSONA_PATH)
-        capabilities = cls._read_text_file(TakumiConfig.CAPABILITIES_PATH)
+        # [Step 1] Persona Preparation (branching based on model size)
+        current_model = TakumiConfig.MODEL_NAME.lower()
+        is_small_model = "2b" in current_model or "gemma" in current_model
         
-        # Fallback
-        if not persona: persona = "You are Takumi."
-        if not capabilities: capabilities = "Respond in JSON."
+        persona = ""
+        if is_small_model:
+            print(f">>> [TakumiBridge] Small model detected ({current_model}). Persona disabled.", file=sys.stderr)
+            persona = "" 
+        else:
+            # For large models, load the Persona file
+            persona_path = cls._get_best_path("prompts/persona.txt")
+            persona = cls._read_text_file(persona_path)
+            if not persona: 
+                persona = "You are Takumi."
 
-        # 2. Inject Catalog into Capabilities
-        catalog = cls.load_workflow_catalog()
-        catalog_str = json.dumps(catalog, indent=2)
+        # [Step 2] Loading Capabilities
+        # Use dynamic paths instead of fixed paths
+        cap_path = cls._get_best_path("prompts/capabilities.txt")
+        capabilities = cls._read_text_file(cap_path)
+        
+        if not capabilities:
+            print(f">>> [TakumiBridge] WARN: Capabilities not found at {cap_path}", file=sys.stderr)
+            # Minimal fallback
+            return "You are a Router. Output JSON only."
+
+        # [Step 3] Catalog Injection (Slim Version)
+        full_catalog = cls.load_workflow_catalog()
+        
+        catalog_lines = []
+        for key, val in full_catalog.items():
+            name = val.get("name", "Unknown")
+            tags = ", ".join(val.get("tags", []))
+            
+            # Simple list format: [ID] Name | Tags
+            line = f"[{key}] {name} | Tags: {tags}"
+            catalog_lines.append(line)
+
+        catalog_str = "\n".join(catalog_lines)
         
         if "{{WORKFLOW_CATALOG}}" in capabilities:
             capabilities = capabilities.replace("{{WORKFLOW_CATALOG}}", catalog_str)
         else:
-            capabilities += f"\n\nWorkflows:\n{catalog_str}"
+            capabilities += f"\n\nDATA:\n{catalog_str}"
 
-        # 3. Merge (Soul + Skill)
-        return f"{persona}\n\n{capabilities}"
+        # [Step 4] Combine and return
+        if persona:
+            return f"{persona}\n\n{capabilities}"
+        else:
+            return capabilities
 
 # ==============================================================================
 # [3] Workflow Engine (The Worker)

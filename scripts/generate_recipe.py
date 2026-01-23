@@ -83,7 +83,7 @@ def generate_contribution(nodes):
     # 2. Core Platform & Utilities (Essential Utility)
     essential_contributors = [
         {
-            "component_id": "https://github.com/comfyanonymous/ComfyUI",
+            "component_id": "https://github.com/Comfy-Org/ComfyUI",
             "role": "core_platform"
         },
         {

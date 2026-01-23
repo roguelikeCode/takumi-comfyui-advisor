@@ -20,14 +20,33 @@ from typing import Optional, Dict, Any
 class BrainConfig:
     # Service Endpoint
     API_URL = "http://localhost:11434/api/generate"
-    
+
     # Model Selection
     MODEL_NAME = "gemma2:2b"
-    
-    # Paths
-    # [Note] Relative path from this script to the config file
+
+    # Determine the root (/app) from the location of the executable file
+    # scripts/brain.py -> ../ -> /app
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    SYSTEM_PROMPT_PATH = os.path.join(BASE_DIR, "app", "config", "takumi_meta", "prompts", "system_prompt.txt")
+    META_ROOT = os.path.join(BASE_DIR, "app", "config", "takumi_meta")
+
+    @staticmethod
+    def _get_best_path(rel_path):
+        """Helper function to find files with 'Enterprise' priority"""
+        # 1. Enterprise Check
+        ent_path = os.path.join(BrainConfig.META_ROOT, "enterprise", rel_path)
+        if os.path.exists(ent_path):
+            return ent_path
+        # 2. Core Check (Fallback)
+        return os.path.join(BrainConfig.META_ROOT, "core", rel_path)
+
+    @staticmethod
+    def get_prompt_path(filename="prompts/capabilities.txt"):
+        # 1. Enterprise
+        ent_path = os.path.join(BrainConfig.META_ROOT, "enterprise", filename)
+        if os.path.exists(ent_path):
+            return ent_path
+        # 2. Core
+        return os.path.join(BrainConfig.META_ROOT, "core", filename)
 
 # ==============================================================================
 # [2] Infrastructure Manager (Ollama Control)
@@ -98,19 +117,16 @@ class BrainEngine:
 
     @staticmethod
     def load_system_prompt() -> str:
-        """
-        [Why] To inject the Takumi persona and guidelines.
-        [What] Reads from external text file, returns fallback if missing.
-        """
-        if os.path.exists(BrainConfig.SYSTEM_PROMPT_PATH):
-            try:
-                with open(BrainConfig.SYSTEM_PROMPT_PATH, 'r', encoding='utf-8') as f:
-                    return f.read()
-            except Exception as e:
-                print(f">>> [Brain] Warning: Failed to read system prompt: {e}", file=sys.stderr)
+        # Get the correct path
+        prompt_path = BrainConfig.get_prompt_path()
         
-        # Fallback Persona
-        return "You are Takumi, a helpful AI assistant for troubleshooting."
+        if os.path.exists(prompt_path):
+            try:
+                with open(prompt_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except Exception:
+                pass
+        return "You are Takumi."
 
     @staticmethod
     def query(user_prompt: str, context: Optional[str] = None) -> str:

@@ -4,7 +4,7 @@
   "components": [
     {
       "type": "git-clone",
-      "source": "https://github.com/comfyanonymous/ComfyUI.git",
+      "source": "https://github.com/Comfy-Org/ComfyUI.git",
       "version": "v0.9.1",
       "path": "/app/external/ComfyUI" 
     },
@@ -136,7 +136,7 @@
     {
       "type": "pip",
       "source": "comfyui-frontend-package",
-      "version": "==1.36.14"
+      "version": "==1.37.11"
     },
     {
       "type": "pip",

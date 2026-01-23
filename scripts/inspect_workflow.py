@@ -3,7 +3,7 @@ Workflow Inspector Tool
 
 [Why] To identify Node IDs and Class Types within a workflow JSON to assist in metadata creation.
 [What] Loads the specified workflow JSON file and displays a readable list of nodes and their widgets.
-[Input] (Optional) Path to the workflow JSON file. Defaults to 'app/assets/workflows/magic_clothing_v1.json'.
+[Input] (Optional) Path to the workflow JSON file. Defaults to 'app/config/takumi_meta/core/library/workflows/magic_clothing_v1.json'.
 """
 
 import json
@@ -12,7 +12,7 @@ import os
 
 def main():
     # Default target file (can be overridden by argument)
-    file_path = "app/assets/workflows/magic_clothing_v1.json"
+    file_path = "app/config/takumi_meta/core/library/workflows/magic_clothing_v1.json"
     
     # Check if an argument is provided
     if len(sys.argv) > 1:

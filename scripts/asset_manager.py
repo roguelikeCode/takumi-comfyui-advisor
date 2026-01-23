@@ -31,7 +31,7 @@ os.environ["TQDM_DISABLE"] = "0"
 # ==============================================================================
 class AssetConfig:
     # Default path inside Docker container
-    DEFAULT_RECIPE_PATH = "/app/config/takumi_meta/recipes/assets/magic_clothing.json"
+    DEFAULT_RECIPE_PATH = "/app/config/takumi_meta/core/recipes/assets/magic_clothing.json"
     ENV_HF_TOKEN = "HF_TOKEN"
 
 # ==============================================================================

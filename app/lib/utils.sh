@@ -37,3 +37,39 @@ declare -A state=(
 ensure_directories() {
     mkdir -p "$LOG_DIR" "$CACHE_DIR" "$EXTERNAL_DIR"
 }
+
+# [Why] Resolve the path of the configuration file (Enterprise preferred)
+# [Input] $1: Relative paths (e.g. infra/python/3.11.yml)
+# [Output] Absolute path (empty if not found)
+resolve_meta_path() {
+    local rel_path="$1"
+    local ent_path="/app/config/takumi_meta/enterprise/$rel_path"
+    local core_path="/app/config/takumi_meta/core/$rel_path"
+
+    if [ -f "$ent_path" ]; then
+        echo "$ent_path"
+    elif [ -f "$core_path" ]; then
+        echo "$core_path"
+    else
+        echo "" # Not found
+    fi
+}
+
+# [Why] Resolve the actual file path from the recipe name (Ent -> Core)
+# [Input] $1: recipe_slug (e.g. "wan_video_2_2")
+# [Output] Absolute path to json file
+find_use_case_recipe_path() {
+    local slug="$1"
+    local filename="${slug}.json"
+    
+    local ent_path="${CONFIG_DIR}/takumi_meta/enterprise/recipes/use_cases/${filename}"
+    local core_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${filename}"
+
+    if [ -f "$ent_path" ]; then
+        echo "$ent_path"
+    elif [ -f "$core_path" ]; then
+        echo "$core_path"
+    else
+        return 1
+    fi
+}

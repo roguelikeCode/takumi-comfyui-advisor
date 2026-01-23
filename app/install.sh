@@ -90,7 +90,7 @@ main() {
     # Reconstruct `recipe_path` from `state``
     local recipe_path=""
     if [ -n "${state[use_case]}" ]; then
-        recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${state[use_case]}.json"
+        recipe_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${state[use_case]}.json"
     fi
 
     # Sending logs on success (using `report_failure.py` as a general-purpose log sender)

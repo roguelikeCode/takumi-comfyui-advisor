@@ -27,6 +27,7 @@ RUN apt-get update && \
     jq \
     unzip \
     bzip2 \
+    zstd \
     sudo \
     # --- Build Essentials (For compiling C++ extensions) ---
     build-essential \
@@ -59,7 +60,7 @@ RUN echo ">>> Creating 'takumi' user with UID=${TAKUMI_UID} GID=${TAKUMI_GID}...
 # 3. Universal Tools Installation
 # ------------------------------------------------------------------------------
 ARG TARGETARCH
-COPY ./app/config/foundation_components/architectures.json /tmp/architectures.json
+COPY ./app/config/takumi_meta/core/infra/architectures.json /tmp/architectures.json
 
 # --- Ollama (The Brain) ---
 # [Why] To run local LLMs (Gemma) for the Chat UI.

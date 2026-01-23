@@ -33,38 +33,25 @@ fetch_external_catalogs() {
 # [Input] $1: entity_name (e.g., "custom_nodes")
 build_merged_catalog() {
     local entity_name="$1"
-    log_info "Building the merged catalog for '${entity_name}'..."
+    log_info "Building merged catalog for '${entity_name}'..."
 
-    local jq_command="jq"
-    local merged_catalog_dir="${CACHE_DIR}/catalogs"
+    local merger_script="/app/scripts/merge_catalogs.py"
+    local output_path="${CACHE_DIR}/catalogs/${entity_name}_merged.json"
     
-    local external_catalog="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
-    local takumi_meta_catalog="${CONFIG_DIR}/takumi_meta/entities/${entity_name}_meta.json"
-    local merged_catalog_path="${merged_catalog_dir}/${entity_name}_merged.json"
+    # Inputs
+    local external_list="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
+    local core_meta="${CONFIG_DIR}/takumi_meta/core/entities/${entity_name}_meta.json"
+    local ent_meta="${CONFIG_DIR}/takumi_meta/enterprise/entities/${entity_name}_meta.json"
 
-    if [ ! -f "$external_catalog" ]; then
-        log_error "External catalog not found: $external_catalog"; return 1;
+    # Leaving it all to the Python script
+    python3 "$merger_script" "$output_path" "$external_list" "$core_meta" "$ent_meta"
+    
+    if [ $? -eq 0 ]; then
+        log_success "Catalog merged."
+    else
+        log_error "Catalog merge failed."
+        return 1
     fi
-    if [ ! -f "$takumi_meta_catalog" ]; then
-        log_error "Takumi meta catalog not found: $takumi_meta_catalog"; return 1;
-    fi
-
-    mkdir -p "$merged_catalog_dir"
-
-    # Merge logic: External list + Takumi metadata
-    "$jq_command" -s '
-        ( (.[0].custom_nodes // .[0]) | 
-          reduce .[] as $item ({}; 
-            if ($item | type) == "object" and ($item | has("reference")) then
-                . + { ($item.reference): $item }
-            else
-                . 
-            end
-        )) as $index |
-        .[1] | map_values(
-            . + ($index[.url] // {}) 
-        )
-    ' "$external_catalog" "$takumi_meta_catalog" > "$merged_catalog_path"
 }
 
 # --- Component Installers ---
@@ -246,13 +233,19 @@ run_install_flow() {
     log_info "Materializing system foundation (ComfyUI)..."
     if [ ! -d "${COMFYUI_ROOT_DIR}/.git" ]; then
         log_info "  -> Cloning ComfyUI repository to ${COMFYUI_ROOT_DIR}..."
-        git clone "https://github.com/comfyanonymous/ComfyUI.git" "${COMFYUI_ROOT_DIR}"
+        git clone "https://github.com/Comfy-Org/ComfyUI.git" "${COMFYUI_ROOT_DIR}"
     else
         log_info "  -> ComfyUI repository already exists. Skipping clone."
     fi
     
-    local raw_recipe_path="${CONFIG_DIR}/takumi_meta/recipes/use_cases/${use_case_name}.json"
-    if [ ! -f "$raw_recipe_path" ]; then log_error "Recipe not found"; return 1; fi
+    # Use a function in 'utils.sh' to search for 'Core' or 'Ent'
+    local raw_recipe_path
+    raw_recipe_path=$(find_use_case_recipe_path "$use_case_name")
+
+    if [ -z "$raw_recipe_path" ]; then
+        log_error "Recipe not found for use-case: ${use_case_name}"
+        return 1
+    fi
 
     # Recipe Integration with Python
     log_info "🧬 Fusing recipes (Base + Main)..."
@@ -326,7 +319,7 @@ run_install_flow() {
         case "$type" in
             "git-clone")
                 # Override path for ComfyUI root if necessary
-                if [[ "$source" == *"comfyanonymous/ComfyUI.git"* ]]; then
+                if [[ "$source" == *"Comfy-Org/ComfyUI.git"* ]]; then
                     path="${COMFYUI_ROOT_DIR}"
                 fi
 
@@ -406,40 +399,59 @@ run_install_flow() {
 
     # 5. Asset Manager
     # [Why] Determine the correct asset recipe based on the selected use case
-    # [Note] Dynamically read from the recipe JSON
-    
+
     local asset_recipe_file=""
-    
-    # Read the "asset_recipe" field from the merged recipe
     asset_recipe_file=$(jq -r '.asset_recipe // empty' "$use_case_path")
     
     if [ -n "$asset_recipe_file" ]; then
-        # Convert relative paths to absolute paths (based on the config directory)
-        # "assets/wan_video.json" -> "/app/config/takumi_meta/recipes/assets/wan_video.json" etc.
-        local asset_recipe_full_path="${CONFIG_DIR}/takumi_meta/recipes/${asset_recipe_file}"
+        log_info "Searching for Asset Recipe: ${asset_recipe_file}..."
         
-        log_info "Launching Takumi Asset Manager..."
-        log_info "  -> Target Asset Recipe: ${asset_recipe_file}"
+        # [Fix] Namespace Search Strategy (Enterprise -> Core)
+        local asset_recipe_full_path=""
+        local base_meta_dir="${CONFIG_DIR}/takumi_meta"
         
-        local manager_script="${APP_ROOT}/scripts/asset_manager.py"
-        
-        if [ -f "$manager_script" ] && [ -f "$asset_recipe_full_path" ]; then
-            (
-                source /opt/conda/etc/profile.d/conda.sh
-                set +u
-                conda activate "$env_name"
-                set -u
-                export COMFYUI_ROOT_DIR="${COMFYUI_ROOT_DIR}"
-                
-                # Execute Asset Manager
-                python -u "$manager_script" "$asset_recipe_full_path"
-            )
-            if [ $? -ne 0 ]; then
-                log_error "Asset Manager encountered an issue."
-                return 1
-            fi
+        # 1. Check Enterprise
+        local ent_candidate="${base_meta_dir}/enterprise/recipes/${asset_recipe_file}"
+        # 2. Check Core
+        local core_candidate="${base_meta_dir}/core/recipes/${asset_recipe_file}"
+
+        if [ -f "$ent_candidate" ]; then
+            asset_recipe_full_path="$ent_candidate"
+            log_info "  -> Found in [Enterprise]"
+        elif [ -f "$core_candidate" ]; then
+            asset_recipe_full_path="$core_candidate"
+            log_info "  -> Found in [Core]"
         else
-            log_warn "Asset Manager script or Asset Recipe not found at: $asset_recipe_full_path"
+            log_error "Asset Recipe defined but not found in directories."
+            log_warn "  Checked: $ent_candidate"
+            log_warn "  Checked: $core_candidate"
+            # Since it is not possible to continue, should I issue an error or skip? This time, I should issue an error instead of skipping, but I will continue for now.
+        fi
+        
+        if [ -n "$asset_recipe_full_path" ]; then
+            log_info "Launching Takumi Asset Manager..."
+            
+            local manager_script="${APP_ROOT}/scripts/asset_manager.py"
+            
+            if [ -f "$manager_script" ]; then
+                (
+                    source /opt/conda/etc/profile.d/conda.sh
+                    set +u
+                    conda activate "$env_name"
+                    set -u
+                    export COMFYUI_ROOT_DIR="${COMFYUI_ROOT_DIR}"
+                    export HF_TOKEN="${HF_TOKEN}" # Pass the token too
+                    
+                    # Execute Asset Manager
+                    python -u "$manager_script" "$asset_recipe_full_path"
+                )
+                if [ $? -ne 0 ]; then
+                    log_error "Asset Manager encountered an issue."
+                    return 1
+                fi
+            else
+                log_warn "Asset Manager script not found."
+            fi
         fi
     else
         log_info "No asset recipe defined for this use case. Skipping Asset Manager."

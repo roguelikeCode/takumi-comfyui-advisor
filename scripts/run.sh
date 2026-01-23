@@ -16,30 +16,30 @@ set -euo pipefail
 
 # --- Configuration ---
 readonly COMFY_PORT=8188
-readonly RECIPES_DIR="/app/config/takumi_meta/recipes/use_cases"
+readonly RECIPES_DIR="/app/config/takumi_meta/core/recipes/use_cases"
 
 # [Dynamic] Build Target Envs List from Recipes
-# レシピ内の environment.name を抽出してリスト化する
+# Extract and list 'environment.name' in a recipe
 TARGET_ENVS=()
 
-# 1. recipesディレクトリが存在する場合のみスキャン
+# 1. Scan 'recipes' directory only if it exists
 if [ -d "$RECIPES_DIR" ]; then
-    # findの結果をループ処理
+    # Looping through 'find' results
     while IFS= read -r file; do
         if [ -f "$file" ]; then
             env_name=$(jq -r '.environment.name // empty' "$file")
             if [ -n "$env_name" ]; then
-                # 配列に追加 (重複排除は後続のcondaチェックで自然に行われるため気にしない)
+                # Add to array (don't worry about deduplication as it will happen naturally in the subsequent 'conda' check)
                 TARGET_ENVS+=("$env_name")
             fi
         fi
     done < <(find "$RECIPES_DIR" -maxdepth 1 -name "*.json")
 fi
 
-# Fallback (最低限の保証)
+# Fallback (Minimum guarantee)
 TARGET_ENVS+=("foundation")
 
-# Debug: 認識した環境を表示
+# Debug: Displaying the recognized environment
 # echo "Debug: Detectable environments: ${TARGET_ENVS[*]}"
 
 # ==============================================================================

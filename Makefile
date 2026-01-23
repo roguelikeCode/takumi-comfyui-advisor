@@ -187,3 +187,16 @@ purge: clean
 	@make ensure-dirs
 	
 	@echo "✅ Project has been reset to factory settings."
+
+# [Note] The "Scorched Earth" Strategy
+nuke: purge
+	@echo ">>> ☢️  INITIATING NUCLEAR LAUNCH DETECTED... ☢️"
+	@echo ">>> 🧹 Wiping all Custom Nodes (Ghosts)..."
+	
+	@# OSS version does not require 'core/' prefix
+	@if [ -d "external/ComfyUI/custom_nodes" ]; then \
+		sudo rm -rf external/ComfyUI/custom_nodes/*; \
+		echo "   -> Custom Nodes vaporized."; \
+	fi
+	
+	@echo "✅ Ground Zero established. Ready for fresh install."

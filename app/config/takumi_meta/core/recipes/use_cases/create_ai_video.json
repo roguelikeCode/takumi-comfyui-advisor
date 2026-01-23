@@ -1,9 +1,9 @@
 {
-  "asset_id": "takumi-use-case-fashion-001",
+  "asset_id": "takumi-use-case-video-001",
   "asset_version": "1.0.0",
-  "asset_recipe": "assets/animate_diff.json",
-  "display_name": "Create & Dress Up Original Fashion (MagicClothing)",
-  "description": "A complete environment for virtual try-on using the MagicClothing node.",
+  "asset_recipe": "assets/magic_clothing.json",
+  "display_name": "Create AI Video (AnimateDiff)",
+  "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
   "contribution": [
     {
       "type": "use_case_recipe",
@@ -21,16 +21,13 @@
       "distribution_rule": "equal",
       "contributors": [
         {
-          "component_id": "https://github.com/frankchieng/ComfyUI_MagicClothing"
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved"
         },
         {
-          "component_id": "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
         },
         {
-          "component_id": "https://github.com/storyicon/comfyui_segment_anything"
-        },
-        {
-          "component_id": "https://github.com/Fannovel16/comfyui_controlnet_aux"
+          "component_id": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet"
         }
       ]
     },
@@ -40,20 +37,17 @@
       "distribution_rule": "equal",
       "contributors": [
         {
-          "component_id": "https://github.com/comfyanonymous/ComfyUI",
+          "component_id": "https://github.com/Comfy-Org/ComfyUI",
           "role": "core_platform"
         },
         {
           "component_id": "https://github.com/ltdrdata/ComfyUI-Manager"
         },
         {
-          "component_id": "https://github.com/cubiq/ComfyUI_essentials"
+          "component_id": "https://github.com/cubiq/ComfyUI_IPAdapter_plus"
         },
         {
-          "component_id": "https://github.com/kijai/ComfyUI-KJNodes"
-        },
-        {
-          "component_id": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
+          "component_id": "https://github.com/Fannovel16/comfyui_controlnet_aux"
         }
       ]
     },
@@ -69,7 +63,7 @@
     }
   ],
   "environment": {
-    "name": "magic_clothing_env",
+    "name": "animatediff_env",
     "engine": "conda",
     "components": [
       {
@@ -84,42 +78,43 @@
       {
         "type": "conda",
         "source": "pytorch-cuda",
-        "version": "11.8",
+        "version": "12.1",
         "channel": "pytorch"
       },
       {
         "type": "conda",
-        "source": "cuda-cudart",
-        "version": "11.8",
+        "source": "cuda-libraries",
+        "version": "12.1",
         "channel": "nvidia"
+      },
+      {
+        "type": "conda",
+        "source": "ffmpeg",
+        "version": ">=6.0",
+        "channel": "conda-forge"
       }
     ]
   },
   "components": [
     {
       "type": "git-clone",
-      "source": "https://github.com/comfyanonymous/ComfyUI.git",
+      "source": "https://github.com/Comfy-Org/ComfyUI.git",
       "version": "master",
       "path": "/app/ComfyUI"
     },
     {
       "type": "custom-node",
-      "source": "https://github.com/frankchieng/ComfyUI_MagicClothing.git",
+      "source": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git",
+      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "https://github.com/storyicon/comfyui_segment_anything.git",
-      "version": "main"
-    },
-    {
-      "type": "custom-node",
-      "source": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
+      "source": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet.git",
       "version": "main"
     },
     {
@@ -129,38 +124,33 @@
     },
     {
       "type": "custom-node",
-      "source": "https://github.com/cubiq/ComfyUI_essentials.git",
+      "source": "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git",
       "version": "main"
     },
     {
       "type": "custom-node",
-      "source": "https://github.com/kijai/ComfyUI-KJNodes.git",
-      "version": "main"
-    },
-    {
-      "type": "custom-node",
-      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+      "source": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
       "version": "main"
     },
     {
       "type": "pip",
       "source": "torch",
-      "version": "==2.1.2"
+      "version": "==2.4.0"
     },
     {
       "type": "pip",
       "source": "torchvision",
-      "version": "==0.16.2"
+      "version": "==0.19.0"
     },
     {
       "type": "pip",
       "source": "torchaudio",
-      "version": "==2.1.2"
+      "version": "==2.4.0"
     },
     {
       "type": "pip",
       "source": "xformers",
-      "version": "==0.0.23.post1"
+      "version": ">=0.0.27"
     },
     {
       "type": "pip",
@@ -179,28 +169,13 @@
     },
     {
       "type": "pip",
-      "source": "opencv-python",
-      "version": ">=4.7.0.72"
+      "source": "insightface",
+      "version": ""
     },
     {
       "type": "pip",
-      "source": "pillow",
-      "version": ">=10.3.0"
-    },
-    {
-      "type": "pip",
-      "source": "scikit-image",
-      "version": ">=0.21.0"
-    },
-    {
-      "type": "pip",
-      "source": "rembg",
-      "version": ">=2.0.50"
-    },
-    {
-      "type": "pip",
-      "source": "matplotlib",
-      "version": ">=3.7.0"
+      "source": "onnxruntime-gpu",
+      "version": ""
     },
     {
       "type": "pip",
@@ -209,47 +184,122 @@
     },
     {
       "type": "pip",
+      "source": "imageio[ffmpeg]",
+      "version": ""
+    },
+    {
+      "type": "pip",
       "source": "tqdm",
-      "version": ">=4.66.0"
+      "version": ""
     },
     {
       "type": "pip",
-      "source": "psutil",
-      "version": ">=5.9.0"
-    },
-    {
-      "type": "pip",
-      "source": "gitpython",
-      "version": ">=3.1.30"
-    },
-    {
-      "type": "pip",
-      "source": "huggingface-hub",
-      "version": ">=0.20.0"
+      "source": "aiohttp",
+      "version": ""
     },
     {
       "type": "pip",
       "source": "safetensors",
-      "version": ">=0.4.0"
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pyyaml",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "packaging",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pillow",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "requests",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "psutil",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "huggingface_hub",
+      "version": ""
     },
     {
       "type": "pip",
       "source": "einops",
-      "version": ">=0.7.0"
+      "version": ""
     },
     {
       "type": "pip",
-      "source": "onnxruntime-gpu",
-      "version": ">=1.16.0"
+      "source": "torchsde",
+      "version": ""
     },
     {
       "type": "pip",
-      "source": "insightface",
-      "version": ">=0.7.3"
+      "source": "kornia",
+      "version": ""
     },
     {
       "type": "pip",
-      "source": "segment-anything",
+      "source": "spandrel",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "soundfile",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "av",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "opencv-python",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "scipy",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "filelock",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "gitpython",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "matrix-client",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pydantic",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "pydantic-settings",
+      "version": ""
+    },
+    {
+      "type": "pip",
+      "source": "alembic",
       "version": ""
     },
     {
