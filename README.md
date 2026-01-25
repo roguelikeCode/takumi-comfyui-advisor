@@ -102,6 +102,19 @@ Exit with "**Ctrl + C**"
 
 ---
 
+## ⚡ Performance Setup (Windows Users)
+
+AI requires high memory settings.
+Please run the setup script to configure your WSL2 environment automatically.
+(WSL2's default settings limit memory usage.)
+
+1. Right-click `setup_windows.ps1` in this folder.
+2. Select "Run with PowerShell.
+3. Follow the instructions on the screen.
+   (This will create a `.wslconfig` file in your home directory and restart WSL.)
+
+---
+
 ## Features
 
 ### Takumi Chat UI
