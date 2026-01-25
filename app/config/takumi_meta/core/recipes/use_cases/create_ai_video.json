@@ -2,7 +2,7 @@
   "asset_id": "takumi-use-case-video-001",
   "asset_version": "1.0.0",
   "asset_recipe": "assets/magic_clothing.json",
-  "display_name": "Create AI Video (AnimateDiff)",
+  "display_name": "Create AI Video (AnimateDiff, Legacy)",
   "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
   "contribution": [
     {
