@@ -106,7 +106,7 @@ Exit with "**Ctrl + C**"
 
 AI requires high memory settings.
 Please run the setup script to configure your WSL2 environment automatically.
-(WSL2's default settings limit memory usage.)
+(The default setting for WSL2 is to limit memory usage to 50%.)
 
 1. Right-click `setup_windows.ps1` in this folder.
 2. Select "Run with PowerShell.
