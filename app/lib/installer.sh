@@ -106,6 +106,38 @@ git_clone_safely() {
     git clone "${git_args[@]}" "$source" "$path"
 }
 
+# [Why] To detect potential security risks in custom nodes before installation.
+# [What] Scans for dangerous keywords like 'subprocess', 'socket', 'eval'.
+# [Input] $1: target_directory
+scan_node_security() {
+    local target_dir="$1"
+    
+    # Skip if directory doesn't exist
+    if [ ! -d "$target_dir" ]; then return 0; fi
+
+    log_info "  -> 🛡️  Scanning for security risks..."
+    
+    # [Patterns Explanation]
+    # - subprocess|os\.system|os\.popen: OSコマンド実行 (RCE)
+    # - socket: 低レベル通信 (C2サーバへの接続など)
+    # - eval|exec: 任意コード実行
+    # - __import__: 動的インポート (隠蔽工作)
+    # - shutil\.rmtree: ファイル削除
+    
+    local patterns="subprocess|os\.system|os\.popen|socket|eval|exec|__import__|shutil\.rmtree"
+    
+    # Run grep recursively on .py files
+    # -r: recursive, -n: line number, -E: extended regex
+    if grep -rE "$patterns" "$target_dir" --include="*.py" --exclude-dir=".git" > /dev/null; then
+        log_warn "  ⚠️  Potential security risk detected in: $(basename "$target_dir")"
+        log_warn "     Keywords found: $patterns"
+        log_warn "     Please review the code or use at your own risk."
+        # In OSS version, we only warn. In Enterprise, we might block or quarantine.
+    else
+        log_success "  -> 🛡️  Basic security check passed."
+    fi
+}
+
 # [Why] To install a specific Custom Node from the catalog.
 # [What] Resolves URL from catalog ID and git clones it.
 # [Input] $1: id, $2: version
@@ -147,6 +179,9 @@ install_component_custom_node() {
         log_info "    Directory '${repo_name}' already exists. Updating..."
         (cd "$clone_path" && git pull)
     fi
+
+    # [Security] Run scanner after install/update
+    scan_node_security "$clone_path"
 }
 
 # [Why] To install extra pip packages defined in a separate JSON recipe.

@@ -38,8 +38,9 @@ DOCKER_RUN_OPTS := \
 	-w /app \
 	-e HOME=/home/takumi \
 	-e HF_TOKEN \
+	-e PYTHONDONTWRITEBYTECODE=1 \
 	--env-file .env \
-	-v $(shell pwd)/app:/app \
+	-v $(shell pwd)/app:/app:ro \
 	-v $(shell pwd)/scripts:/app/scripts:ro \
 	\
 	-v $(shell pwd)/cache:/app/cache \
@@ -49,6 +50,14 @@ DOCKER_RUN_OPTS := \
 	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs \
 	-v $(shell pwd)/storage/ollama:/home/takumi/.ollama \
 	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs
+
+# --- Security Hardening ---
+# [Why] Prevent privilege escalation and drop unnecessary capabilities
+DOCKER_SEC_OPTS := \
+	--security-opt no-new-privileges:true \
+	--cap-drop=ALL \
+	--cap-add=SYS_NICE \
+	--read-only=false
 
 # --- Pre-flight Checks ---
 REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs
@@ -144,7 +153,7 @@ run: build
 		LAUNCHER="dotenvx run --"; \
 	fi; \
 	$$LAUNCHER docker run \
-		--cap-drop=ALL \
+		$(DOCKER_SEC_OPTS) \
 		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run.sh
