@@ -60,14 +60,16 @@ build_merged_catalog() {
 # [What] Temporarily boosts Conda's timeout and retry settings.
 enhance_conda_network() {
     log_info "  -> 🛡️  Activating network resilience patch..."
+    conda config --set remote_read_timeout_secs 600.0
     conda config --set remote_connect_timeout_secs 60.0
-    conda config --set remote_max_retries 5
+    conda config --set remote_max_retries 10
 }
 
 # [Why] To restore default Conda settings after operations.
 # [What] Removes the temporary overrides.
 restore_conda_network() {
     log_info "  -> 🛡️  Restoring default network settings..."
+    conda config --remove-key remote_read_timeout_secs > /dev/null 2>&1 || true
     conda config --remove-key remote_connect_timeout_secs > /dev/null 2>&1 || true
     conda config --remove-key remote_max_retries > /dev/null 2>&1 || true
 }
@@ -106,35 +108,42 @@ git_clone_safely() {
     git clone "${git_args[@]}" "$source" "$path"
 }
 
-# [Why] To detect potential security risks in custom nodes before installation.
-# [What] Scans for dangerous keywords like 'subprocess', 'socket', 'eval'.
+# Bandit (SAST)
+# [Why] To detect security issues in custom nodes using AST analysis.
 # [Input] $1: target_directory
-scan_node_security() {
+run_bandit_scan() {
     local target_dir="$1"
-    
-    # Skip if directory doesn't exist
     if [ ! -d "$target_dir" ]; then return 0; fi
 
-    log_info "  -> 🛡️  Scanning for security risks..."
-    
-    # [Patterns Explanation]
-    # - subprocess|os\.system|os\.popen: OSコマンド実行 (RCE)
-    # - socket: 低レベル通信 (C2サーバへの接続など)
-    # - eval|exec: 任意コード実行
-    # - __import__: 動的インポート (隠蔽工作)
-    # - shutil\.rmtree: ファイル削除
-    
-    local patterns="subprocess|os\.system|os\.popen|socket|eval|exec|__import__|shutil\.rmtree"
-    
-    # Run grep recursively on .py files
-    # -r: recursive, -n: line number, -E: extended regex
-    if grep -rE "$patterns" "$target_dir" --include="*.py" --exclude-dir=".git" > /dev/null; then
-        log_warn "  ⚠️  Potential security risk detected in: $(basename "$target_dir")"
-        log_warn "     Keywords found: $patterns"
-        log_warn "     Please review the code or use at your own risk."
-        # In OSS version, we only warn. In Enterprise, we might block or quarantine.
+    log_info "  -> 🛡️  Auditing code with Bandit (Configured)..."
+
+    # Install bandit if missing
+    if ! command -v bandit &> /dev/null; then
+        # If you are in a virtual environment, use 'pip install'
+        pip install bandit -q 2>/dev/null || true
+    fi
+
+    # Config file path (path within container)
+    local config_file="/app/.bandit"
+    local cmd_opts="-r $target_dir -f txt"
+
+    # Use the configuration file if it exists, otherwise use the default (High/High)
+    if [ -f "$config_file" ]; then
+        cmd_opts="$cmd_opts -c $config_file"
     else
-        log_success "  -> 🛡️  Basic security check passed."
+        cmd_opts="$cmd_opts -lll" # High Severity Only
+    fi
+
+    # Run Scan
+    # Consider using '|| true' so that the script does not stop even if a failure (vulnerability) occurs.
+    # Here, we will issue a warning and proceed if a vulnerability is detected.
+    if bandit $cmd_opts > /tmp/bandit_report.txt 2>&1; then
+        log_success "  -> 🛡️  Security check passed."
+    else
+        log_warn "  ⚠️  Security risks detected by Bandit!"
+        log_warn "     Review details in logs."
+        # Display only important lines (false positive prevention)
+        grep -E "Test ID:|Severity:|Location:" /tmp/bandit_report.txt | head -n 10 | sed 's/^/     /'
     fi
 }
 
@@ -181,7 +190,7 @@ install_component_custom_node() {
     fi
 
     # [Security] Run scanner after install/update
-    scan_node_security "$clone_path"
+    run_bandit_scan "$clone_path"
 }
 
 # [Why] To install extra pip packages defined in a separate JSON recipe.
@@ -282,11 +291,15 @@ run_install_flow() {
         return 1
     fi
 
+    # Detect Hardware & Select Environment
+    local env_id=$(detect_optimal_environment)
+    log_info "  -> 🖥️  Hardware Profile: $env_id"
+
     # Recipe Integration with Python
-    log_info "🧬 Fusing recipes (Base + Main)..."
+    log_info "🧬 Fusing recipes with environment..."
     local merged_recipe_path="/tmp/merged_recipe.json"
     
-    if ! python3 /app/scripts/merge_recipes.py "$raw_recipe_path" > "$merged_recipe_path"; then
+    if ! python3 /app/scripts/merge_recipes.py "$raw_recipe_path" "$env_id" > "$merged_recipe_path"; then
         log_error "Failed to merge recipes."
         return 1
     fi
@@ -304,17 +317,34 @@ run_install_flow() {
     else
         log_info "Materializing Conda environment '${env_name}'..."
         
-        # --- Parameter Parsing (Conda) ---
         local conda_pkgs=()
         local channels=()
 
+        # [1] Load Global Channels (from YAML)
+        while IFS= read -r ch; do
+            if [ -n "$ch" ] && [ "$ch" != "null" ]; then
+                channels+=("-c" "$ch")
+            fi
+        done < <(jq -r '.environment.channels[]? // empty' "$use_case_path")
+
+        # [2] Load Components
         while IFS=$'\t' read -r type source version channel; do
             if [ "$version" == "null" ]; then version=""; fi
             if [ "$channel" == "null" ]; then channel=""; fi
-            if [ -n "$channel" ]; then channels+=("-c" "$channel"); fi
+            
+            # Optional component channel
+            if [ -n "$channel" ]; then 
+                channels+=("-c" "$channel")
+            fi
+            
+            # Version constraint handling
+            # Regex stored in variable to avoid Bash syntax errors with < >
+            local constraint_regex='^[=<>!]'
             
             if [ -n "$version" ]; then
-                if [[ "$version" != =* ]] && [[ "$version" =~ ^[0-9] ]]; then
+                if [[ "$version" =~ $constraint_regex ]]; then
+                    conda_pkgs+=("${source}${version}")
+                elif [[ "$version" =~ ^[0-9] ]]; then
                     conda_pkgs+=("${source}=${version}")
                 else
                     conda_pkgs+=("${source}${version}")
@@ -324,12 +354,11 @@ run_install_flow() {
             fi
         done < <(jq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
 
-        # --- Execution with Network Patch ---
+        # [3] Create Environment
         enhance_conda_network
         
         if ! conda create -n "$env_name" "${channels[@]}" "${conda_pkgs[@]}" -y; then
-             restore_conda_network # Ensure cleanup on failure
-             
+             restore_conda_network
              consult_ai_on_complex_failure \
                 "Failed to create Conda environment '${env_name}'." \
                 "Packages: ${conda_pkgs[*]}"

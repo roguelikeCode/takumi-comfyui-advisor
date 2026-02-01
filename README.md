@@ -4,7 +4,7 @@
 > The AI-Powered Concierge that saves you from Dependency Hell.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Conda](https://img.shields.io/badge/conda-%2344A833.svg?style=flat&logo=anaconda&logoColor=white)](https://docs.conda.io/)
 [![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
@@ -41,7 +41,7 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
 
 2.  **✨ One-Command Setup**
     Forget about manually installing 20 different requirements.
-    Just type `make install`. Takumi handles Conda, CUDA, PyTorch, and all Custom Nodes automatically.
+    Just type `make install-oss`. Takumi handles Conda, CUDA, PyTorch, and all Custom Nodes automatically.
 
 3.  **🤖 AI Concierge (Yamato_Watase)**
     Built-in LLM (Gemma 2) monitors your workflow. If an error occurs, Takumi explains it in plain language and guides you to the solution.
@@ -58,60 +58,71 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
 
 ## ⚡ Quick Start
 
-### Prerequisites
-*   **Windows Users:** **WSL2 (Ubuntu)** is required.
-    *   *⚠️ Please run all commands inside the `Ubuntu` terminal, NOT in `PowerShell`.*
-*   **Docker Desktop** (configured with WSL2 backend)
-*   **NVIDIA GPU** (Drivers installed)
-*   **Git**
-*   **Make**
+### 0. Prerequisites & Optimization
+Before running the installation, ensure your environment is ready.
+Performance and Security settings are critical for a smooth experience.
 
-### Installation
+(*⚠️ Please run all commands inside the `Ubuntu` terminal, NOT in `PowerShell`.*)
+
+*   **System Requirements:**
+    *   **Windows Users:** WSL2 (Ubuntu) is strictly required. *Run all commands in Ubuntu terminal.*
+    *   **Docker Desktop:** Configured with WSL2 backend.
+    *   **NVIDIA GPU:** Drivers installed.
+*   **Essential Configuration:**
+    *   🛡️ **[Security Guide](docs/security/RECOMMENDED_GUIDE.md):** Best practices for keeping your environment safe.
+    *   🚀 **[WSL Performance Tuning](docs/performance/WSL_TUNING.md):** **Highly Recommended.** Optimize memory/CPU for AI workloads.
+    *   ⚙️ **[Docker Settings](docs/security/DOCKER_SETTINGS.md):** Required configurations for GPU access.
+
+### 1. Installation
+
+**Step 1: Clone the repository**
+
+This creates a folder named `takumi-comfyui-advisor` in your current location
 
 ```bash
-# 1. Clone the repository
-# This creates a folder named 'takumi-comfyui-advisor' in your current location
 git clone https://github.com/roguelikeCode/takumi-comfyui-advisor.git
 cd takumi-comfyui-advisor
-
-# 2. Setup Environment
-make setup-env
-
-# [Action Required]
-# Open the generated 'takumi-comfyui-advisor/.env' file and paste your Hugging Face Token.
-
-1. https://huggingface.co/settings/tokens
-2. Create new token -> Token type: "Read" -> Token name: "Takumi"
-3. Copy the token (hf_...)
-4. Paste it into 'takumi-comfyui-advisor/.env' (HF_TOKEN=hf_...)
-5. Encrypt your secrets (secure your token):
-make encrypt
-
-# 3. Build & Install (The Magic Command)
-# Select your desired use-case number from the menu (e.g., AnimateDiff)
-Launch Docker Desktop
-make install
-
-# 4. Run
-make run
 ```
 
-Access ComfyUI at **http://localhost:8188**
+**Step 2: Setup Environment & Secrets**
 
-Exit with "**Ctrl + C**"
+Generates the configuration files. You must set your Hugging Face Token to download models.
 
----
+```bash
+make setup-env
+```
 
-## ⚡ Performance Setup (Windows Users)
+**Action Required:**
 
-AI requires high memory settings.
-Please run the setup script to configure your WSL2 environment automatically.
-(The default setting for WSL2 is to limit memory usage to 50%.)
+Open the generated `takumi-comfyui-advisor/.env` and paste your Hugging Face Token.
 
-1. Right-click `setup_windows.ps1` in this folder.
-2. Select "Run with PowerShell.
-3. Follow the instructions on the screen.
-   (This will create a `.wslconfig` file in your home directory and restart WSL.)
+1. https://huggingface.co/settings/tokens
+2. Create new token -> Token type: `Read` -> Token name: `Takumi`
+3. Copy the token (hf_...)
+4. Paste it into `takumi-comfyui-advisor/.env` (HF_TOKEN=hf_...)
+5. Encrypt your secrets (secure your token)
+```bash
+make encrypt
+```
+
+**Step 3: Build**
+
+Select your desired use-case number from the menu (e.g., Wan2.2)
+
+```bash
+make install-oss
+```
+
+### 4. Run
+
+```bash
+make run-oss
+```
+
+```bash
+Access ComfyUI at "http://localhost:8188"
+Exit with "Ctrl + C"
+```
 
 ---
 

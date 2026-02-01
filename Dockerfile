@@ -74,7 +74,7 @@ RUN echo ">>> Installing uv..." && \
 
 # --- Miniforge (The Environment Manager) ---
 # [Why] To manage Python versions and CUDA dependencies without licensing issues (unlike Anaconda).
-ENV MINIFORGE_VERSION=25.9.1-0
+ENV MINIFORGE_VERSION=25.11.0-1
 ENV CONDA_DIR=/opt/conda
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
@@ -99,6 +99,14 @@ RUN echo ">>> Installing Miniforge ${MINIFORGE_VERSION} for arch: ${TARGETARCH}.
 # 4. Application Setup
 # ------------------------------------------------------------------------------
 WORKDIR /app
+
+# Creating a "receptacle" to prevent mount errors (mkdirat read-only) in Rootless Docker
+RUN mkdir -p \
+    /app/scripts \
+    /app/cache \
+    /app/external \
+    /app/logs \
+    /app/storage
 
 # [Why] Copy contents of 'app' directory to '/app' (Prevent app/app nesting)
 COPY app/ .

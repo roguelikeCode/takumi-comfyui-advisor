@@ -37,9 +37,6 @@ run_concierge_use_case() {
                 slugs+=("$slug")
                 ((i++))
             done < <(find "$search_dir" -maxdepth 1 -name "*.json" | sort)
-        else
-            # Warning (for debugging)
-            echo "Debug: Namespace dir not found: $search_dir"
         fi
     done
 

@@ -1,20 +1,14 @@
-# ==============================================================================
-# Takumi-ComfyUI Makefile
-#
-# Maintainer: Yamato Watase
-# Description: This Makefile is the high-level orchestrator for the project.
-#              It wraps complex, fragmented node commands with simple, memorable targets
-#              for developers.
-# ==============================================================================
 SHELL := /bin/bash
 
 # ==============================================================================
-# Configuration
+# Takumi OSS Makefile
+#
+# Theme: "The Studio (Standard)"
+# Description: Manages the lifecycle of the Open Source edition (Takumi Advisor).
 # ==============================================================================
-# --- Versions ---
-DOTENVX_VERSION := v1.51.1
 
-# --- Container Settings ---
+# --- Configuration ---
+DOTENVX_VERSION := v1.52.0
 IMAGE_NAME     := takumi-comfyui
 IMAGE_TAG      := latest
 CONTAINER_NAME := takumi-comfyui-oss
@@ -26,42 +20,60 @@ HISTORY_FILEPATH_OSS := $(CACHE_DIR)/.install_history
 # --- Ports ---
 WEB_PORT := 8188
 
-# --- Docker Runtime Options (Encapsulation) ---
-# [Why] Defined as a multiline variable for readability and easier maintenance.
-# [What] Maps host directories to the container and sets user permissions.
-DOCKER_RUN_OPTS := \
-	--rm \
-	--gpus all \
-	--name $(CONTAINER_NAME) \
-	--user $(shell id -u):$(shell id -g) \
-	-p $(WEB_PORT):8188 \
-	-w /app \
-	-e HOME=/home/takumi \
-	-e HF_TOKEN \
-	-e PYTHONDONTWRITEBYTECODE=1 \
-	--env-file .env \
-	-v $(shell pwd)/app:/app:ro \
-	-v $(shell pwd)/scripts:/app/scripts:ro \
-	\
-	-v $(shell pwd)/cache:/app/cache \
-	-v $(shell pwd)/$(HISTORY_FILEPATH_OSS):/app/$(HISTORY_FILEPATH_OSS) \
-	-v $(shell pwd)/external:/app/external \
-	-v $(shell pwd)/logs:/app/logs \
-	-v $(shell pwd)/storage/envs:/home/takumi/.conda/envs \
-	-v $(shell pwd)/storage/ollama:/home/takumi/.ollama \
-	-v $(shell pwd)/storage/pkgs:/home/takumi/.conda/pkgs
+# --- Infrastructure ---
+REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs
+PURGE_DIRS    := cache external logs storage
 
-# --- Security Hardening ---
-# [Why] Prevent privilege escalation and drop unnecessary capabilities
+# ==============================================================================
+# Docker Options (The Engine)
+# ==============================================================================
+
+# --- Security Hardening Options ---
+# - no-new-privileges: Prevent sudo usage
+# - cap-drop         : Drop root capabilities
+# - read-only=false  : Required for some writable temporary paths in Rootless
 DOCKER_SEC_OPTS := \
 	--security-opt no-new-privileges:true \
 	--cap-drop=ALL \
 	--cap-add=SYS_NICE \
 	--read-only=false
 
-# --- Pre-flight Checks ---
-REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs
-PURGE_DIRS    := cache external logs storage
+# --- Docker Runtime Options ---
+# - Rootless Mode Adaptation
+# - HOME=/root
+# - /app is Writable (RW) for nested mount creation
+# - Storage mapped to /root
+# - Scripts mapped as RO (Security)
+DOCKER_RUN_OPTS := \
+	--rm \
+	--gpus all \
+	--name $(CONTAINER_NAME) \
+	-p $(WEB_PORT):8188 \
+	-w /app \
+	-e HOME=/root \
+	-e HF_TOKEN \
+	-e PYTHONDONTWRITEBYTECODE=1 \
+	-e CONDA_ENVS_DIRS=/root/.conda/envs \
+	-e CONDA_PKGS_DIRS=/root/.conda/pkgs \
+	--env-file .env \
+	-v $(shell pwd)/app:/app \
+	-v $(shell pwd)/scripts:/app/scripts:ro \
+	\
+	-v $(shell pwd)/cache:/app/cache \
+	-v $(shell pwd)/$(HISTORY_FILEPATH_OSS):/app/$(HISTORY_FILEPATH_OSS) \
+	-v $(shell pwd)/external:/app/external \
+	-v $(shell pwd)/logs:/app/logs \
+	-v $(shell pwd)/storage/envs:/root/.conda/envs \
+	-v $(shell pwd)/storage/ollama:/root/.ollama \
+	-v $(shell pwd)/storage/pkgs:/root/.conda/pkgs
+
+# ==============================================================================
+# Command Wrapper
+# ==============================================================================
+LAUNCHER :=
+ifneq (,$(shell command -v dotenvx))
+	LAUNCHER := dotenvx run --
+endif
 
 # ==============================================================================
 # Targets
@@ -73,24 +85,30 @@ help:
 	@echo "Takumi Command Interface:"
 	@echo ""
 	@echo "  [Setup & Security]"
-	@echo "    make setup-env   : Initialize .env and install utilities."
-	@echo "    make encrypt     : Encrypt .env file for security."
+	@echo "    make setup-env    : Initialize .env and install utilities."
+	@echo "    make encrypt      : Encrypt .env file for security."
 	@echo ""
 	@echo "  [Main]"
-	@echo "    make install     : Build and set up the environment (The Magic Command)."
-	@echo "    make run         : Start ComfyUI and AI Advisor."
+	@echo "    make install-oss  : Build and set up the environment (The Magic Command)."
+	@echo "    make run-oss      : Start ComfyUI and AI Advisor."
 	@echo ""
 	@echo "  [Development]"
-	@echo "    make build       : Rebuild Docker image manually."
-	@echo "    make shell       : Enter the container shell for debugging."
-	@echo "    make test        : Run automated test suite."
-	@echo "    make clean       : Remove all artifacts and images."
-	@echo "    make purge       : [DANGER] Delete ALL data and reset to factory settings."
+	@echo "    make build        : Rebuild Docker image."
+	@echo "    make shell        : Enter the container shell for debugging."
+	@echo "    make test         : Run automated test suite."
+	@echo "    make clean-docker : Stop and remove containers."
+	@echo "    make clean-env    : Reset environment (Delete envs/caches)."
+	@echo "    make clean-all    : Factory reset (Delete everything)."
 
 # ==============================================================================
-# 1. Security & Setup
+# 1. Setup & Security
 # ==============================================================================
-.PHONY: setup-env encrypt ensure-dirs
+.PHONY: ensure-dirs setup-env encrypt
+
+ensure-dirs:
+	@mkdir -p $(REQUIRED_DIRS)
+	@touch $(HISTORY_FILEPATH_OSS)
+
 setup-env:
 	@echo ">>> Setting up environment..."
 	@if [ ! -f .env ]; then \
@@ -122,16 +140,14 @@ encrypt:
 		echo "❌ dotenvx not found. Please run 'make setup-env' first."; \
 	fi
 
-ensure-dirs:
-	@mkdir -p $(REQUIRED_DIRS)
-	@touch $(HISTORY_FILEPATH_OSS)
+# ==============================================================================
+# 2. Main (Dockerfile Wrapper)
+# ==============================================================================
+.PHONY: build install-oss run-oss stop
 
-# ==============================================================================
-# 2. Main (Dockerfile Wrapper Recipes)
-# ==============================================================================
-.PHONY: build install run
 build: ensure-dirs
 	@echo ">>> Building Docker image: $(IMAGE_NAME):$(IMAGE_TAG)..."
+	@# Passing Host UID/GID to Dockerfile (Standard Practice, though Rootless handles mapping)
 	@docker build \
 		--build-arg TAKUMI_UID=$(shell id -u) \
 		--build-arg TAKUMI_GID=$(shell id -g) \
@@ -139,73 +155,73 @@ build: ensure-dirs
 		.
 	@echo "✅ Build complete."
 
-install: build
-	@echo ">>> Launching installer wrapper..."
-	@bash ./scripts/run_installer.sh
+install-oss: build
+	@echo ">>> Launching installer..."
+	@$(LAUNCHER) docker run \
+		$(DOCKER_SEC_OPTS) \
+		-it $(DOCKER_RUN_OPTS) \
+		$(IMAGE_NAME):$(IMAGE_TAG) \
+		bash /app/install.sh
 
 # [Why] To run the application with optional secret decryption.
 # [What] Dynamically prepends 'dotenvx run --' if the tool is available.
-run: build
+run-oss: build
 	@echo ">>> Starting ComfyUI..."
 	@echo ">>> Open http://localhost:$(WEB_PORT) for ComfyUI"
-	@LAUNCHER=""; \
-	if command -v dotenvx >/dev/null 2>&1; then \
-		LAUNCHER="dotenvx run --"; \
-	fi; \
-	$$LAUNCHER docker run \
+	@$(LAUNCHER) docker run \
 		$(DOCKER_SEC_OPTS) \
 		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run.sh
 
+stop:
+	@echo ">>> Stopping container..."
+	@docker stop $(CONTAINER_NAME) 2>/dev/null || true
+
 # ==============================================================================
-# 3. Development Utilities
+# 3. Utilities & Cleanup
 # ==============================================================================
-.PHONY: shell test clean purge
+.PHONY: shell test clean-docker clean-env clean-all
+
 shell: build
 	@echo ">>> Starting interactive shell..."
-	@docker run \
+	@$(LAUNCHER) docker run \
+		$(DOCKER_SEC_OPTS) \
 		-it $(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash
 
 test: build
 	@echo ">>> Running tests..."
-	@docker run \
-		--cap-drop=ALL \
+	@$(LAUNCHER) docker run \
+		$(DOCKER_SEC_OPTS) \
 		$(DOCKER_RUN_OPTS) \
 		$(IMAGE_NAME):$(IMAGE_TAG) \
 		bash /app/scripts/run_tests.sh
 
-clean:
-	@echo ">>> Cleaning up..."
+# [Level 1] Clean Docker Containers
+clean-docker:
+	@echo ">>> 🧹 Removing container artifacts..."
 	@-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 	@-docker rmi -f $(IMAGE_NAME):$(IMAGE_TAG) 2>/dev/null || true
-	@-rm -rf ./cache/* ./logs/* ./external/* ./app/ComfyUI
 	@echo "✅ Cleanup complete."
 
-# [Why] Nuclear option. Wipes EVERYTHING including persistent storage (Conda envs, Models).
-# [Note] Use this when you want to start from absolute zero.
-# [Note] This will cause the download time to increase.
-purge: clean
-	@echo ">>> ☢️  INITIATING TOTAL PURGE... ☢️"
-	@echo ">>> This will delete ALL environments, downloaded models, and caches."
-	@echo ">>> Use sudo to delete the root privilege files created by Docker."
-
-	@sudo rm -rf $(PURGE_DIRS)
-	@make ensure-dirs
-	
-	@echo "✅ Project has been reset to factory settings."
-
-# [Note] The "Scorched Earth" Strategy
-nuke: purge
-	@echo ">>> ☢️  INITIATING NUCLEAR LAUNCH DETECTED... ☢️"
-	@echo ">>> 🧹 Wiping all Custom Nodes (Ghosts)..."
-	
-	@# OSS version does not require 'core/' prefix
-	@if [ -d "external/ComfyUI/custom_nodes" ]; then \
-		sudo rm -rf external/ComfyUI/custom_nodes/*; \
-		echo "   -> Custom Nodes vaporized."; \
+# [Level 2] Clean Environment & Cache
+clean-env: clean-docker
+	@echo ">>> ☢️  Cleaning Runtime Environments (OSS)..."
+	@# Use sudo just in case, but finding/deleting content only
+	@if [ -d "storage" ]; then \
+		echo "   -> Removing caches and environments..."; \
+		sudo rm -rf $(PURGE_DIRS); \
 	fi
-	
-	@echo "✅ Ground Zero established. Ready for fresh install."
+	@make ensure-dirs
+	@echo "✅ Environment reset. Please run 'make install-oss' again."
+
+# [Level 3] Factory Reset
+clean-all: clean-env
+	@echo ">>> ☢️  INITIATING FACTORY RESET..."
+	@echo "   -> Wiping all ComfyUI data..."
+	@if [ -d "external/ComfyUI" ]; then \
+		sudo rm -rf external/ComfyUI; \
+	fi
+	@echo "✅ System restored to factory settings."

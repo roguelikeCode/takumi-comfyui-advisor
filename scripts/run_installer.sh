@@ -31,10 +31,10 @@ get_volume_args() {
         "-v ${CURRENT_DIR}/logs:/app/logs" \
         "-v ${CURRENT_DIR}/external:/app/external" \
         "-v ${CURRENT_DIR}/app:/app" \
-        "-v ${CURRENT_DIR}/scripts:/app/scripts" \
-        "-v ${CURRENT_DIR}/storage/pkgs:/home/takumi/.conda/pkgs" \
-        "-v ${CURRENT_DIR}/storage/envs:/home/takumi/.conda/envs" \
-        "-v ${CURRENT_DIR}/storage/ollama:/home/takumi/.ollama" \
+        "-v ${CURRENT_DIR}/scripts:/app/scripts:ro" \
+        "-v ${CURRENT_DIR}/storage/pkgs:/home/.conda/pkgs" \
+        "-v ${CURRENT_DIR}/storage/envs:/home/.conda/envs" \
+        "-v ${CURRENT_DIR}/storage/ollama:/home/.ollama" \
         "-v ${CURRENT_DIR}/${HISTORY_FILE}:/app/${HISTORY_FILE}"
 }
 
@@ -61,10 +61,15 @@ execute_docker_run() {
         --gpus all
         --env-file .env
         -e HF_TOKEN # Inject decrypted token
+        -e PYTHONDONTWRITEBYTECODE=1
+        -e CONDA_ENVS_DIRS=/root/.conda/envs \
+	    -e CONDA_PKGS_DIRS=/root/.conda/pkgs \
         --name "$CONTAINER_NAME"
-        --user "$(id -u):$(id -g)"
         -w /app
-        -e HOME=/home/takumi
+        -e HOME=/home
+        --security-opt no-new-privileges:true
+        --cap-drop=ALL
+        --cap-add=SYS_NICE
     )
 
     # Append volumes dynamically
