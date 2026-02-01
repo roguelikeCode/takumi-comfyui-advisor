@@ -2,7 +2,6 @@
 
 # [Why] To verify hardware capabilities and configure the environment accordingly.
 # [What] Detects NVIDIA GPU, CUDA version, and sets global state variables.
-
 # [Input] None (Uses system commands: nvidia-smi)
 detect_gpu_environment() {
     log_info "Diagnosing your hardware environment..."
@@ -31,4 +30,19 @@ detect_gpu_environment() {
     log_info "Proceeding with CPU-only configuration."
     state["detected_accelerator"]="cpu"
     return 0
+}
+
+# [Why] Select the optimal environment YAML based on hardware availability.
+# [What] Checks for nvidia-smi. Returns 'cuda_12_4' (Standard) or 'cpu'.
+# [Output] String (Environment ID)
+detect_optimal_environment() {
+    # 1. Check for NVIDIA GPU
+    if command -v nvidia-smi &> /dev/null; then
+        # Future-proofing: Logic for RTX 50 series (CUDA 13) can go here.
+        # local gpu_name=$(nvidia-smi --query-gpu=name --format=csv,noheader)
+        
+        echo "cuda_12_4"
+    else
+        echo "cpu"
+    fi
 }

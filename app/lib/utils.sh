@@ -39,7 +39,7 @@ ensure_directories() {
 }
 
 # [Why] Resolve the path of the configuration file (Enterprise preferred)
-# [Input] $1: Relative paths (e.g. infra/python/3.11.yml)
+# [Input] $1: Relative paths (e.g. infra/environments/cuda_12_4.yml)
 # [Output] Absolute path (empty if not found)
 resolve_meta_path() {
     local rel_path="$1"

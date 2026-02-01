@@ -1,6 +1,0 @@
-name: foundation
-channels:
-  - conda-forge
-dependencies:
-  - python=3.10 # [Target] Required for legacy nodes (e.g. MagicClothing original)
-  - pip

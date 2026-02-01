@@ -1,9 +1,10 @@
 {
   "asset_id": "takumi-use-case-video-001",
   "asset_version": "1.0.0",
-  "asset_recipe": "assets/magic_clothing.json",
+  "asset_recipe": "assets/animate_diff.json",
   "display_name": "Legacy: Create AI Video (AnimateDiff)",
   "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
+  "base_recipe": "foundation/comfyui/v0.11.1.json",
   "contribution": [
     {
       "type": "use_case_recipe",
@@ -63,45 +64,9 @@
     }
   ],
   "environment": {
-    "name": "animatediff_env",
-    "engine": "conda",
-    "components": [
-      {
-        "type": "conda",
-        "source": "python",
-        "version": "3.10"
-      },
-      {
-        "type": "conda",
-        "source": "pip"
-      },
-      {
-        "type": "conda",
-        "source": "pytorch-cuda",
-        "version": "12.1",
-        "channel": "pytorch"
-      },
-      {
-        "type": "conda",
-        "source": "cuda-libraries",
-        "version": "12.1",
-        "channel": "nvidia"
-      },
-      {
-        "type": "conda",
-        "source": "ffmpeg",
-        "version": ">=6.0",
-        "channel": "conda-forge"
-      }
-    ]
+    "name": "animatediff_env"
   },
   "components": [
-    {
-      "type": "git-clone",
-      "source": "https://github.com/Comfy-Org/ComfyUI.git",
-      "version": "master",
-      "path": "/app/ComfyUI"
-    },
     {
       "type": "custom-node",
       "source": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git",
@@ -131,26 +96,6 @@
       "type": "custom-node",
       "source": "https://github.com/Fannovel16/comfyui_controlnet_aux.git",
       "version": "main"
-    },
-    {
-      "type": "pip",
-      "source": "torch",
-      "version": "==2.4.0"
-    },
-    {
-      "type": "pip",
-      "source": "torchvision",
-      "version": "==0.19.0"
-    },
-    {
-      "type": "pip",
-      "source": "torchaudio",
-      "version": "==2.4.0"
-    },
-    {
-      "type": "pip",
-      "source": "xformers",
-      "version": ">=0.0.27"
     },
     {
       "type": "pip",

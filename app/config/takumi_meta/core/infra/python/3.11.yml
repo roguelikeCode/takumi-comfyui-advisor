@@ -1,6 +1,0 @@
-name: foundation
-channels:
-  - conda-forge
-dependencies:
-  - python=3.11 # [Target] Best balance of speed and compatibility
-  - pip

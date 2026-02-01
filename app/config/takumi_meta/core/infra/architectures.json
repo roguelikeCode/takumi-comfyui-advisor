@@ -1,13 +1,13 @@
 {
   "miniforge": {
-    "25.9.1-0": {
+    "25.11.0-1": {
       "amd64": {
-        "binary": "Miniforge3-25.9.1-0-Linux-x86_64.sh",
-        "checksum": "07f64c1d908ae036e9f6a81f97704899311c0ae677d83980d664b9781d4cc5fc"
+        "binary": "Miniforge3-25.11.0-1-Linux-x86_64.sh",
+        "checksum": "be1bad9d4e67a8753eb76fb4940e9a08036786675c7adf060627e55791bf110d"
       },
       "arm64": {
-        "binary": "Miniforge3-25.9.1-0-Linux-aarch64.sh",
-        "checksum": "b2b223680807e8f407b67603f6a5a224452b7f0ce177bc6719f870040c3bfa98"
+        "binary": "Miniforge3-25.11.0-1-Linux-aarch64.sh",
+        "checksum": "43a3783f9e121088f1c92b131b4305b9ebf159424ad2543dfcfc0f1952b5e127"
       }
     }
   }

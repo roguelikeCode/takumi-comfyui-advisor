@@ -1,0 +1,11 @@
+name: takumi_cpu
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch=2.5.1
+  - torchvision=0.20.1
+  - torchaudio=2.5.1
+  - cpuonly
+  - ffmpeg>=6.0

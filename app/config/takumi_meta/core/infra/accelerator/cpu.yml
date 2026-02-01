@@ -1,9 +1,0 @@
-name: foundation
-channels:
-  - pytorch
-  - conda-forge
-dependencies:
-  - pytorch
-  - torchvision
-  - torchaudio
-  - cpuonly # To install the CPU version of PyTorch

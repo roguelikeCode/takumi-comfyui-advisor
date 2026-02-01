@@ -1,32 +1,17 @@
 {
-  "id": "takumi-foundation-comfyui-v0.9.1",
-  "description": "Core dependencies for ComfyUI v0.9.1 (Python 3.11/Torch 2.4/CUDA 12.1)",
+  "id": "takumi-foundation-comfyui-v0.11.1",
+  "description": "Core dependencies for ComfyUI v0.11.1 (Python 3.11/Torch 2.4/CUDA 12.1)",
   "components": [
     {
       "type": "git-clone",
       "source": "https://github.com/Comfy-Org/ComfyUI.git",
-      "version": "v0.9.1",
+      "version": "v0.11.1",
       "path": "/app/external/ComfyUI" 
     },
     {
       "type": "custom-node",
       "source": "https://github.com/ltdrdata/ComfyUI-Manager.git",
       "version": "main"
-    },
-    {
-      "type": "pip",
-      "source": "torch",
-      "version": "==2.4.0"
-    },
-    {
-      "type": "pip",
-      "source": "torchvision",
-      "version": "==0.19.0"
-    },
-    {
-      "type": "pip",
-      "source": "torchaudio",
-      "version": "==2.4.0"
     },
     {
       "type": "pip",
@@ -151,7 +136,7 @@
     {
       "type": "pip",
       "source": "comfyui-workflow-templates",
-      "version": "==0.8.4"
+      "version": "==0.8.27"
     },
     {
       "type": "pip",

@@ -1,0 +1,15 @@
+{
+  "asset_id": "takumi-use-case-infra-001",
+  "asset_version": "1.1.0",
+  "display_name": "Nothing (Infrastructure Only)",
+  "description": "Installs ComfyUI v0.11.1 and Auto-Detected Environment (CUDA/CPU).",
+  "base_recipe": "foundation/comfyui/v0.11.1.json",
+  "asset_recipe": "",
+  "components": [
+    {
+      "type": "pip",
+      "source": "huggingface_hub",
+      "version": ">=0.25.0"
+    }
+  ]
+}

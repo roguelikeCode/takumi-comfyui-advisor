@@ -1,0 +1,12 @@
+name: takumi_standard
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch=2.4.0
+  - torchvision==0.19.0
+  - torchaudio==2.4.0
+  - pytorch-cuda=12.4
+  - ffmpeg>=6.0

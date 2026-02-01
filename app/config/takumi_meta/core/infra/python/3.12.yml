@@ -1,6 +1,0 @@
-name: foundation
-channels:
-  - conda-forge
-dependencies:
-  - python=3.12 # [Target] High performance, most libraries supported
-  - pip

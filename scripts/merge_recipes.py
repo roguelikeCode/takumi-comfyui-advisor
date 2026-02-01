@@ -1,23 +1,66 @@
 import json
 import sys
 import os
+import re
+
+# [Why] Dependency-free parser to avoid installing pyyaml before conda setup.
+def parse_simple_yaml_deps(yaml_path):
+    """
+    Parses a simple Conda environment.yml file.
+    Returns: A list of dicts suitable for Takumi JSON 'components'.
+    """
+    comps = []
+    env_name = "custom_env"
+    channels = []
+    
+    with open(yaml_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        
+    section = None # 'dependencies' or 'channels'
+    
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"): continue
+        
+        # Section Detection
+        if line.startswith("name:"):
+            env_name = line.split(":", 1)[1].strip()
+            section = None
+        elif line.startswith("channels:"):
+            section = "channels"
+        elif line.startswith("dependencies:"):
+            section = "dependencies"
+            
+        # List Parsing
+        elif line.startswith("-"):
+            value = line.lstrip("- ").strip()
+            
+            if section == "channels":
+                channels.append(value)
+
+            elif section == "dependencies":
+                # Skip special pip sections
+                if isinstance(value, dict) or value == "pip:": continue
+                
+                # Parse: "package=version" or "package>=version"
+                # Allowed chars: a-z, A-Z, 0-9, _, -, .
+                match = re.match(r'^([a-zA-Z0-9_\-\.]+)(?:([<>=]+)(.+))?$', value)
+                if match:
+                    comps.append({
+                        "type": "conda",
+                        "source": match.group(1),
+                        "version": (match.group(2) or "") + (match.group(3) or "")
+                    })
+    
+    return env_name, comps, channels
 
 def load_json(path):
-    # 1. Load if the path exists (Absolute Path Success)
+    # Try direct path
     if os.path.exists(path):
         return json.load(open(path, 'r'))
 
-    # 2. Path normalization (Normalization)
-    # If the old absolute path ("/app/config/takumi_meta/recipes/...") was specified,
-    # Remove the prefix and convert to a relative path ("foundation/...")
-    legacy_prefix = "/app/config/takumi_meta/recipes/"
-    if path.startswith(legacy_prefix):
-        path = path.replace(legacy_prefix, "")
-    
-    # Remove the leading / (due to os.path.join)
-    relative_path = path.lstrip("/")
-
-    # 3. Namespace Lookup (Search Path: Enterprise -> Core)
+    # Try searching in namespaces
+    relative_path = path.split("recipes/")[-1] # Extract relative path if needed
     base_dir = "/app/config/takumi_meta"
     namespaces = ["enterprise", "core"]
     
@@ -28,40 +71,64 @@ def load_json(path):
             print(f"  -> Found dependency in [{ns}]: {relative_path}", file=sys.stderr)
             return json.load(open(candidate, 'r'))
 
-    # 4. Give Up
+    # Give Up
     print(f"Error: Recipe file not found: {path}", file=sys.stderr)
-    print(f"       (Searched in: {namespaces})", file=sys.stderr)
     sys.exit(1)
 
 def merge_components(base_comps, main_comps):
-    """Component merging (Main takes precedence)"""
+    """Merge components list, preferring main_comps items by source key."""
     merged_map = {}
-    for c in base_comps:
-        key = f"{c['type']}:{c.get('source', 'unknown')}"
-        merged_map[key] = c
-    for c in main_comps:
+    for c in base_comps + main_comps:
         key = f"{c['type']}:{c.get('source', 'unknown')}"
         merged_map[key] = c
     return list(merged_map.values())
 
 def main():
+    # Args: 1=recipe_path, 2=env_id (Optional)
     if len(sys.argv) < 2:
-        print("Usage: python merge_recipes.py <main_recipe_path>", file=sys.stderr)
+        print("Usage: python merge_recipes.py <recipe_path> [env_id]", file=sys.stderr)
         sys.exit(1)
 
-    main_path = sys.argv[1]
-    # Loading the main recipe
-    main_data = load_json(main_path)
+    recipe_path = sys.argv[1]
+    env_id = sys.argv[2] if len(sys.argv) > 2 else None
 
-    # Base Recipe Integration
-    base_path = main_data.get("base_recipe")
-    if base_path:
-        base_data = load_json(base_path)
+    # Loading the main recipe
+    main_data = load_json(recipe_path)
+
+    # [1] Dynamic Environment Injection
+    if env_id:
+        yaml_rel = f"infra/environments/{env_id}.yml"
+        yaml_path = None
+        
+        # Find YAML in namespaces
+        for ns in ["enterprise", "core"]:
+            candidate = os.path.join("/app/config/takumi_meta", ns, yaml_rel)
+            if os.path.exists(candidate):
+                yaml_path = candidate
+                break
+        
+        if yaml_path:
+            yaml_name, yaml_comps, yaml_channels = parse_simple_yaml_deps(yaml_path)
+            
+            # Prefer JSON name if exists, else use YAML name
+            target_name = main_data.get("environment", {}).get("name", yaml_name)
+            
+            main_data["environment"] = {
+                "name": target_name,
+                "engine": "conda",
+                "channels": yaml_channels,
+                "components": yaml_comps
+            }
+
+    # [2] Base Recipe Merge
+    if "base_recipe" in main_data:
+        base_data = load_json(main_data["base_recipe"])
         
         main_data["components"] = merge_components(
             base_data.get("components", []),
             main_data.get("components", [])
         )
+        # Fallback environment if not injected
         if "environment" not in main_data and "environment" in base_data:
             main_data["environment"] = base_data["environment"]
 
