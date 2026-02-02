@@ -69,9 +69,9 @@ Performance and Security settings are critical for a smooth experience.
     *   **Docker Desktop:** Configured with WSL2 backend.
     *   **NVIDIA GPU:** Drivers installed.
 *   **Essential Configuration:**
-    *   🛡️ **[Security Guide](docs/security/RECOMMENDED_GUIDE.md):** Best practices for keeping your environment safe.
-    *   🚀 **[WSL Performance Tuning](docs/performance/WSL_TUNING.md):** **Highly Recommended.** Optimize memory/CPU for AI workloads.
-    *   ⚙️ **[Docker Settings](docs/security/DOCKER_SETTINGS.md):** Required configurations for GPU access.
+    *   **[Security Guide](docs/security/RECOMMENDED_GUIDE.md):** Best practices for keeping your environment safe.
+    *   **[WSL Performance Tuning](docs/performance/WSL_TUNING.md):** **Highly Recommended.** Optimize memory/CPU for AI workloads.
+    *   **[Docker Settings](docs/security/DOCKER_SETTINGS.md):** Required configurations for GPU access.
 
 ### 1. Installation
 
