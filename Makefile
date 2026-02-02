@@ -56,9 +56,6 @@ DOCKER_RUN_OPTS := \
 	-e CONDA_ENVS_DIRS=/root/.conda/envs \
 	-e CONDA_PKGS_DIRS=/root/.conda/pkgs \
 	--env-file .env \
-	-v $(shell pwd)/app:/app \
-	-v $(shell pwd)/scripts:/app/scripts:ro \
-	\
 	-v $(shell pwd)/cache:/app/cache \
 	-v $(shell pwd)/$(HISTORY_FILEPATH_OSS):/app/$(HISTORY_FILEPATH_OSS) \
 	-v $(shell pwd)/external:/app/external \

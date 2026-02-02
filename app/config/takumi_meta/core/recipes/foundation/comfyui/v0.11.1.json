@@ -133,6 +133,11 @@
       "source": "comfy-kitchen",
       "version": ">=0.2.6"
     },
+     {
+      "type": "pip",
+      "source": "comfy-aimdo",
+      "version": ""
+    },
     {
       "type": "pip",
       "source": "comfyui-workflow-templates",

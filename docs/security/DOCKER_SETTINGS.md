@@ -38,6 +38,7 @@ By stripping root privileges from the Docker Daemon, we construct a double layer
     *   Even if an attacker gains `root` access inside the container, they map to a **powerless user** (e.g., UID 1001) on your Host OS.
     *   They cannot modify system files (`/usr`, `/etc`) or install system-wide malware on your Windows/Linux machine.
 
-2.  **Write Protection (Partial):**
-    *   Critical directories like `/app/scripts` are mounted as **Read-Only**.
-    *   This prevents attackers from easily modifying the core logic of the Takumi system during runtime.
+2. **Write Protection (Read-Only):**
+    *   Core directories like `/app` and `/scripts` are **NOT mounted** from the host.
+    *   The code is baked into the Docker image during the build process.
+    *   This ensures that even if an attacker modifies files on the host, the running container remains unaffected (and vice versa).

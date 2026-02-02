@@ -108,8 +108,10 @@ RUN mkdir -p \
     /app/logs \
     /app/storage
 
-# [Why] Copy contents of 'app' directory to '/app' (Prevent app/app nesting)
+# Copy Application Code (Source)
 COPY app/ .
+# Copy Scripts (Tools)
+COPY scripts/ ./scripts/
 
 # [Why] Ensure the takumi user owns the application code.
 RUN chown -R takumi:takumi /app

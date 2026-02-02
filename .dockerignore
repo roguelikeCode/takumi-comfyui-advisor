@@ -14,13 +14,12 @@
 # --- 2. Heavy Data & Artifacts ---
 # [Why] To speed up the "Sending build context to Docker daemon" phase.
 # [What] Exclude directories that are mounted at runtime or downloaded by the installer.
-storage/
-cache/
-logs/
-external/
-
-# [Why] To prevent host-side installations from corrupting the container state.
 app/ComfyUI/
+cache/
+external/
+logs/
+storage/
+takumi_train_data/
 
 # Large binary files (Safety net)
 *.safetensors
@@ -40,13 +39,19 @@ Makefile
 README.md
 PRIVACY.md
 
-# --- 4. System & IDE ---
+# --- 4. Logs & Artifacts ---
+*.log
+logs/
+*.jsonl
+.install_history
+
+# --- 5. System & IDE ---
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# --- 5. Language Runtime Junk ---
+# --- 6. Language Runtime Junk ---
 # Python
 __pycache__/
 *.pyc
@@ -58,6 +63,3 @@ venv/
 node_modules/
 npm-debug.log
 yarn-error.log
-
-# --- 6. Temporary Files ---
-.install_history

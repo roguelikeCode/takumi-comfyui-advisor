@@ -113,20 +113,33 @@ class AssetProcessor:
         filename = item["filename"]
         target_dir = AssetProcessor._resolve_path(item["target_dir"])
         
+        # Target file path calculation
+        final_name = item.get("rename_to", filename)
+        final_path = target_dir / final_name
+
+        # Check if file already exists
+        if final_path.exists():
+            # If the size is greater than 0, it is considered to exist (simple check)
+            if final_path.stat().st_size > 0:
+                print(f"  ✨ [Skip] Already exists: {final_name}")
+                return
+
         try:
-            print(f"  - Downloading {filename} from {repo_id}...")
+            print(f"  ⬇️  Downloading {filename} from {repo_id}...")
             file_path = hf_hub_download(
                 repo_id=repo_id,
                 filename=filename,
                 local_dir=target_dir
             )
             
-            # Handle renaming if specified
+            # Handle renaming
             if "rename_to" in item:
                 source = Path(file_path)
-                dest = target_dir / item["rename_to"]
-                shutil.move(source, dest)
-                print(f"    ✅ Renamed to {item['rename_to']}")
+                # Save `hf_hub_download` to `local_dir/filename`
+                # Move only if the destination does not already exist
+                if source != final_path:
+                    shutil.move(source, final_path)
+                    print(f"    ✅ Renamed to {item['rename_to']}")
             else:
                 print(f"    ✅ Saved to {target_dir}")
 

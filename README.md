@@ -119,10 +119,12 @@ make install-oss
 make run-oss
 ```
 
-```bash
-Access ComfyUI at "http://localhost:8188"
-Exit with "Ctrl + C"
-```
+**How to use:**
+1.  Open your browser at `http://localhost:8188`
+2.  Click the chat icon (bottom right)
+3.  Type `Workflow` to open the menu
+
+*(To stop the application, press `Ctrl + C` in the terminal)*
 
 ---
 
