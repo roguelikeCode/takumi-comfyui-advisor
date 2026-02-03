@@ -5,8 +5,11 @@
     "description": "Standard generation workflow for MagicClothing.",
     "tags": ["fashion", "virtual-try-on", "magic-clothing"],
     "path": "/app/config/takumi_meta/core/library/workflows/magic_clothing_v1.json",
-    "dependency_target": "custom_nodes/ComfyUI_MagicClothing",
     "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
+
+    "_comment": "Link to Recipe ID",
+    "requires_asset": "takumi-use-case-fashion-001", 
+
     "mapping": {
       "prompt": { "node_id": 23, "widget_index": 0 },
       "seed": { "node_id": 23, "widget_index": 6 }
@@ -18,8 +21,11 @@
     "description": "Text-to-Video generation using AnimateDiff Evolved.",
     "tags": ["animation", "video", "animatediff"],
     "path": "/app/config/takumi_meta/core/library/workflows/animate_diff_v1.json",
-    "dependency_target": "custom_nodes/ComfyUI-AnimateDiff-Evolved",
     "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
+
+    "_comment": "Link to Recipe ID",
+    "requires_asset": "takumi-use-case-video-001",
+    
     "mapping": {
       "prompt": { "node_id": 6, "widget_index": 0 } 
     }

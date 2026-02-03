@@ -16,31 +16,35 @@ set -euo pipefail
 
 # --- Configuration ---
 readonly COMFY_PORT=8188
-readonly RECIPES_DIR="/app/config/takumi_meta/core/recipes/use_cases"
 
-# [Dynamic] Build Target Envs List from Recipes
-# Extract and list 'environment.name' in a recipe
+# Universal Recipe Scanner
+# Scan BOTH 'core' and 'enterprise' namespaces to build the environment list.
+# If 'enterprise' dir doesn't exist (OSS mode), it will simply be skipped.
 TARGET_ENVS=()
+NAMESPACES=("core" "enterprise")
 
-# 1. Scan 'recipes' directory only if it exists
-if [ -d "$RECIPES_DIR" ]; then
-    # Looping through 'find' results
-    while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            env_name=$(jq -r '.environment.name // empty' "$file")
-            if [ -n "$env_name" ]; then
-                # Add to array (don't worry about deduplication as it will happen naturally in the subsequent 'conda' check)
-                TARGET_ENVS+=("$env_name")
+for ns in "${NAMESPACES[@]}"; do
+    RECIPES_DIR="/app/config/takumi_meta/${ns}/recipes/use_cases"
+    
+    if [ -d "$RECIPES_DIR" ]; then
+        # Use find to list json files
+        while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                # Extract environment name from JSON
+                # (Use // empty to handle missing keys without error)
+                env_name=$(jq -r '.environment.name // empty' "$file")
+                
+                # Add to list if found
+                if [ -n "$env_name" ]; then
+                    TARGET_ENVS+=("$env_name")
+                fi
             fi
-        fi
-    done < <(find "$RECIPES_DIR" -maxdepth 1 -name "*.json")
-fi
+        done < <(find "$RECIPES_DIR" -maxdepth 1 -name "*.json")
+    fi
+done
 
 # Fallback (Minimum guarantee)
-TARGET_ENVS+=("foundation")
-
-# Debug: Displaying the recognized environment
-# echo "Debug: Detectable environments: ${TARGET_ENVS[*]}"
+TARGET_ENVS+=("foundation" "takumi_standard")
 
 # ==============================================================================
 # [1] Environment Management

@@ -357,10 +357,15 @@ run_install_flow() {
         # [3] Create Environment
         enhance_conda_network
         
-        if ! conda create -n "$env_name" "${channels[@]}" "${conda_pkgs[@]}" -y; then
+        # Force path to ensure persistence in Rootless Docker
+        local env_path="/root/.conda/envs/${env_name}"
+        
+        log_info "Creating env at: $env_path" # Debug log
+
+        if ! conda create -p "$env_path" "${channels[@]}" "${conda_pkgs[@]}" -y; then
              restore_conda_network
              consult_ai_on_complex_failure \
-                "Failed to create Conda environment '${env_name}'." \
+                "Failed to create Conda environment at '$env_path'." \
                 "Packages: ${conda_pkgs[*]}"
             return 1
         fi
@@ -470,7 +475,7 @@ run_install_flow() {
     if [ -n "$asset_recipe_file" ]; then
         log_info "Searching for Asset Recipe: ${asset_recipe_file}..."
         
-        # [Fix] Namespace Search Strategy (Enterprise -> Core)
+        # Namespace Search Strategy (Enterprise -> Core)
         local asset_recipe_full_path=""
         local base_meta_dir="${CONFIG_DIR}/takumi_meta"
         
@@ -564,6 +569,22 @@ run_install_flow() {
             fi
         fi
     }
+
+    # Brain setup is optional/parallel, but good to ensure here
+    setup_ollama_model
+
+    # 7. Finalization (Receipts & State)
+    
+    # Generate Installation Receipt (ID assignment)
+    # As proof of success, create an empty file with the ID name in the persistent area.
+    local use_case_id=$(jq -r '.asset_id // empty' "$use_case_path")
+    
+    if [ -n "$use_case_id" ]; then
+        local receipt_dir="/app/storage/receipts"
+        mkdir -p "$receipt_dir"
+        touch "${receipt_dir}/${use_case_id}"
+        log_info "🎟️  Issued installation receipt: $use_case_id"
+    fi
 
     # Save the active environment name for run.sh
     echo "${env_name}" > "${ACTIVE_ENV_FILE}"

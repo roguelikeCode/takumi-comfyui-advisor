@@ -21,7 +21,7 @@ HISTORY_FILEPATH_OSS := $(CACHE_DIR)/.install_history
 WEB_PORT := 8188
 
 # --- Infrastructure ---
-REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs
+REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs storage/receipts
 PURGE_DIRS    := cache external logs storage
 
 # ==============================================================================
@@ -62,7 +62,8 @@ DOCKER_RUN_OPTS := \
 	-v $(shell pwd)/logs:/app/logs \
 	-v $(shell pwd)/storage/envs:/root/.conda/envs \
 	-v $(shell pwd)/storage/ollama:/root/.ollama \
-	-v $(shell pwd)/storage/pkgs:/root/.conda/pkgs
+	-v $(shell pwd)/storage/pkgs:/root/.conda/pkgs \
+	-v $(shell pwd)/storage/receipts:/app/storage/receipts
 
 # ==============================================================================
 # Command Wrapper

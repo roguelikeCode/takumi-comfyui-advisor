@@ -49,7 +49,7 @@ class CatalogManager:
     def load_validated_catalog() -> Dict[str, Any]:
         """
         [Why] Loads metadata and filters out unavailable workflows.
-        [What] Checks 'dependency_target' against the physical filesystem.
+        [What] Checks for 'Installation Receipts' in storage to validate availability.
         """
         raw_catalog = {}
         namespaces = ["core", "enterprise"]
@@ -64,19 +64,22 @@ class CatalogManager:
                 except Exception as e:
                     print(f"[Takumi] Error loading {ns} catalog: {e}", file=sys.stderr)
 
-        # 2. Validate Availability (Physical Check)
+        # 2. Validate Availability (Receipt Check)
         valid_catalog = {}
+        receipts_dir = "/app/storage/receipts"
+
         for key, val in raw_catalog.items():
-            target = val.get("dependency_target")
+            # Get "requires_asset" (Recipe ID)
+            required_asset_id = val.get("requires_asset")
             
-            if target:
-                # Resolve relative path (custom_nodes or models)
-                check_path = os.path.join(TakumiConfig.COMFY_ROOT, target)
-                
-                # If target does not exist, exclude this workflow
-                if not os.path.exists(check_path):
+            if required_asset_id:
+                # Check if you have a receipt
+                receipt_path = os.path.join(receipts_dir, required_asset_id)
+                if not os.path.exists(receipt_path):
+                    # No receipt = Not installed -> Excluded
                     continue
             
+            # Only those that pass verification are registered
             valid_catalog[key] = val
             
         return valid_catalog
