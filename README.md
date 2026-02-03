@@ -48,8 +48,7 @@ Takumi simplifies the **physical reality** of AI environments. By encapsulating 
 
 4.  **🧩 Verified Use-Cases (Recipes)**
     We give you **"Environments that Work,"** such as:
-    *   👗 **MagicClothing:** Virtual Try-On environment (Fixed Diffusers/Transformers versions).
-    *   🎥 **AnimateDiff:** AI Video generation environment (FFmpeg/Audio enabled).
+    *   👗 **Wan2.2 I2V 14B:** Wan 2.2 I2V Quantum (GGUF) + LightX2V Distill LoRA + GGUF quantization.
 
 5.  **📦 Asset Manager**
     Modern AI models require complex combinations of `Checkpoints`, `VAEs`, `Clips`, `LoRA` and `Motion Modules`. Takumi's "Asset Manager" downloads and links them automatically, solving the fragmented model problem.
