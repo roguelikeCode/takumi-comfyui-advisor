@@ -6,7 +6,6 @@
       "type": "huggingface",
       "repo_id": "SG161222/Realistic_Vision_V4.0_noVAE",
       "filename": "Realistic_Vision_V4.0.safetensors",
-      "target_dir": "/app/ComfyUI/models/checkpoints",
       "rename_to": "Realistic_Vision_V4.0_noVAE.safetensors"
     },
     {

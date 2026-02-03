@@ -29,5 +29,17 @@
     "mapping": {
       "prompt": { "node_id": 6, "widget_index": 0 } 
     }
+  },
+  "takumi-flow-wan-video-001": {
+    "name": "Wan 2.2 Cinema Studio (I2V)",
+    "creator": "Takumi Enterprise",
+    "description": "Generate cinematic video from image using Wan 2.2 GGUF & LightX2V.",
+    "tags": ["video", "wan2.2", "i2v", "cinema"],
+    "path": "/app/config/takumi_meta/core/library/workflows/create_video_wan2.2_i2v.json",
+    "recommended_checkpoint": "Wan2.2-TI2V-5B-Q4_K_M.gguf",
+    "requires_asset": "takumi-use-case-wan-video-gguf-001",
+    "mapping": {
+      "prompt": { "node_id": 30, "widget_index": 0 }
+    }
   }
 }

@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "adr": "docs/adr/create_video_wan2.2_i2v.md",
+    "strategy": "Wan 2.2 I2V Quantum (GGUF) + LightX2V Distill LoRA"
+  },
+  "id": "wan-video-2.2-assets",
+  "description": "Wan 2.2 (14B) I2V GGUF Models & LightX2V LoRA",
+  "downloads": [
+    {
+      "type": "huggingface",
+      "repo_id": "QuantStack/Wan2.2-I2V-A14B-GGUF",
+      "filename": "HighNoise/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf",
+      "target_dir": "/app/ComfyUI/models/unet",
+      "rename_to": "Wan2.2_I2V_HighNoise_Q4KM.gguf"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "QuantStack/Wan2.2-I2V-A14B-GGUF",
+      "filename": "LowNoise/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf",
+      "target_dir": "/app/ComfyUI/models/unet",
+      "rename_to": "Wan2.2_I2V_LowNoise_Q4KM.gguf"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "filename": "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors",
+      "target_dir": "/app/ComfyUI/models/loras",
+      "rename_to": "Wan2.2_LightX2V_high_4step.safetensors"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "filename": "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "target_dir": "/app/ComfyUI/models/loras",
+      "rename_to": "Wan2.2_LightX2V_low_4step.safetensors"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "city96/umt5-xxl-encoder-gguf",
+      "filename": "umt5-xxl-encoder-Q4_K_M.gguf",
+      "target_dir": "/app/ComfyUI/models/text_encoders",
+      "rename_to": "umt5_xxl_Q4KM.gguf"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "filename": "split_files/vae/wan_2.1_vae.safetensors",
+      "target_dir": "/app/ComfyUI/models/vae",
+      "rename_to": "wan2.1_vae.safetensors"
+    }
+  ]
+}

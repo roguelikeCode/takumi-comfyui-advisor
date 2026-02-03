@@ -1,0 +1,41 @@
+{
+  "asset_id": "takumi-use-case-wan-video-gguf-001",
+  "asset_version": "4.1.0",
+  "asset_recipe": "assets/create_video_wan2.2_i2v.json",
+  "base_recipe": "foundation/comfyui/v0.11.1.json",
+  "display_name": "WanVideo Studio (Wan 2.2 Native + GGUF)",
+  "description": "Run Wan 2.2 I2V using ComfyUI Native nodes and GGUF quantization.",
+  "environment": {
+    "name": "wan_video_env"
+  },
+  "components": [
+    {
+      "type": "custom-node",
+      "source": "https://github.com/city96/ComfyUI-GGUF.git",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/ShmuelRonen/ComfyUI-FreeMemory.git",
+      "version": "main"
+    },
+    { "type": "pip", "source": "numpy", "version": "<2.0" },
+    { "type": "pip", "source": "diffusers", "version": ">=0.33.0" },
+    { "type": "pip", "source": "accelerate", "version": ">=1.2.1" },
+    { "type": "pip", "source": "gguf", "version": ">=0.17.1" },
+    { "type": "pip", "source": "peft", "version": ">=0.17.0" },
+    { "type": "pip", "source": "sentencepiece", "version": ">=0.2.0" },
+    { "type": "pip", "source": "protobuf", "version": "" },
+    { "type": "pip", "source": "pyloudnorm", "version": "" },
+    { "type": "pip", "source": "ftfy", "version": "" },
+    { "type": "pip", "source": "einops", "version": "" },
+    { "type": "pip", "source": "scipy", "version": "" },
+    { "type": "pip", "source": "opencv-python", "version": "" },
+    { "type": "pip", "source": "imageio-ffmpeg", "version": "" }
+  ]
+}
