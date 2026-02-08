@@ -527,60 +527,59 @@ run_install_flow() {
     fi
 
     # 6. Brain
-    setup_ollama_model() {
+    # [Why] To connect to the external AI Brain (Ollama) and ensure the model exists.
+    # [What] 1. Waits for the HTTP endpoint (Sidecar). 2. Uses local CLI to trigger remote pull.
+    provision_brain() {
+        # --- Configuration ---
         local model_name="gemma3:4b"
-        # Get the host from an environment variable (default is http://ollama:11434)
-        local target_host="${OLLAMA_HOST:-http://ollama:11434}"
-        
-        # `curl`` will fail if the URL contains a path such as `/v1``, so use the base URL
-        target_host=${target_host%/v1*} 
+        local raw_host="${OLLAMA_HOST:-http://ollama:11434}"
+        # Sanitize: Strip '/v1' suffix to ensure raw API access for curl/cli
+        local target_host="${raw_host%/v1*}" 
 
-        log_info "Connecting to AI Brain at ${target_host}..."
+        log_info "Initializing connection to AI Brain at ${target_host}..."
 
-        # 1. Connection Check (No local startup)
-        log_info "  -> Waiting for Ollama API to be ready..."
+        # --- Phase 1: Health Check (Wait for Sidecar) ---
         local max_retries=10
         local count=0
         
-        # Check connection to the external container
+        # Loop until connection is established
         while ! curl -s "${target_host}" > /dev/null; do
             sleep 2
             ((count++))
             if [ "$count" -ge "$max_retries" ]; then
-                log_warn "Could not connect to Ollama at ${target_host}."
-                log_warn "Skipping model pull. (You can do this later)"
-                return 0 
+                log_warn "Brain unreachable at ${target_host}. Skipping AI setup."
+                return 0
             fi
             echo -n "."
         done
-        echo "" 
+        echo "" # Newline for clean log
 
-        # 2. Checking and Pulling the Model via Remote API is hard with curl only.
-        # Instead, we assume the user/makefile handled the pull, or we skip it here.
-        # Microservices philosophy: The 'ollama' container manages its own models.
+        # --- Phase 2: Model Provisioning (Remote Control) ---
+        # [Note] In Microservices, we use the local 'ollama' CLI to control the remote 'ollama' server.
         
-        # [Alternative] If we have 'ollama' CLI installed locally, we can point it to the remote host.
+        if ! command -v ollama >/dev/null; then
+            log_warn "Ollama CLI client not found. Skipping model verification."
+            return 0
+        fi
+
+        # Point local CLI to the remote host context
         export OLLAMA_HOST="$target_host"
-        
-        if command -v ollama >/dev/null; then
-            if ollama list | grep -q "${model_name}"; then
-                log_info "  -> Model '${model_name}' is ready."
-            else
-                log_info "  -> Pulling '${model_name}'..."
-                # Run pull in background to not block, or foreground to wait
-                if ! ollama pull "${model_name}"; then
-                    log_warn "Failed to pull model. Please run 'docker exec -it takumi-ollama ollama pull ${model_name}' manually."
-                else
-                    log_success "Model '${model_name}' installed."
-                fi
-            fi
+
+        if ollama list | grep -q "${model_name}"; then
+            log_info "  -> Neural network '${model_name}' is active."
         else
-            log_warn "Ollama CLI not found in container. Skipping model check."
+            log_info "  -> Provisioning '${model_name}' (This may take time)..."
+            if ! ollama pull "${model_name}"; then
+                log_warn "Model pull failed."
+                log_info "Hint: Try manually: 'docker exec -it takumi-ollama ollama pull ${model_name}'"
+            else
+                log_success "Brain upgrade complete: ${model_name}"
+            fi
         fi
     }
 
-    # Brain setup is optional/parallel, but good to ensure here
-    setup_ollama_model
+    # Execute the provisioner
+    provision_brain
 
     # 7. Finalization (Receipts & State)
     

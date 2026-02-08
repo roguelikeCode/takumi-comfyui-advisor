@@ -1,5 +1,5 @@
 """
-Takumi Bridge Server API (Refactored)
+Takumi Bridge Server API (v3.0 Refactored)
 
 [Why] To act as the intelligent interface between the User and ComfyUI.
 [What] Handles chat requests, resolves intents (Fast Path/AI), and orchestrates workflow loading.
@@ -12,27 +12,26 @@ import json
 import os
 import sys
 import subprocess
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 # ==============================================================================
 # [1] Configuration & Constants
 # ==============================================================================
 class TakumiConfig:
-    """Central configuration for paths and AI settings."""
+    """
+    Central Configuration Registry.
+    [Why] To unify path resolution and external service endpoints.
+    """
     
-    # AI Settings
-     # [Fix] 環境変数からホストを取得 (デフォルトはDockerサービス名の http://ollama:11434)
-    _base_host = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
-    # 末尾の /v1 などを除去して整形
-    _base_host = _base_host.replace("/v1", "").rstrip("/")
+    # --- AI Service Settings (Ollama) ---
+    # [Logic] Retrieve host from env, strip '/v1' suffix to ensure raw API access.
+    _raw_host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+    _sanitized_host = _raw_host.replace("/v1", "").rstrip("/")
     
-    # APIエンドポイントを構築
-    OLLAMA_API_URL = f"{_base_host}/api/generate"
-
-    # Model Selection
+    OLLAMA_API_URL = f"{_sanitized_host}/api/generate"
     MODEL_NAME = "gemma3:4b"
     
-    # Paths
+    # --- File System Paths ---
     BASE_CONFIG_DIR = "/app/config/takumi_meta"
     COMFY_ROOT = "/app/external/ComfyUI"
     CUSTOM_NODES_DIR = os.path.join(COMFY_ROOT, "custom_nodes")
@@ -40,11 +39,13 @@ class TakumiConfig:
     @staticmethod
     def get_asset_path(rel_path: str) -> str:
         """
-        [Why] Search priority: Enterprise > Core
+        [Why] To resolve file paths with Enterprise priority.
+        [What] Checks 'enterprise' namespace first, falls back to 'core'.
         """
         ent_path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, "enterprise", rel_path)
         if os.path.exists(ent_path):
             return ent_path
+        
         return os.path.join(TakumiConfig.BASE_CONFIG_DIR, "core", rel_path)
 
 # ==============================================================================
@@ -109,7 +110,8 @@ class CatalogManager:
         # Load Persona (Optional)
         persona_path = TakumiConfig.get_asset_path("prompts/persona.txt")
         persona = ""
-        if os.path.exists(persona_path) and "2b" not in TakumiConfig.MODEL_NAME:
+        # Skip persona for very small models if needed, but keeping simple for now
+        if os.path.exists(persona_path):
              with open(persona_path, 'r', encoding='utf-8') as f:
                 persona = f.read()
 
@@ -175,8 +177,9 @@ class IntentResolver:
             async with aiohttp.ClientSession() as session:
                 async with session.post(TakumiConfig.OLLAMA_API_URL, json=payload) as resp:
                     if resp.status == 404:
-                        await IntentResolver._pull_model()
-                        return await IntentResolver._query_ollama(user_input) # Retry
+                        # Model missing?
+                        print(f">>> [Takumi] Model {TakumiConfig.MODEL_NAME} missing (404).", file=sys.stderr)
+                        return {"response": f"AI Error: Model {TakumiConfig.MODEL_NAME} not found on server."}
                     
                     if resp.status != 200:
                         return {"response": f"AI Error: {resp.status}"}
@@ -197,11 +200,6 @@ class IntentResolver:
             return json.loads(clean_text)
         except json.JSONDecodeError:
             return {"response": raw_text}
-
-    @staticmethod
-    async def _pull_model():
-        print(f">>> [Takumi] Pulling model {TakumiConfig.MODEL_NAME}...", file=sys.stderr)
-        subprocess.run(["ollama", "pull", TakumiConfig.MODEL_NAME], check=True)
 
 # ==============================================================================
 # [4] Workflow Executor (The Worker)
@@ -283,4 +281,4 @@ async def chat_handler(request):
 
     except Exception as e:
         print(f"[Takumi] Critical Error: {e}", file=sys.stderr)
-        return web.json_response({"type": "text", "response": "Internal Server Error."})
+        return web.json_response({"type": "text", "response": f"Internal Server Error: {e}"})

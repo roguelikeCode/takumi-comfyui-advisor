@@ -1,113 +1,44 @@
 SHELL := /bin/bash
 
 # ==============================================================================
-# Takumi OSS Makefile
-#
-# Theme: "The Studio (Standard)"
-# Description: Manages the lifecycle of the Open Source edition (Takumi Advisor).
+#  Takumi ComfyUI Advisor (OSS Edition)
 # ==============================================================================
 
-# --- Configuration ---
-DOTENVX_VERSION := v1.52.0
-IMAGE_NAME     := takumi-comfyui
-IMAGE_TAG      := latest
-CONTAINER_NAME := takumi-comfyui-oss
-
-# --- State Files ---
-CACHE_DIR            := cache
-HISTORY_FILEPATH_OSS := $(CACHE_DIR)/.install_history
-
-# --- Ports ---
-WEB_PORT := 8188
-
-# --- Infrastructure ---
-REQUIRED_DIRS := cache external logs storage/envs storage/ollama storage/pkgs storage/receipts
-PURGE_DIRS    := cache external logs storage
-
-# ==============================================================================
-# Docker Options (The Engine)
-# ==============================================================================
-
-# --- Security Hardening Options ---
-# - no-new-privileges: Prevent sudo usage
-# - cap-drop         : Drop root capabilities
-# - read-only=false  : Required for some writable temporary paths in Rootless
-DOCKER_SEC_OPTS := \
-	--security-opt no-new-privileges:true \
-	--cap-drop=ALL \
-	--cap-add=SYS_NICE \
-	--read-only=false
-
-# --- Docker Runtime Options ---
-# - Rootless Mode Adaptation
-# - HOME=/root
-# - /app is Writable (RW) for nested mount creation
-# - Storage mapped to /root
-# - Scripts mapped as RO (Security)
-DOCKER_RUN_OPTS := \
-	--rm \
-	--gpus all \
-	--name $(CONTAINER_NAME) \
-	-p $(WEB_PORT):8188 \
-	-w /app \
-	-e HOME=/root \
-	-e HF_TOKEN \
-	-e PYTHONDONTWRITEBYTECODE=1 \
-	-e CONDA_ENVS_DIRS=/root/.conda/envs \
-	-e CONDA_PKGS_DIRS=/root/.conda/pkgs \
-	--env-file .env \
-	-v $(shell pwd)/cache:/app/cache \
-	-v $(shell pwd)/$(HISTORY_FILEPATH_OSS):/app/$(HISTORY_FILEPATH_OSS) \
-	-v $(shell pwd)/external:/app/external \
-	-v $(shell pwd)/logs:/app/logs \
-	-v $(shell pwd)/storage/envs:/root/.conda/envs \
-	-v $(shell pwd)/storage/ollama:/root/.ollama \
-	-v $(shell pwd)/storage/pkgs:/root/.conda/pkgs \
-	-v $(shell pwd)/storage/receipts:/app/storage/receipts
-
-# ==============================================================================
-# Command Wrapper
-# ==============================================================================
+# [Config] Launcher (Secure Env Injection)
 LAUNCHER := $(shell command -v dotenvx >/dev/null 2>&1 && echo "dotenvx run --" || echo "")
 
-# [Why] Docker Compose wrapper.
+# [Core] The Unified Command Wrapper
 # [Note] For Rootless Docker, the container runs as 'root' inside, which maps to the host user outside.
 COMPOSE_CMD := $(LAUNCHER) docker compose
 
-# ==============================================================================
 # Targets
-# ==============================================================================
 .DEFAULT_GOAL := help
 
 .PHONY: help
 help:
-	@echo "Takumi Command Interface:"
+	@echo "Takumi OSS Commands:"
 	@echo ""
 	@echo "  [Setup & Security]"
 	@echo "    make setup-env    : Initialize .env and install utilities."
 	@echo "    make encrypt      : Encrypt .env file for security."
 	@echo ""
 	@echo "  [Main]"
-	@echo "    make install-oss  : Build and set up the environment (The Magic Command)."
-	@echo "    make run-oss      : Start ComfyUI and AI Advisor."
+	@echo "  make build-oss    : Build the Docker image"
+	@echo "  make install-oss  : Provision the environment (Install ComfyUI & Nodes)"
+	@echo "  make run-oss      : Start the application stack"
+	@echo "  make stop-oss     : Stop the application stack"
 	@echo ""
 	@echo "  [Development]"
-	@echo "    make build        : Rebuild Docker image."
-	@echo "    make shell        : Enter the container shell for debugging."
-	@echo "    make test         : Run automated test suite."
-	@echo "    make clean-docker : Stop and remove containers."
-	@echo "    make clean-env    : Reset environment (Delete envs/caches)."
-	@echo "    make clean-all    : Factory reset (Delete everything)."
+	@echo "  make logs-oss     : View container logs"
+	@echo "  make shell-oss    : Open a debug shell inside the container"
+	@echo "  make clean-oss    : Factory Reset (Removes all data & containers)"
 
 # ==============================================================================
 # 1. Setup & Security
 # ==============================================================================
-.PHONY: ensure-dirs setup-env encrypt
+.PHONY: setup-env encrypt
 
-ensure-dirs:
-	@mkdir -p $(REQUIRED_DIRS)
-	@touch $(HISTORY_FILEPATH_OSS)
-
+# [Setup]
 setup-env:
 	@echo ">>> Setting up environment..."
 	@if [ ! -f .env ]; then \
@@ -125,7 +56,7 @@ setup-env:
 	else \
 		echo "  ✅ dotenvx is already installed."; \
 	fi
-
+# [Encryption]
 encrypt:
 	@if [ ! -f .env ]; then \
 		echo "❌ .env file not found. Please run 'make setup-env' first."; \
@@ -140,83 +71,63 @@ encrypt:
 	fi
 
 # ==============================================================================
-# 2. Main (Dockerfile Wrapper)
+# 1. Lifecycle Management
 # ==============================================================================
-.PHONY: build install-oss run-oss stop
 
-build: ensure-dirs
+# [Build]
+build-oss:
 	@echo ">>> Building OSS Image..."
 	$(COMPOSE_CMD) build
 
-install-oss: build
-	@echo ">>> [Step 1] Waking up Ollama (Brain)..."
+# [Install]
+# Flow: Build -> Start Infrastructure -> Execute Installer inside Container
+install-oss: build-oss
+	@echo ">>> [Step 1] Waking up Infrastructure..."
 	$(COMPOSE_CMD) up -d --wait
 	@echo ">>> [Step 2] Running Installer..."
 	$(COMPOSE_CMD) exec comfyui bash /app/install.sh
+	@echo ">>> [Step 3] Restarting Runtime (Apply Changes)..."
+	$(COMPOSE_CMD) restart comfyui
+	@echo "✅ Installation Complete. ComfyUI is starting at http://localhost:8188"
 
-# Ensures infrastructure is UP, then executes install script INSIDE.
+# [Run]
+# Just start the services. 'run.sh' inside the container handles the rest.
 run-oss:
 	@echo ">>> Starting Full Stack..."
 	$(COMPOSE_CMD) up -d
 	@echo "✅ Stack is running."
 	@echo "   - ComfyUI: http://localhost:8188"
 
-stop:
+# [Stop]
+stop-oss:
 	@echo ">>> Stopping Stack..."
 	$(COMPOSE_CMD) down
 
+# ==============================================================================
+# 2. Observability & Debugging
+# ==============================================================================
+
+# [Logs] Follow output
 logs-oss:
 	$(COMPOSE_CMD) logs -f
 
+# [Shell] Debug Mode
+# Uses 'run --rm' to create a disposable container attached to the network.
+shell-oss:
+	@echo ">>> Entering Debug Shell..."
+	$(COMPOSE_CMD) run --rm --entrypoint bash comfyui
+
+
+# ==============================================================================
+# 3. Maintenance
+# ==============================================================================
+
+# [Clean] Factory Reset
+# [Warning] This deletes ALL persistent volumes (Conda envs, models, output).
 clean-oss:
-	@echo ">>> Cleaning up..."
-	$(COMPOSE_CMD) down --remove-orphans --volumes
-	docker rm -f takumi-comfyui-oss takumi-ollama 2>/dev/null || true
-
-# ==============================================================================
-# 3. Utilities & Cleanup
-# ==============================================================================
-.PHONY: shell test clean-docker clean-env clean-all
-
-shell: build
-	@echo ">>> Starting interactive shell..."
-	@$(LAUNCHER) docker run \
-		$(DOCKER_SEC_OPTS) \
-		-it $(DOCKER_RUN_OPTS) \
-		$(IMAGE_NAME):$(IMAGE_TAG) \
-		bash
-
-test: build
-	@echo ">>> Running tests..."
-	@$(LAUNCHER) docker run \
-		$(DOCKER_SEC_OPTS) \
-		$(DOCKER_RUN_OPTS) \
-		$(IMAGE_NAME):$(IMAGE_TAG) \
-		bash /app/scripts/run_tests.sh
-
-# [Level 1] Clean Docker Containers
-clean-docker:
-	@echo ">>> 🧹 Removing container artifacts..."
-	@-docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
-	@-docker rmi -f $(IMAGE_NAME):$(IMAGE_TAG) 2>/dev/null || true
-	@echo "✅ Cleanup complete."
-
-# [Level 2] Clean Environment & Cache
-clean-env: clean-docker
-	@echo ">>> ☢️  Cleaning Runtime Environments (OSS)..."
-	@# Use sudo just in case, but finding/deleting content only
-	@if [ -d "storage" ]; then \
-		echo "   -> Removing caches and environments..."; \
-		sudo rm -rf $(PURGE_DIRS); \
-	fi
-	@make ensure-dirs
-	@echo "✅ Environment reset. Please run 'make install-oss' again."
-
-# [Level 3] Factory Reset
-clean-all: clean-env
 	@echo ">>> ☢️  INITIATING FACTORY RESET..."
-	@echo "   -> Wiping all ComfyUI data..."
-	@if [ -d "external/ComfyUI" ]; then \
-		sudo rm -rf external/ComfyUI; \
-	fi
+	@echo "   -> Stopping containers..."
+	$(COMPOSE_CMD) down --remove-orphans --volumes
+	@echo "   -> Sweeping artifacts..."
+	@docker rm -f takumi-comfyui-oss takumi-ollama 2>/dev/null || true
 	@echo "✅ System restored to factory settings."

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- Include Guard (Critical Fix) ---
+# [Why] To prevent "readonly variable" errors when sourced multiple times.
+if [ -n "${UTILS_SH_LOADED:-}" ]; then
+    return 0
+fi
+readonly UTILS_SH_LOADED=true
+
 # [Why] To centrally manage paths and state variables shared across the project.
 # [What] Defines directory paths and initializes global state arrays.
 

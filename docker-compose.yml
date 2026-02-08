@@ -5,8 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: takumi-comfyui-oss
-    
-    # セキュリティ設定
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -16,9 +14,7 @@ services:
       - DAC_OVERRIDE
       - CHOWN
       - FOWNER
-    
     command: ["bash", "/app/scripts/run.sh"]
-    
     deploy:
       resources:
         reservations:
@@ -26,21 +22,16 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
     ports:
       - "8188:8188"
-    
-    # 【重要】永続化ボリューム設定 (Ent版の構成をNamed Volumeで再現)
     volumes:
       # 1. Python/Conda Core
-      - conda-envs:/root/.conda/envs       # 環境本体
-      - conda-pkgs:/root/.conda/pkgs       # パッケージキャッシュ (DL高速化)
-      
+      - conda-envs:/root/.conda/envs
+      - conda-pkgs:/root/.conda/pkgs
       # 2. Takumi System
-      - takumi-cache:/app/cache            # ★最重要: .active_env (記憶) はここ
-      - takumi-logs:/app/logs              # ログ
-      - takumi-receipts:/app/storage/receipts # インストール証明書
-      
+      - takumi-cache:/app/cache
+      - takumi-logs:/app/logs
+      - takumi-receipts:/app/storage/receipts
       # 3. ComfyUI Data
       - comfyui-external:/app/external
       - comfyui-output:/app/ComfyUI/output
@@ -48,7 +39,6 @@ services:
       - comfyui-models:/app/ComfyUI/models
       - comfyui-user:/app/ComfyUI/user
       - pip-cache:/root/.cache/pip
-    
     environment:
       - CLI_ARGS=--listen 0.0.0.0 --port 8188 --preview-method auto
       - NVIDIA_VISIBLE_DEVICES=all
@@ -56,14 +46,11 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - OLLAMA_HOST=http://ollama:11434
       - HF_TOKEN=${HF_TOKEN}
-    
     depends_on:
       ollama:
         condition: service_healthy
-    
     networks:
       - takumi-network
-    
     restart: unless-stopped
     tty: true
 
@@ -83,18 +70,15 @@ services:
       timeout: 10s
       retries: 5
     restart: always
-
 networks:
   takumi-network:
     driver: bridge
-
-# ボリューム定義
 volumes:
   conda-envs:
-  conda-pkgs:      # NEW
-  takumi-cache:    # NEW (Critical)
-  takumi-logs:     # NEW
-  takumi-receipts: # NEW
+  conda-pkgs:
+  takumi-cache:
+  takumi-logs:
+  takumi-receipts:
   comfyui-external:
   comfyui-output:
   comfyui-input:
