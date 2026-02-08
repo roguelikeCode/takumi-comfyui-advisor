@@ -316,176 +316,6 @@
       ]
     },
     {
-      "id": 94,
-      "type": "TextEncodeAceStepAudio1.5",
-      "pos": [
-        270,
-        -790
-      ],
-      "size": [
-        611.9184354063266,
-        679.7643386829468
-      ],
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 261
-        },
-        {
-          "name": "seed",
-          "type": "INT",
-          "widget": {
-            "name": "seed"
-          },
-          "link": 257
-        },
-        {
-          "name": "duration",
-          "type": "FLOAT",
-          "widget": {
-            "name": "duration"
-          },
-          "link": 251
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            254,
-            255
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.11.1",
-        "Node name for S&R": "TextEncodeAceStepAudio1.5"
-      },
-      "widgets_values": [
-        "K-Pop: A slick, maximalist K-pop track that genre-hops with precision and style. The production shifts seamlessly between sections—a hard-hitting trap-influenced verse with rapid-fire rapping, a softer R&B pre-chorus with breathy vocals and lush harmonies, then an explosive, synth-driven pop chorus with an ear worm hook.",
-        "[Intro - Synth Rise & Vocal Chop]\nyeah—\nuh\nturn it up\n\n[Verse 1 - Trap Rap]\nClick-clack, camera flash, we don’t miss  \nRun the board, every move calculated  \nBig bass hit when I step in the frame  \nToo fast, they can’t even say my name  \n\nRadar locked, yeah I’m on that lane  \nDrip so sharp, cut through champagne  \nTalk cheap, but my sound heavyweight  \nCountdown tickin’, watch me detonate  \n\n[Verse 2 - Trap Rap]\n808 talk, let it shake the floor  \nAll eyes on me when I hit that door  \nToo bold, too cold, no rehearsal  \nBuilt this crown from universal  \n\nChain reaction when I breathe that fire  \nOne line, whole room go higher  \nNo pause, no fear, full ignition  \nThis that global transmission  \n\n[Pre-Chorus - R&B]\nPull me closer, slow it down  \nHeartbeat under the sound  \nWhen you whisper my name like that  \nI forget where the edges are  \n\nLights go low, voices melt  \nEvery note just how I felt  \nHold your breath, let it bloom  \nSomething ’bout to break real soon  \n\n[Chorus - Pop Explosion]\nBoom, boom, feel it in your chest  \nWhen the beat drop, we the best  \nHands up high, don’t overthink  \nSay my name, make the whole world blink  \n\nFlash, flash, colors collide  \nWe don’t wait, we ignite  \nRound and round, stuck in your brain  \nThis that hook you won’t escape  \n\n[Post-Chorus - Chant]\nHey!  \nTurn it l\n",
-        31,
-        "fixed",
-        190,
-        120,
-        "4",
-        "en",
-        "E minor",
-        true,
-        2,
-        0.85,
-        0.9,
-        0
-      ]
-    },
-    {
-      "id": 119,
-      "type": "ShowText|pysssss",
-      "pos": [
-        1401.7201586128874,
-        -289.20673822179947
-      ],
-      "size": [
-        210,
-        161.68230724935069
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "text",
-          "type": "STRING",
-          "link": 273
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "shape": 6,
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-custom-scripts",
-        "ver": "26a13291c8081135b9a80794daf818793c37ef24",
-        "Node name for S&R": "ShowText|pysssss",
-        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
-      },
-      "widgets_values": [
-        "\"Uplifting J-pop winter song featuring a female vocalist, evoking a cozy cafe atmosphere with delicate piano melodies and warm synth pads, reflecting the beauty of falling snow.\""
-      ]
-    },
-    {
-      "id": 109,
-      "type": "LyricForgeACEStepGenerator",
-      "pos": [
-        928.2405709185036,
-        -292.44289770374786
-      ],
-      "size": [
-        400,
-        292
-      ],
-      "flags": {
-        "collapsed": false
-      },
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "caption",
-          "type": "STRING",
-          "links": [
-            273
-          ]
-        },
-        {
-          "name": "lyrics",
-          "type": "STRING",
-          "links": [
-            274
-          ]
-        },
-        {
-          "name": "bpm",
-          "type": "INT",
-          "links": [
-            275
-          ]
-        },
-        {
-          "name": "key_scale",
-          "type": "STRING",
-          "links": [
-            276
-          ]
-        }
-      ],
-      "properties": {
-        "aux_id": "knishika62/ComfyUI-LyricForge",
-        "ver": "bdf7e94a5d5bca4646c5b6ba8ace550531aa69b4",
-        "Node name for S&R": "LyricForgeACEStepGenerator"
-      },
-      "widgets_values": [
-        "j-pop 冬の歌 女性ボーカル 雪 カフェ",
-        "http://ollama:11434",
-        "dummy",
-        "gemma3:4b",
-        "Japanese",
-        "Standard",
-        0.7
-      ]
-    },
-    {
       "id": 18,
       "type": "VAEDecodeAudio",
       "pos": [
@@ -528,38 +358,6 @@
       "widgets_values": []
     },
     {
-      "id": 107,
-      "type": "SaveAudioMP3",
-      "pos": [
-        1280.9116657821721,
-        -679.4656934277992
-      ],
-      "size": [
-        700,
-        136
-      ],
-      "flags": {},
-      "order": 16,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "link": 263
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.11.1",
-        "Node name for S&R": "SaveAudioMP3"
-      },
-      "widgets_values": [
-        "audio/ComfyUI",
-        "V0"
-      ]
-    },
-    {
       "id": 102,
       "type": "PrimitiveNode",
       "pos": [
@@ -571,7 +369,7 @@
         82
       ],
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -640,57 +438,89 @@
       ]
     },
     {
-      "id": 111,
-      "type": "ShowText|pysssss",
+      "id": 113,
+      "type": "easy showAnything",
       "pos": [
-        1613.0654927189466,
-        -289.1191453462297
+        1402.1141452680608,
+        -66.00292366916469
       ],
       "size": [
-        543.9488784790956,
-        428.1069484960497
+        210,
+        88
       ],
       "flags": {},
-      "order": 9,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
-          "name": "text",
-          "type": "STRING",
-          "link": 274
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 275
         }
       ],
       "outputs": [
         {
-          "name": "STRING",
-          "shape": 6,
-          "type": "STRING",
+          "name": "output",
+          "type": "*",
           "links": null
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-custom-scripts",
-        "ver": "26a13291c8081135b9a80794daf818793c37ef24",
-        "Node name for S&R": "ShowText|pysssss",
-        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
+        "cnr_id": "comfyui-easy-use",
+        "ver": "7c470c67d6df44498e52c902173c1ac77cd5bdfd",
+        "Node name for S&R": "easy showAnything",
+        "aux_id": "yolain/ComfyUI-Easy-Use"
       },
       "widgets_values": [
-        "[Intro]\n(Soft piano chords and gentle synth pads)\n\n[Verse 1]\n窓の外には　白い雪が降る\n(Mado no soto ni wa, shiroi yuki ga furu)\n(Outside the window, snow falls white)\nカフェの灯り　温もり感じる\n(Kafe no tomori, nukumi kanjiiru)\n(The cafe's light, I feel warmth)\n忘れかけてた　あの日の記憶\n(Wasurekakete ta, ano hi no kioku)\n(I had almost forgotten, the memories of that day)\n\n[Pre-Chorus]\n風が吹く　頬を赤く染めて\n(Kaze ga fuku, hoo o akaku somete)\n(The wind blows, reddening my cheeks)\n心に響く　優しいメロディ\n(Kokoro ni hibiku, yasashii merodii)\n(A gentle melody resonates in my heart)\n\n[Chorus]\n雪が降る　カプチーノを飲み\n(Yuki ga furu, kapuchino o nomu)\n(Snow falls, I drink a cappuccino)\nあなたと出会えた　奇跡の季節\n(Anata to deaeta, kiseki no kisetsu)\n(The miracle season I was able to meet you)\nこの場所で　永遠を誓う\n(Kono basho de, eien o chikau)\n(I swear eternity in this place)\n\n[Verse 2]\n雪駄が踏む　路面の静寂\n(Yukidana ga namu, rono no seijaku)\n(The yukidana steps on, the silence of the road)\nロマンチックな　物語が始まる\n(Roman shikkusu na, monogatari ga hajimaru)\n(A romantic story begins)\n温かい飲み物　二人で分かち合う\n(Atatakai nomimono, futari de wakachiau)\n(Warm drinks, we share together)\n\n[Pre-Chorus]\n風が吹く　頬を赤く染めて\n(Kaze ga fuku, hoo o akaku somete)\n(The wind blows, reddening my cheeks)\n心に響く　優しいメロディ\n(Kokoro ni hibiku, yasashii merodii)\n(A gentle melody resonates in my heart)\n\n[Chorus]\n雪が降る　カプチーノを飲み\n(Yuki ga furu, kapuchino o nomu)\n(Snow falls, I drink a cappuccino)\nあなたと出会えた　奇跡の季節\n(Anata to deaeta, kiseki no kisetsu)\n(The miracle season I was able to meet you)\nこの場所で　永遠を誓う\n(Kono basho de, eien o chikau)\n(I swear eternity in this place)\n\n[Bridge]\n(Instrumental - Piano solo with subtle synth harmonies)\n雪の結晶　きらきらと輝き\n(Yuki no seichou, kirakira to kagayaki)\n(Snow crystals, shining brightly)\n希望を乗せて　未来へと続く\n(Kibou o nosete, mirai e to tsukuku)\n(Carrying hope, continuing towards the future)\n\n[Chorus]\n雪が降る　カプチーノを飲み\n(Yuki ga furu, kapuchino o nomu)\n(Snow falls, I drink a cappuccino)\nあなたと出会えた　奇跡の季節\n(Anata to deaeta, kiseki no kisetsu)\n(The miracle season I was able to meet you)\nこの場所で　永遠を誓う\n(Kono basho de, eien o chikau)\n(I swear eternity in this place)\n\n[Outro]\n(Fade out with piano and synth pads)\n雪が降る… (Yuki ga furu…)\n(Snow falls…)"
+        "125"
+      ]
+    },
+    {
+      "id": 107,
+      "type": "SaveAudioMP3",
+      "pos": [
+        1280.9116657821721,
+        -679.4656934277992
+      ],
+      "size": [
+        700,
+        136
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 263
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.11.1",
+        "Node name for S&R": "SaveAudioMP3"
+      },
+      "widgets_values": [
+        "audio/ComfyUI",
+        "V0"
       ]
     },
     {
       "id": 112,
       "type": "easy showAnything",
       "pos": [
-        1401.6084996964685,
-        63.5797449483772
+        1402.129486544661,
+        61.75630687896051
       ],
       "size": [
-        140,
-        76
+        210,
+        88
       ],
       "flags": {},
-      "order": 11,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -718,42 +548,212 @@
       ]
     },
     {
-      "id": 113,
-      "type": "easy showAnything",
+      "id": 109,
+      "type": "LyricForgeACEStepGenerator",
       "pos": [
-        1402.1141452680608,
-        -66.00292366916469
+        931.3925413500677,
+        -289.0044369732253
       ],
       "size": [
-        140,
-        76
+        400,
+        292
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "caption",
+          "type": "STRING",
+          "links": [
+            273
+          ]
+        },
+        {
+          "name": "lyrics",
+          "type": "STRING",
+          "links": [
+            274
+          ]
+        },
+        {
+          "name": "bpm",
+          "type": "INT",
+          "links": [
+            275
+          ]
+        },
+        {
+          "name": "key_scale",
+          "type": "STRING",
+          "links": [
+            276
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "knishika62/ComfyUI-LyricForge",
+        "ver": "bdf7e94a5d5bca4646c5b6ba8ace550531aa69b4",
+        "Node name for S&R": "LyricForgeACEStepGenerator"
+      },
+      "widgets_values": [
+        "Chorus-first, Nu-Disco, Funky Bass, Whisper Vocals, High Confidence, Playful, Unbothered, Catchy Hook, Aesthetic, Witty Lyrics, Self-Love, Highly addictive main phrase, Groove-driven, Catchy Hook, Minimalist",
+        "http://ollama:11434",
+        "dummy",
+        "gemma3:4b",
+        "English",
+        "Standard",
+        1
+      ]
+    },
+    {
+      "id": 119,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1401.7201586128874,
+        -289.20673822179947
+      ],
+      "size": [
+        210,
+        161.68230724935069
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 273
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "26a13291c8081135b9a80794daf818793c37ef24",
+        "Node name for S&R": "ShowText|pysssss",
+        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
+      },
+      "widgets_values": [
+        "\"A playful and high-confidence nu-disco track driven by a funky bassline and whisper vocals, boasting a catchy hook and witty lyrics about self-love and unbothered vibes – highly addictive!\""
+      ]
+    },
+    {
+      "id": 111,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1613.0654927189466,
+        -289.1191453462297
+      ],
+      "size": [
+        550.4612140815011,
+        438.21438723948484
       ],
       "flags": {},
       "order": 10,
       "mode": 0,
       "inputs": [
         {
-          "name": "anything",
-          "shape": 7,
-          "type": "*",
-          "link": 275
+          "name": "text",
+          "type": "STRING",
+          "link": 274
         }
       ],
       "outputs": [
         {
-          "name": "output",
-          "type": "*",
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
           "links": null
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-easy-use",
-        "ver": "7c470c67d6df44498e52c902173c1ac77cd5bdfd",
-        "Node name for S&R": "easy showAnything",
-        "aux_id": "yolain/ComfyUI-Easy-Use"
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "26a13291c8081135b9a80794daf818793c37ef24",
+        "Node name for S&R": "ShowText|pysssss",
+        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
       },
       "widgets_values": [
-        "115"
+        "[Intro]\n(Subtle synth pads and hi-hats build)\n\n[Verse 1]\nSilk dress shimmerin', mood is golden\nDon't need no validation, story told in\nDiamond eyes reflectin’ all the light\nFeelin’ like a queen, feelin’ alright\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Verse 2]\nAesthetic dreams in a neon glow\nLeaving all the worries far below\nWitty lyrics dancin' in my head\nSmiling at the world, unapologetically led\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Bridge]\n(Beat softens, synth pads become more prominent)\nMinimalist soul, shining from within\nSelf-love’s the rhythm, let the journey begin\n\n[Instrumental]\n(Funky bass and driving beat take center stage - brief breakdown)\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Outro]\n(Music fades out with synth pads and hi-hats, repeating the hook subtly)\nUnbothered... yeah... oh..."
+      ]
+    },
+    {
+      "id": 94,
+      "type": "TextEncodeAceStepAudio1.5",
+      "pos": [
+        270,
+        -790
+      ],
+      "size": [
+        611.9184354063266,
+        679.7643386829468
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 261
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 257
+        },
+        {
+          "name": "duration",
+          "type": "FLOAT",
+          "widget": {
+            "name": "duration"
+          },
+          "link": 251
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            254,
+            255
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.11.1",
+        "Node name for S&R": "TextEncodeAceStepAudio1.5"
+      },
+      "widgets_values": [
+        "\"Chorus-first, A playful and high-confidence nu-disco track driven by a funky bassline and whisper vocals, boasting a catchy hook and witty lyrics about self-love and unbothered vibes – highly addictive!\"",
+        "[Intro]\n(Subtle synth pads and hi-hats build)\n\n[Verse 1]\nSilk dress shimmerin', mood is golden\nDon't need no validation, story told in\nDiamond eyes reflectin’ all the light\nFeelin’ like a queen, feelin’ alright\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Verse 2]\nAesthetic dreams in a neon glow\nLeaving all the worries far below\nWitty lyrics dancin' in my head\nSmiling at the world, unapologetically led\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Bridge]\n(Beat softens, synth pads become more prominent)\nMinimalist soul, shining from within\nSelf-love’s the rhythm, let the journey begin\n\n[Instrumental]\n(Funky bass and driving beat take center stage - brief breakdown)\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Outro]\n(Music fades out with synth pads and hi-hats, repeating the hook subtly)\nUnbothered... yeah... oh...",
+        31,
+        "fixed",
+        125,
+        120,
+        "4",
+        "ja",
+        "C major",
+        true,
+        2,
+        0.85,
+        0.9,
+        0
       ]
     }
   ],
@@ -947,10 +947,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.4952692721989676,
+      "scale": 0.5816168647737713,
       "offset": [
-        842.0320623538757,
-        1379.1443625732666
+        978.3794769186015,
+        1231.8060683924566
       ]
     },
     "frontendVersion": "1.38.13",
