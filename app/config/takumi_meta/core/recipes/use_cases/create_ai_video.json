@@ -4,7 +4,7 @@
   "asset_recipe": "assets/animate_diff.json",
   "display_name": "Legacy: Create AI Video (AnimateDiff)",
   "description": "Create smooth AI animations using AnimateDiff Evolved and VideoHelperSuite.",
-  "base_recipe": "foundation/comfyui/v0.11.1.json",
+  "base_recipe": "foundation/comfyui/v0.12.3.json",
   "contribution": [
     {
       "type": "use_case_recipe",

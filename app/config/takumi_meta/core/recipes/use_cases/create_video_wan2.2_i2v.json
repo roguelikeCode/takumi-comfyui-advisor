@@ -2,7 +2,7 @@
   "asset_id": "takumi-use-case-wan-video-gguf-001",
   "asset_version": "4.1.0",
   "asset_recipe": "assets/create_video_wan2.2_i2v.json",
-  "base_recipe": "foundation/comfyui/v0.11.1.json",
+  "base_recipe": "foundation/comfyui/v0.12.3.json",
   "display_name": "WanVideo Studio (Wan2.2 I2V + GGUF)",
   "description": "Run Wan 2.2 I2V using ComfyUI Native nodes and GGUF quantization.",
   "environment": {

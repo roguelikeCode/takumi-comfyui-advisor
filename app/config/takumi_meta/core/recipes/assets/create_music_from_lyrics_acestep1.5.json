@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "adr": "docs/adr/create_music_from_lyrics_acestep1.5.md",
+    "strategy": "ACE-Step 1.5 Turbo + Qwen Text Encoders"
+  },
+  "id": "ace-step-1.5-assets",
+  "description": "ACE-Step 1.5 Turbo Models, VAE, and Qwen Text Encoders for LyricForge workflow.",
+  "downloads": [
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/ace_step_1.5_ComfyUI_files",
+      "filename": "split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+      "target_dir": "/app/ComfyUI/models/diffusion_models",
+      "rename_to": "acestep_v1.5_turbo.safetensors"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/ace_step_1.5_ComfyUI_files",
+      "filename": "split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+      "target_dir": "/app/ComfyUI/models/text_encoders",
+      "rename_to": "qwen_0.6b_ace15.safetensors"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/ace_step_1.5_ComfyUI_files",
+      "filename": "split_files/text_encoders/qwen_1.7b_ace15.safetensors",
+      "target_dir": "/app/ComfyUI/models/text_encoders",
+      "rename_to": "qwen_1.7b_ace15.safetensors"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Comfy-Org/ace_step_1.5_ComfyUI_files",
+      "filename": "split_files/vae/ace_1.5_vae.safetensors",
+      "target_dir": "/app/ComfyUI/models/vae",
+      "rename_to": "ace_1.5_vae.safetensors"
+    }
+  ]
+}

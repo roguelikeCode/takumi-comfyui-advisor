@@ -1,11 +1,11 @@
 {
-  "id": "takumi-foundation-comfyui-v0.11.1",
-  "description": "Core dependencies for ComfyUI v0.11.1 (Python 3.11/Torch 2.4/CUDA 12.1)",
+  "id": "takumi-foundation-comfyui-v0.12.3",
+  "description": "Core dependencies for ComfyUI v0.12.3 (Python 3.11/Torch 2.4/CUDA 12.1)",
   "components": [
     {
       "type": "git-clone",
       "source": "https://github.com/Comfy-Org/ComfyUI.git",
-      "version": "v0.11.1",
+      "version": "v0.12.3",
       "path": "/app/external/ComfyUI" 
     },
     {
@@ -121,7 +121,7 @@
     {
       "type": "pip",
       "source": "comfyui-frontend-package",
-      "version": "==1.37.11"
+      "version": "==1.38.13"
     },
     {
       "type": "pip",
@@ -136,12 +136,12 @@
      {
       "type": "pip",
       "source": "comfy-aimdo",
-      "version": ""
+      "version": ">=0.1.7"
     },
     {
       "type": "pip",
       "source": "comfyui-workflow-templates",
-      "version": "==0.8.27"
+      "version": "==0.8.31"
     },
     {
       "type": "pip",

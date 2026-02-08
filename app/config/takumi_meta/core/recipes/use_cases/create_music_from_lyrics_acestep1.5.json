@@ -1,0 +1,44 @@
+{
+  "asset_id": "takumi-use-case-ace-step-1.5-lyric-001",
+  "asset_version": "1.0.0",
+  "asset_recipe": "assets/create_music_from_lyrics_acestep1.5.json",
+  "base_recipe": "foundation/comfyui/v0.12.3.json",
+  "display_name": "ACE-Step 1.5 Studio (Lyric + Music)",
+  "description": "Environment for ACE-Step 1.5 workflow using ComfyUI-LyricForge. Optimized for lyric generation and prompt engineering.",
+  "environment": {
+    "name": "ace_step_env"
+  },
+  "components": [
+    {
+      "type": "custom-node",
+      "source": "https://github.com/ltdrdata/ComfyUI-Manager.git",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/knishika62/ComfyUI-LyricForge.git",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
+      "version": "main"
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/yolain/ComfyUI-Easy-Use.git",
+      "version": "main"
+    },
+    { "type": "pip","source": "requests","version": ">=2.31.0"},
+    { "type": "pip", "source": "diffusers", "version": "" },
+    { "type": "pip", "source": "accelerate", "version": "" },
+    { "type": "pip", "source": "clip_interrogator", "version": ">=0.6.0" },
+    { "type": "pip", "source": "lark", "version": "" },
+    { "type": "pip", "source": "onnxruntime", "version": "" },
+    { "type": "pip", "source": "opencv-python-headless", "version": "" },
+    { "type": "pip", "source": "sentencepiece", "version": "" },
+    { "type": "pip", "source": "spandrel", "version": "" },
+    { "type": "pip", "source": "matplotlib", "version": "" },
+    { "type": "pip", "source": "peft", "version": "" }
+  ]
+}

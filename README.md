@@ -112,7 +112,7 @@ Select your desired use-case number from the menu (e.g., Wan2.2)
 make install-oss
 ```
 
-### 4. Run
+### 2. Run
 
 ```bash
 make run-oss

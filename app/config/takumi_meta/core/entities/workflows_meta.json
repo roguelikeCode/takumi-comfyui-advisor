@@ -1,18 +1,24 @@
 {
-  "takumi-flow-magic-clothing-001": {
-    "name": "Magic Clothing Standard",
-    "creator": "frankchieng (Adapted by Takumi)",
-    "description": "Standard generation workflow for MagicClothing.",
-    "tags": ["fashion", "virtual-try-on", "magic-clothing"],
-    "path": "/app/config/takumi_meta/core/library/workflows/magic_clothing_v1.json",
-    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
-
-    "_comment": "Link to Recipe ID",
-    "requires_asset": "takumi-use-case-fashion-001", 
-
+  "takumi-flow-ace-step-1.5-lyric-001": {
+    "name": "ACE-Step 1.5 Music Gen",
+    "creator": "Takumi Enterprise",
+    "description": "Generate audio/lyrics using ACE-Step 1.5 & LyricForge.",
+    "tags": ["audio", "ace-step-1.5", "lyric-forge", "trend"],
+    "path": "/app/config/takumi_meta/core/library/workflows/create_music_from_lyrics_acestep1.5.json",
+    "recommended_checkpoint": null,
+    "requires_asset": "takumi-use-case-ace-step-1.5-lyric-001",
+    "mapping": {}
+  },
+  "takumi-flow-wan-video-001": {
+    "name": "Wan 2.2 Cinema Studio (I2V)",
+    "creator": "Takumi Enterprise",
+    "description": "Generate cinematic video from image using Wan 2.2 GGUF & LightX2V.",
+    "tags": ["video", "wan2.2", "i2v", "cinema"],
+    "path": "/app/config/takumi_meta/core/library/workflows/create_video_wan2.2_i2v.json",
+    "recommended_checkpoint": "Wan2.2-TI2V-5B-Q4_K_M.gguf",
+    "requires_asset": "takumi-use-case-wan-video-gguf-001",
     "mapping": {
-      "prompt": { "node_id": 23, "widget_index": 0 },
-      "seed": { "node_id": 23, "widget_index": 6 }
+      "prompt": { "node_id": 30, "widget_index": 0 }
     }
   },
   "takumi-flow-animatediff-001": {
@@ -30,16 +36,20 @@
       "prompt": { "node_id": 6, "widget_index": 0 } 
     }
   },
-  "takumi-flow-wan-video-001": {
-    "name": "Wan 2.2 Cinema Studio (I2V)",
-    "creator": "Takumi Enterprise",
-    "description": "Generate cinematic video from image using Wan 2.2 GGUF & LightX2V.",
-    "tags": ["video", "wan2.2", "i2v", "cinema"],
-    "path": "/app/config/takumi_meta/core/library/workflows/create_video_wan2.2_i2v.json",
-    "recommended_checkpoint": "Wan2.2-TI2V-5B-Q4_K_M.gguf",
-    "requires_asset": "takumi-use-case-wan-video-gguf-001",
+  "takumi-flow-magic-clothing-001": {
+    "name": "Magic Clothing Standard",
+    "creator": "frankchieng (Adapted by Takumi)",
+    "description": "Standard generation workflow for MagicClothing.",
+    "tags": ["fashion", "virtual-try-on", "magic-clothing"],
+    "path": "/app/config/takumi_meta/core/library/workflows/magic_clothing_v1.json",
+    "recommended_checkpoint": "SG161222/Realistic_Vision_V4.0_noVAE",
+
+    "_comment": "Link to Recipe ID",
+    "requires_asset": "takumi-use-case-fashion-001", 
+
     "mapping": {
-      "prompt": { "node_id": 30, "widget_index": 0 }
+      "prompt": { "node_id": 23, "widget_index": 0 },
+      "seed": { "node_id": 23, "widget_index": 6 }
     }
   }
 }
