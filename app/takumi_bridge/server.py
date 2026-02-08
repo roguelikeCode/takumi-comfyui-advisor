@@ -21,8 +21,16 @@ class TakumiConfig:
     """Central configuration for paths and AI settings."""
     
     # AI Settings
-    OLLAMA_API_URL = "http://localhost:11434/api/generate"
-    MODEL_NAME = "gemma2:2b"
+     # [Fix] 環境変数からホストを取得 (デフォルトはDockerサービス名の http://ollama:11434)
+    _base_host = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+    # 末尾の /v1 などを除去して整形
+    _base_host = _base_host.replace("/v1", "").rstrip("/")
+    
+    # APIエンドポイントを構築
+    OLLAMA_API_URL = f"{_base_host}/api/generate"
+
+    # Model Selection
+    MODEL_NAME = "gemma3:4b"
     
     # Paths
     BASE_CONFIG_DIR = "/app/config/takumi_meta"

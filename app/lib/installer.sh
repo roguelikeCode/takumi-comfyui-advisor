@@ -238,9 +238,9 @@ install_pip_from_recipe() {
 
 # [Why] To ensure the AI model is ready for the Chat UI.
 # [What] Starts Ollama server and pulls the required model if missing.
-# [Note] gemma2:2b provides the best balance of speed and instruction following
+# [Note] gemma3:4b provides the best balance of speed and instruction following
 setup_ollama_model() {
-    local model_name="gemma2:2b"
+    local model_name="gemma3:4b"
     log_info "Setting up AI Model (${model_name})..."
 
     if ! pgrep -x "ollama" > /dev/null; then
@@ -528,45 +528,54 @@ run_install_flow() {
 
     # 6. Brain
     setup_ollama_model() {
-        local model_name="gemma2:2b"
-        log_info "Setting up AI Model (${model_name})..."
+        local model_name="gemma3:4b"
+        # Get the host from an environment variable (default is http://ollama:11434)
+        local target_host="${OLLAMA_HOST:-http://ollama:11434}"
+        
+        # `curl`` will fail if the URL contains a path such as `/v1``, so use the base URL
+        target_host=${target_host%/v1*} 
 
-        # 1. Start the server if it is not running
-        if ! pgrep -x "ollama" > /dev/null; then
-            log_info "  -> Starting Ollama server..."
-            # Prevent buffer congestion by discarding logs & background execution
-            ollama serve > /dev/null 2>&1 &
-        fi
+        log_info "Connecting to AI Brain at ${target_host}..."
 
-        # 2. Startup wait loop (Heartbeat Check)
-        # Instead of simply sleeping, it actually waits up to 20 seconds until it can connect.
+        # 1. Connection Check (No local startup)
         log_info "  -> Waiting for Ollama API to be ready..."
-        local max_retries=20
+        local max_retries=10
         local count=0
         
-        # Check if you can connect to 127.0.0.1:11434
-        while ! curl -s http://127.0.0.1:11434 > /dev/null; do
+        # Check connection to the external container
+        while ! curl -s "${target_host}" > /dev/null; do
             sleep 2
             ((count++))
             if [ "$count" -ge "$max_retries" ]; then
-                log_warn "Ollama server failed to start within timeout."
-                # Failure does not stop the entire installation (because it is a non-essential component)
+                log_warn "Could not connect to Ollama at ${target_host}."
+                log_warn "Skipping model pull. (You can do this later)"
                 return 0 
             fi
             echo -n "."
         done
-        echo "" # Line breaks
+        echo "" 
 
-        # 3. Checking and Pulling the Model
-        if ollama list | grep -q "${model_name}"; then
-            log_info "  -> Model '${model_name}' is already installed."
-        else
-            log_info "  -> Pulling '${model_name}'..."
-            if ! ollama pull "${model_name}"; then
-                log_warn "Failed to pull model '${model_name}'. Run 'ollama pull ${model_name}' manually."
+        # 2. Checking and Pulling the Model via Remote API is hard with curl only.
+        # Instead, we assume the user/makefile handled the pull, or we skip it here.
+        # Microservices philosophy: The 'ollama' container manages its own models.
+        
+        # [Alternative] If we have 'ollama' CLI installed locally, we can point it to the remote host.
+        export OLLAMA_HOST="$target_host"
+        
+        if command -v ollama >/dev/null; then
+            if ollama list | grep -q "${model_name}"; then
+                log_info "  -> Model '${model_name}' is ready."
             else
-                log_success "Model '${model_name}' installed."
+                log_info "  -> Pulling '${model_name}'..."
+                # Run pull in background to not block, or foreground to wait
+                if ! ollama pull "${model_name}"; then
+                    log_warn "Failed to pull model. Please run 'docker exec -it takumi-ollama ollama pull ${model_name}' manually."
+                else
+                    log_success "Model '${model_name}' installed."
+                fi
             fi
+        else
+            log_warn "Ollama CLI not found in container. Skipping model check."
         fi
     }
 

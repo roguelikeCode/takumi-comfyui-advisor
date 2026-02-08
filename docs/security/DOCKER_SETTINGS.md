@@ -31,6 +31,16 @@ If you cannot use the script, please refer to the official documentation:
 *   [Run the Docker daemon as a non-root user (Rootless mode)](https://docs.docker.com/engine/security/rootless/)
 *   [NVIDIA Container Toolkit: Rootless Support](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#rootless-mode)
 
+**Critical Fix for WSL2 Users:**
+Rootless Docker usually fails to access GPUs due to cgroup permission errors.
+You must disable cgroups in the NVIDIA config:
+
+```bash
+# Edit /etc/nvidia-container-runtime/config.toml
+# Change "no-cgroups = false" to "true"
+no-cgroups = true
+```
+
 ## 2. The Double Barrier
 By stripping root privileges from the Docker Daemon, we construct a double layer of defense:
 

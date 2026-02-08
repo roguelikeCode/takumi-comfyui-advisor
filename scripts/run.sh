@@ -1,222 +1,176 @@
 #!/bin/bash
 
 # ==============================================================================
-# Takumi Application Runner
-#
-# [Why] To orchestrate the runtime environment inside the Docker container.
-# [What] Activates Conda, links extensions, starts background services (AI/Dashboard), and launches ComfyUI.
+# Takumi Runtime Engine v2.4 (Namespace + Safety)
 # ==============================================================================
 
 # --- Import Libraries ---
-source /app/lib/utils.sh
-source /app/lib/logger.sh
+if [ -f "/app/lib/utils.sh" ]; then source /app/lib/utils.sh; fi
+if [ -f "/app/lib/logger.sh" ]; then source /app/lib/logger.sh; fi
 
-# --- Strict Mode ---
-set -euo pipefail
+# Fallback Logger
+if ! command -v log_info &> /dev/null; then
+    log_info() { echo "INFO: $1"; }
+    log_success() { echo "SUCCESS: $1"; }
+    log_warn() { echo "WARN: $1"; }
+    log_error() { echo "ERROR: $1"; }
+fi
 
-# --- Configuration ---
+# [CRITICAL] 起動初期はエラーで落ちないようにする（待機モードへ移行するため）
+set +e
+
+readonly COMFY_DIR="/app/external/ComfyUI"
+readonly ACTIVE_ENV_FILE="/app/cache/.active_env"
 readonly COMFY_PORT=8188
 
-# Universal Recipe Scanner
-# Scan BOTH 'core' and 'enterprise' namespaces to build the environment list.
-# If 'enterprise' dir doesn't exist (OSS mode), it will simply be skipped.
-TARGET_ENVS=()
-NAMESPACES=("core" "enterprise")
-
-for ns in "${NAMESPACES[@]}"; do
-    RECIPES_DIR="/app/config/takumi_meta/${ns}/recipes/use_cases"
-    
-    if [ -d "$RECIPES_DIR" ]; then
-        # Use find to list json files
-        while IFS= read -r file; do
-            if [ -f "$file" ]; then
-                # Extract environment name from JSON
-                # (Use // empty to handle missing keys without error)
-                env_name=$(jq -r '.environment.name // empty' "$file")
-                
-                # Add to list if found
-                if [ -n "$env_name" ]; then
-                    TARGET_ENVS+=("$env_name")
-                fi
-            fi
-        done < <(find "$RECIPES_DIR" -maxdepth 1 -name "*.json")
+# ==============================================================================
+# 1. Pre-flight Check (Safety Net)
+# ==============================================================================
+# 最優先: インストールされていなければ、何もせずに待機する
+# これを main の先頭でやらないと、Condaロード等でエラーになり再起動ループする
+check_installation_status() {
+    if [ ! -d "$COMFY_DIR" ] || [ ! -f "$COMFY_DIR/main.py" ]; then
+        echo "---------------------------------------------------"
+        log_warn "ComfyUI not found at $COMFY_DIR"
+        log_info "Container is entering STANDBY mode."
+        log_info "Please run 'make install-oss' to provision this container."
+        echo "---------------------------------------------------"
+        
+        # [STOP HERE] 永久に待機 (インストーラーの接続を待つ)
+        exec tail -f /dev/null
     fi
-done
-
-# Fallback (Minimum guarantee)
-TARGET_ENVS+=("foundation" "takumi_standard")
+}
 
 # ==============================================================================
-# [1] Environment Management
+# 2. Dynamic Environment Resolution (Namespace Logic)
 # ==============================================================================
 
-# [Why] To automatically select the installed environment without hardcoding.
-# [What] Checks conda env list and activates the first match.
-# [Note] Conda activation scripts may use undefined variables, so temporarily disable "set -u" (undefined variable error)
+detect_available_environments() {
+    local envs=()
+    # 検索順序: Enterprise(上書き) -> Core(基盤)
+    local namespaces=("enterprise" "core")
+
+    log_info "Scanning for available environments..."
+
+    for ns in "${namespaces[@]}"; do
+        local recipes_dir="/app/config/takumi_meta/${ns}/recipes/use_cases"
+        
+        if [ -d "$recipes_dir" ]; then
+            while IFS= read -r file; do
+                if [ -f "$file" ]; then
+                    # jqで environment.name を抽出
+                    local env_name
+                    env_name=$(jq -r '.environment.name // empty' "$file" 2>/dev/null || true)
+                    if [ -n "$env_name" ]; then
+                        envs+=("$env_name")
+                    fi
+                fi
+            done < <(find "$recipes_dir" -maxdepth 1 -name "*.json")
+        fi
+    done
+
+    # フォールバック
+    envs+=("takumi_standard" "foundation")
+    
+    # 重複排除して出力
+    echo "${envs[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '
+}
+
 activate_conda_environment() {
     log_info "Initializing Conda environment..."
-    source /opt/conda/etc/profile.d/conda.sh
+    if [ -f "/opt/conda/etc/profile.d/conda.sh" ]; then
+        source /opt/conda/etc/profile.d/conda.sh
+    else
+        log_error "Conda not found at /opt/conda"
+        # 待機モードへ
+        exec tail -f /dev/null
+    fi
 
-    # Priority 1: Check for the last installed environment to ensure consistency.
+    # Strategy 1: Last used environment
     if [ -f "$ACTIVE_ENV_FILE" ]; then
         local last_env
         last_env=$(cat "$ACTIVE_ENV_FILE" | tr -d '[:space:]')
-        
         if conda env list | grep -q "${last_env}"; then
-            log_success "Activating last used environment: ${last_env}"
-            
-            # Disable strict mode temporarily to avoid Conda's unbound variable errors
-            # Conda activation scripts often reference unbound variables (MKL_INTERFACE_LAYER)
-            set +u
-            conda activate "${last_env}"
-            set -u
-            
+            log_success "Resuming environment: ${last_env}"
+            set +u; conda activate "${last_env}"; set -u
             return 0
         fi
     fi
 
-    # Priority 2: Fallback to the predefined list if no active env record exists.
-    for env_name in "${TARGET_ENVS[@]}"; do
+    # Strategy 2: Scan recipes (Namespace Aware)
+    local candidates=($(detect_available_environments))
+    
+    for env_name in "${candidates[@]}"; do
         if conda env list | grep -q "${env_name}"; then
-            log_success "Found active environment: ${env_name}"
-            
-            # Disable strict mode temporarily
-            set +u
-            conda activate "${env_name}"
-            set -u
-            
+            log_success "Activating available environment: ${env_name}"
+            set +u; conda activate "${env_name}"; set -u
             return 0
         fi
     done
 
-    # If the environment is not found, an error occurs.
     log_error "No suitable Conda environment found."
-    log_warn "Expected one of: ${TARGET_ENVS[*]}"
-    return 1
+    log_info "Candidates were: ${candidates[*]}"
+    # エラーで落とさず待機（デバッグ用）
+    exec tail -f /dev/null
 }
 
-
 # ==============================================================================
-# [2] Service Managers
+# 3. Service Logic
 # ==============================================================================
 
-# [Why] To expose the Chat UI extension to ComfyUI.
-# [What] Creates a symbolic link from the source code to the ComfyUI custom_nodes folder.
 setup_bridge_node() {
-    local target_link="${COMFYUI_CUSTOM_NODES_DIR}/ComfyUI-Takumi-Bridge"
+    local nodes_dir="${COMFY_DIR}/custom_nodes"
+    local target_link="${nodes_dir}/ComfyUI-Takumi-Bridge"
     local source_dir="/app/takumi_bridge"
 
-    log_info "Configuring Takumi Bridge..."
-
-    if [ -d "$source_dir" ]; then
+    if [ -d "$nodes_dir" ] && [ -d "$source_dir" ]; then
         if [ ! -L "$target_link" ]; then
             ln -s "$source_dir" "$target_link"
-            log_success "Linked Takumi Bridge to custom_nodes."
-        else
-            log_info "  -> Bridge already linked."
+            log_success "Linked Takumi Bridge."
         fi
-    else
-        log_warn "Takumi Bridge source not found at $source_dir"
     fi
 }
 
-# [Why] To provide the AI backend for the Chat UI.
-# [What] Starts Ollama in the background.
 start_brain_service() {
-    log_info "Starting The Brain (Ollama)..."
-
-    # 1. Check if it is already running (prevent double startup)
-    if pgrep -x "ollama" > /dev/null; then
-        log_info "  -> Ollama is already running."
+    local target_host="${OLLAMA_HOST:-http://127.0.0.1:11434}"
+    
+    # 外部接続なら接続確認のみ
+    if [[ "$target_host" != *"127.0.0.1"* ]] && [[ "$target_host" != *"localhost"* ]]; then
+        log_info "Using External Brain at: $target_host"
         return
     fi
 
-    # 2. Launch in background
-    # Log to a file and run in the background (&)
-    ollama serve > /app/logs/ollama.log 2>&1 &
-    
-    # 3. Startup wait loop (Heartbeat Check)
-    # Wait until connection is established (up to 30 seconds) instead of simply sleeping
-    log_info "  -> Waiting for neural network to initialize..."
-    local max_retries=30
-    local count=0
-
-    # Strict mode is disabled
-    set +e 
-    
-    # /api/tags (Hit the endpoint to check if it is alive)
-    while ! curl -s http://127.0.0.1:11434/api/tags > /dev/null; do
-        sleep 1
-        ((count++))
-        if [ "$count" -ge "$max_retries" ]; then
-            log_warn "Ollama server failed to start within timeout. Check /app/logs/ollama.log"
-            cat /app/logs/ollama.log
-            set -e # Strict mode reversion
-            return 1 
-        fi
-        echo -n "."
-    done
-
-    set -e # Strict mode reversion
-
-    echo "" # Line breaks
-    log_success "  -> Brain is active."
+    # ローカル起動
+    if ! pgrep -x "ollama" > /dev/null; then
+        log_info "Starting Local Brain..."
+        ollama serve > /app/logs/ollama.log 2>&1 &
+    fi
 }
 
 # ==============================================================================
-# [3] Main Execution
+# Main Execution
 # ==============================================================================
 
 main() {
+    # 1. 存在確認 (なければ待機)
+    check_installation_status
+
+    # ここから厳格モード
+    set -euo pipefail
+
     log_info "Takumi Runtime Engine Starting..."
 
-    # 1. Setup Environment
+    # 2. 環境有効化
     activate_conda_environment
 
-    # 2. Setup Components
+    # 3. コンポーネント接続
     setup_bridge_node
-
-    # 3. Start Background Services
-    # [Important] Kill background jobs (Ollama/Streamlit) when this script exits
-    terminate_services() {
-        # Get list of background job IDs
-        local pids=$(jobs -p)
-        
-        if [ -n "$pids" ]; then
-            # Kill processes and suppress errors if they are already dead
-            kill $pids >/dev/null 2>&1 || true
-        fi
-    }
-    
-    # Register the trap
-    trap 'terminate_services' EXIT
-    
     start_brain_service
 
-    #  [Extension Slot] Launch enterprise Services
-    # If there are any extension scripts that should be run at startup, run them in the background
-    if [ -f "/app/extensions/hooks/on_boot/run.sh" ]; then
-        log_info "🚀 Launching enterprise Extension..."
-        bash "/app/extensions/hooks/on_boot/run.sh" &
-    fi
-
-    # 4. Launch Main Application (Blocking)
-    # Skip ComfyUI (Memory Saver for Enterprise)
-    if [ "${SKIP_COMFYUI:-false}" == "true" ]; then
-        log_warn "SKIP_COMFYUI is set. ComfyUI will NOT start."
-        log_info "Container is standing by for Enterprise tasks..."
-        
-        # Wait indefinitely to prevent the container from terminating
-        tail -f /dev/null
-    else
-        # Launch ComfyUI
-        log_info "Launching ComfyUI..."
-        
-        cd "${COMFYUI_ROOT_DIR}"
-        python main.py --listen 0.0.0.0 --port "$COMFY_PORT"
-    fi
+    # 4. ComfyUI起動
+    log_info "Launching ComfyUI..."
+    cd "$COMFY_DIR"
+    python main.py ${CLI_ARGS:---listen 0.0.0.0 --port 8188}
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main
-fi
+main

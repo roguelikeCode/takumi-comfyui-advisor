@@ -91,6 +91,20 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 # Disable system-wide docker immediately
 sudo systemctl disable --now docker.service docker.socket
 
+# --- 3.5. NVIDIA Configuration (Critical for Rootless) ---
+log_info "Step 3.5: Configuring NVIDIA for Rootless..."
+
+# Generate a configuration file (if it doesn't already exist)
+if [ ! -f /etc/nvidia-container-runtime/config.toml ]; then
+    sudo nvidia-ctk runtime configure --runtime=docker --config=/etc/nvidia-container-runtime/config.toml
+fi
+
+# Disable `cgroup`` control (avoiding permission errors in `rootless``)
+sudo sed -i 's/^#no-cgroups = false/no-cgroups = true/g' /etc/nvidia-container-runtime/config.toml
+sudo sed -i 's/^no-cgroups = false/no-cgroups = true/g' /etc/nvidia-container-runtime/config.toml
+
+log_success "NVIDIA Runtime configured (no-cgroups)."
+
 # --- 4. Rootless Setup ---
 log_info "Step 4: Activating Rootless Mode..."
 

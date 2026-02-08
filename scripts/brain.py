@@ -22,7 +22,7 @@ class BrainConfig:
     API_URL = "http://localhost:11434/api/generate"
 
     # Model Selection
-    MODEL_NAME = "gemma2:2b"
+    MODEL_NAME = "gemma3:4b"
 
     # Determine the root (/app) from the location of the executable file
     # scripts/brain.py -> ../ -> /app

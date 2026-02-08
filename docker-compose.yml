@@ -1,0 +1,104 @@
+services:
+  # --- Service A: The Studio (ComfyUI) ---
+  comfyui:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: takumi-comfyui-oss
+    
+    # セキュリティ設定
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_NICE
+      - DAC_OVERRIDE
+      - CHOWN
+      - FOWNER
+    
+    command: ["bash", "/app/scripts/run.sh"]
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    ports:
+      - "8188:8188"
+    
+    # 【重要】永続化ボリューム設定 (Ent版の構成をNamed Volumeで再現)
+    volumes:
+      # 1. Python/Conda Core
+      - conda-envs:/root/.conda/envs       # 環境本体
+      - conda-pkgs:/root/.conda/pkgs       # パッケージキャッシュ (DL高速化)
+      
+      # 2. Takumi System
+      - takumi-cache:/app/cache            # ★最重要: .active_env (記憶) はここ
+      - takumi-logs:/app/logs              # ログ
+      - takumi-receipts:/app/storage/receipts # インストール証明書
+      
+      # 3. ComfyUI Data
+      - comfyui-external:/app/external
+      - comfyui-output:/app/ComfyUI/output
+      - comfyui-input:/app/ComfyUI/input
+      - comfyui-models:/app/ComfyUI/models
+      - comfyui-user:/app/ComfyUI/user
+      - pip-cache:/root/.cache/pip
+    
+    environment:
+      - CLI_ARGS=--listen 0.0.0.0 --port 8188 --preview-method auto
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONDONTWRITEBYTECODE=1
+      - OLLAMA_HOST=http://ollama:11434
+      - HF_TOKEN=${HF_TOKEN}
+    
+    depends_on:
+      ollama:
+        condition: service_healthy
+    
+    networks:
+      - takumi-network
+    
+    restart: unless-stopped
+    tty: true
+
+  # --- Service B: The Brain (Ollama) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: takumi-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - takumi-network
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+networks:
+  takumi-network:
+    driver: bridge
+
+# ボリューム定義
+volumes:
+  conda-envs:
+  conda-pkgs:      # NEW
+  takumi-cache:    # NEW (Critical)
+  takumi-logs:     # NEW
+  takumi-receipts: # NEW
+  comfyui-external:
+  comfyui-output:
+  comfyui-input:
+  comfyui-models:
+  comfyui-user:
+  pip-cache:
+  ollama-models:

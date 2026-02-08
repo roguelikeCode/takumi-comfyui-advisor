@@ -10,7 +10,7 @@ ask_takumi() {
     # Specify the location of the Python script (path inside the container)
     local script_path="/app/scripts/brain.py"
     
-    log_info "Consulting The Takumi (Gemma 2)..."
+    log_info "Consulting The Takumi (Gemma 3)..."
     
     if [ -f "$script_path" ]; then
         local response
