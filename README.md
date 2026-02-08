@@ -123,7 +123,7 @@ make run-oss
 2.  Click the chat icon (bottom right)
 3.  Type `Workflow` to open the menu
 
-*(To stop the application, press `Ctrl + C` in the terminal)*
+*(To stop the application, press `make stop-oss` in the terminal)*
 
 ---
 
