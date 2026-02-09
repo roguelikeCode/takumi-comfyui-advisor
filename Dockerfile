@@ -39,6 +39,7 @@ RUN apt-get update && \
     libgl1 \
     libglib2.0-0 \
     libcairo2-dev \
+    libsndfile1 \
     # --- Cleanup (Reduce image size) ---
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*

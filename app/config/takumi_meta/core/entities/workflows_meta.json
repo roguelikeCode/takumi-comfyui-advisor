@@ -1,7 +1,7 @@
 {
   "takumi-flow-ace-step-1.5-lyric-001": {
     "name": "ACE-Step 1.5 Music Gen",
-    "creator": "Takumi Enterprise",
+    "creator": "Takumi OSS",
     "description": "Generate audio/lyrics using ACE-Step 1.5 & LyricForge.",
     "tags": ["audio", "ace-step-1.5", "lyric-forge", "trend"],
     "path": "/app/config/takumi_meta/core/library/workflows/create_music_from_lyrics_acestep1.5.json",
@@ -11,7 +11,7 @@
   },
   "takumi-flow-wan-video-001": {
     "name": "Wan 2.2 Cinema Studio (I2V)",
-    "creator": "Takumi Enterprise",
+    "creator": "Takumi OSS",
     "description": "Generate cinematic video from image using Wan 2.2 GGUF & LightX2V.",
     "tags": ["video", "wan2.2", "i2v", "cinema"],
     "path": "/app/config/takumi_meta/core/library/workflows/create_video_wan2.2_i2v.json",
@@ -20,5 +20,15 @@
     "mapping": {
       "prompt": { "node_id": 30, "widget_index": 0 }
     }
+  },
+  "takumi-flow-wan-video-infinitetalk-v2v-001": {
+    "name": "WanVideo MV Gen (InfiniteTalk V2V)",
+    "creator": "Takumi OSS",
+    "description": "Create high-quality music videos using WanVideo 2.1/2.2 for V2V and InfiniteTalk for lip-sync synchronization.",
+    "tags": ["video", "wan-video", "infinitetalk", "v2v", "lip-sync", "mv"],
+    "path": "/app/config/takumi_meta/core/library/workflows/create_mv_wan2.2_v2v.json",
+    "recommended_checkpoint": null,
+    "requires_asset": "takumi-use-case-wan-video-infinitetalk-001",
+    "mapping": {}
   }
 }

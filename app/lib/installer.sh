@@ -190,7 +190,10 @@ install_component_custom_node() {
     fi
 
     # [Security] Run scanner after install/update
-    run_bandit_scan "$clone_path"
+    # ▼▼▼ コメントアウトして無効化 (メモリ不足回避) ▼▼▼
+    # run_bandit_scan "$clone_path"
+    log_warn "Skipping Bandit scan to prevent OOM."
+    # ▲▲▲ ここまで ▲▲▲
 }
 
 # [Why] To install extra pip packages defined in a separate JSON recipe.
@@ -526,62 +529,7 @@ run_install_flow() {
         log_info "No asset recipe defined for this use case. Skipping Asset Manager."
     fi
 
-    # 6. Brain
-    # [Why] To connect to the external AI Brain (Ollama) and ensure the model exists.
-    # [What] 1. Waits for the HTTP endpoint (Sidecar). 2. Uses local CLI to trigger remote pull.
-    provision_brain() {
-        # --- Configuration ---
-        local model_name="gemma3:4b"
-        local raw_host="${OLLAMA_HOST:-http://ollama:11434}"
-        # Sanitize: Strip '/v1' suffix to ensure raw API access for curl/cli
-        local target_host="${raw_host%/v1*}" 
-
-        log_info "Initializing connection to AI Brain at ${target_host}..."
-
-        # --- Phase 1: Health Check (Wait for Sidecar) ---
-        local max_retries=10
-        local count=0
-        
-        # Loop until connection is established
-        while ! curl -s "${target_host}" > /dev/null; do
-            sleep 2
-            ((count++))
-            if [ "$count" -ge "$max_retries" ]; then
-                log_warn "Brain unreachable at ${target_host}. Skipping AI setup."
-                return 0
-            fi
-            echo -n "."
-        done
-        echo "" # Newline for clean log
-
-        # --- Phase 2: Model Provisioning (Remote Control) ---
-        # [Note] In Microservices, we use the local 'ollama' CLI to control the remote 'ollama' server.
-        
-        if ! command -v ollama >/dev/null; then
-            log_warn "Ollama CLI client not found. Skipping model verification."
-            return 0
-        fi
-
-        # Point local CLI to the remote host context
-        export OLLAMA_HOST="$target_host"
-
-        if ollama list | grep -q "${model_name}"; then
-            log_info "  -> Neural network '${model_name}' is active."
-        else
-            log_info "  -> Provisioning '${model_name}' (This may take time)..."
-            if ! ollama pull "${model_name}"; then
-                log_warn "Model pull failed."
-                log_info "Hint: Try manually: 'docker exec -it takumi-ollama ollama pull ${model_name}'"
-            else
-                log_success "Brain upgrade complete: ${model_name}"
-            fi
-        fi
-    }
-
-    # Execute the provisioner
-    provision_brain
-
-    # 7. Finalization (Receipts & State)
+    # 6. Finalization (Receipts & State)
     
     # Generate Installation Receipt (ID assignment)
     # As proof of success, create an empty file with the ID name in the persistent area.

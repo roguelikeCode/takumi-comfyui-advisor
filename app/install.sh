@@ -1,32 +1,16 @@
-# ==============================================================================
-# The Takumi's ComfyUI Installer v3.2 (Single-Attempt Engine)
-#
-# This script executes a single, guided installation attempt within a Docker
-# container. It is designed to be orchestrated by an external tool (e.g., Makefile)
-# that handles retry loops.
-#
-# It reports its result via exit codes:
-#   - 0: Success
-#   - 1: Generic failure, retry possible
-#   - 125: Failure, user chose to report to The Takumi (final exit)
-# ==============================================================================
-
 #!/bin/bash
 
 # ==============================================================================
-# The Takumi's ComfyUI Installer v4.0 (Modularized)
+# The Takumi's ComfyUI Installer v4.2 (Clean Flow)
 # ==============================================================================
 
 # --- Shell Environment Initialization ---
-# [Why] To enable 'conda' commands in non-interactive shells.
 if [ -f ~/.bashrc ]; then . ~/.bashrc; fi
 
 # --- Strict Mode ---
 set -euo pipefail
 
 # --- Import Libraries ---
-# [Why] To load the separated logic modules.
-# [Note] Paths are absolute inside the Docker container (/app/...).
 source /app/lib/utils.sh       # Constants & State
 source /app/lib/logger.sh      # Logging & Error Handling
 source /app/lib/brain.sh       # AI Interface
@@ -43,21 +27,30 @@ trap 'cleanup_and_report' EXIT
 # ==============================================================================
 
 main() {
-    log_info "Takumi Installer Engine v4.0 starting..."
+    log_info "Takumi Installer Engine v4.2 starting..."
 
-    # Change permissions of .conda directory (owned by root due to volume mount) to takumi user
+    # Fix permissions for .conda (Rootless Docker quirk)
     if [ -d "/home/takumi/.conda" ]; then
         log_info "Fixing permissions for .conda directory..."
         sudo chown -R $(id -u):$(id -g) /home/takumi/.conda
     fi
 
     # --- Phase 1: Preparation ---
-    # Now 'try_with_ai' is available via source /app/lib/brain.sh
+    
+    # [Fix] Isolation Mode (SKIP_BRAIN=true) check
+    if [ "${SKIP_BRAIN:-false}" = "true" ]; then
+        log_info "Skipping Brain setup (Isolation Mode Active)."
+    else
+        # 通常起動時のみ実行
+        if command -v provision_brain &> /dev/null; then
+            provision_brain
+        fi
+    fi
+
     if ! try_with_ai "fetch_external_catalogs" "Fetching external catalogs"; then
         log_warn "Could not fetch external catalogs. Proceeding with local files if available."
     fi
 
-    # Now 'build_merged_catalog' is available via source /app/lib/installer.sh
     if ! build_merged_catalog "custom_nodes"; then
         log_error "Failed to prepare essential catalogs. Installation cannot proceed."
         exit 1
@@ -68,13 +61,13 @@ main() {
         run_concierge_use_case
     fi
 
-    # --- Phase 3: Execution ---
+    # --- Phase 3: Execution (Base Install) ---
     if ! run_install_flow; then
         log_error "Installation failed."
         exit 1
     fi
 
-    # Ensure Takumi Bridge is linked during install
+    # Ensure Takumi Bridge is linked
     if [ -d "/app/takumi_bridge" ]; then
         target_link="${COMFYUI_CUSTOM_NODES_DIR}/ComfyUI-Takumi-Bridge"
         if [ ! -L "$target_link" ]; then
@@ -83,17 +76,32 @@ main() {
         fi
     fi
 
-    # --- Phase 4: [Extension Slot] enterprise / Custom Hooks --- 
-    run_extension_hooks "post_install"
-
-    # --- Phase 5: Finalization ---
-    # Reconstruct `recipe_path` from `state``
-    local recipe_path=""
-    if [ -n "${state[use_case]}" ]; then
-        recipe_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${state[use_case]}.json"
+    # --- Phase 4: Smart Dependency Resolver ---
+    # [Why] To consolidate requirements and install them safely (Low Memory).
+    local resolver_script="/app/scripts/smart_resolver.py"
+    
+    if [ -f "$resolver_script" ]; then
+        log_info "🛡️  Running Takumi Smart Resolver..."
+        
+        # Script handles resolution AND installation.
+        if ! python3 "$resolver_script"; then
+            log_warn "Smart Resolver finished with warnings."
+        fi
     fi
 
-    # Sending logs on success (using `report_failure.py` as a general-purpose log sender)
+    # --- Phase 5: Extensions --- 
+    run_extension_hooks "post_install"
+
+    # --- Phase 6: Finalization ---
+    local recipe_path=""
+    if [ -n "${state[use_case]}" ]; then
+        recipe_path="${CONFIG_DIR}/takumi_meta/enterprise/recipes/use_cases/${state[use_case]}.json"
+        if [ ! -f "$recipe_path" ]; then
+             recipe_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${state[use_case]}.json"
+        fi
+    fi
+
+    # Success Report
     if command -v python3 >/dev/null; then
         python3 "${APP_ROOT}/scripts/report_failure.py" "$INSTALL_LOG" "$recipe_path"
     fi
@@ -104,6 +112,5 @@ main() {
 
 # --- Script Entry Point ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # Log everything to file while showing in console
     main "$@" > >(tee "$INSTALL_LOG") 2>&1
 fi

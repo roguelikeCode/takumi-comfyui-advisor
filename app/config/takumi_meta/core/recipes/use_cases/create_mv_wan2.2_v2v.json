@@ -1,0 +1,96 @@
+{
+  "asset_id": "takumi-use-case-wan-video-infinitetalk-001",
+  "asset_version": "1.0.0",
+  "asset_recipe": "",
+  "base_recipe": "foundation/comfyui/v0.12.3.json",
+  "display_name": "WanVideo MV Studio (Wan2.1/2.2 + InfiniteTalk)",
+  "description": "Advanced MV creation workflow using WanVideo for V2V/I2V and InfiniteTalk for high-quality lip-sync. Includes Audio Separation and SAM2 masking.",
+  "environment": {
+    "name": "wan_video_infinitetalk_env"
+  },
+  "components": [
+    {
+      "type": "custom-node",
+      "source": "https://github.com/Kijai/ComfyUI-WanVideoWrapper.git",
+      "version": "main",
+      "description": "Essential wrapper for Wan2.1/2.2 Video generation nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+      "version": "main",
+      "description": "Required for loading videos and combining output frames (VHS)."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/kijai/ComfyUI-KJNodes.git",
+      "version": "main",
+      "description": "Provides ImageResizeKJ, GetImageSizeAndCount and other utility nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/kijai/ComfyUI-segment-anything-2.git",
+      "version": "main",
+      "description": "Used for SAM2Segmentation (Automatic masking)."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/Kijai/ComfyUI-MelBandRoFormer.git",
+      "version": "main",
+      "description": "Required for vocal separation (MelBandRoFormer nodes)."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git",
+      "version": "main",
+      "description": "Required for Pose estimation and preprocessing (DrawViTPose, etc.)."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/christian-byrne/audio-separation-nodes-comfyui.git",
+      "version": "main",
+      "description": "Required for AudioCrop nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git",
+      "version": "main",
+      "description": "Required for MathExpression nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/yolain/ComfyUI-Easy-Use.git",
+      "version": "main",
+      "description": "Required for 'easy clearCacheAll' node."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/rgthree/rgthree-comfy.git",
+      "version": "main",
+      "description": "Required for Fast Groups Bypasser and Label nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git",
+      "version": "main",
+      "description": "Required for 'ttN text' nodes."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/melMass/comfy_mtb.git",
+      "version": "main",
+      "description": "Required for 'Audio Duration (mtb)' node."
+    },
+    { 
+      "type": "pip", 
+      "source": "numpy", 
+      "version": "<2.0" 
+    },
+    {
+      "type": "pip",
+      "source": "librosa",
+      "version": "",
+      "description": "Often required for audio processing nodes."
+    }
+  ]
+}

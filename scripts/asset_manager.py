@@ -64,18 +64,21 @@ class RecipeLoader:
 
     @staticmethod
     def load(path_str: str) -> Dict[str, Any]:
-        """
-        [Why] To convert the JSON definition into a Python dictionary.
-        [Input] path_str: Absolute path to the JSON file.
-        [Output] Dict containing the recipe.
-        """
         path = Path(path_str)
+        
         if not path.exists():
             print(f"❌ Recipe not found: {path}")
             sys.exit(1)
 
+        # [Fix] Check for empty file
+        if path.stat().st_size == 0:
+            print(f"⚠️  Warning: Recipe file is empty: {path}")
+            print("   -> Please register assets in this file.")
+            # Return empty dict to proceed without crashing
+            return {}
+
         try:
-            with path.open('r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except json.JSONDecodeError as e:
             print(f"❌ Invalid JSON format: {e}")
