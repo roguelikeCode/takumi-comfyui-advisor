@@ -190,10 +190,7 @@ install_component_custom_node() {
     fi
 
     # [Security] Run scanner after install/update
-    # ▼▼▼ コメントアウトして無効化 (メモリ不足回避) ▼▼▼
-    # run_bandit_scan "$clone_path"
-    log_warn "Skipping Bandit scan to prevent OOM."
-    # ▲▲▲ ここまで ▲▲▲
+    run_bandit_scan "$clone_path"
 }
 
 # [Why] To install extra pip packages defined in a separate JSON recipe.

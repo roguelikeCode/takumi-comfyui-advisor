@@ -17,6 +17,12 @@
     },
     {
       "type": "custom-node",
+      "source": "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git",
+      "version": "main",
+      "description": ""
+    },
+    {
+      "type": "custom-node",
       "source": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
       "version": "main",
       "description": "Required for loading videos and combining output frames (VHS)."

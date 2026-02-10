@@ -82,20 +82,16 @@ build-oss:
 # [Install]
 # Flow: Build -> Start Infrastructure -> Execute Installer inside Container
 install-oss: build-oss
-	@echo ">>> [Step 1] Stopping everything to clear RAM..."
-	$(COMPOSE_CMD) down
-	
-	@echo ">>> [Step 2] Running Installer in ISOLATION (Low Memory)..."
-	@# --no-deps : Do not start Ollama (Saves ~3GB RAM)
-	@# --rm      : Remove container after script finishes
-	$(COMPOSE_CMD) run --rm --no-deps \
-		-e SKIP_BRAIN=true \
-		-e UV_CONCURRENT_DOWNLOADS=1 \
-		-e UV_CONCURRENT_BUILDS=1 \
-		comfyui bash /app/install.sh
-	
-	@echo ">>> [Step 3] Booting Full Stack..."
-	$(COMPOSE_CMD) up -d
+	@echo ">>> [Step 1] Waking up Infrastructure..."
+	@# --wait: Wait for Ollama's health check (startup completion) before proceeding
+	$(COMPOSE_CMD) up -d --wait
+
+	@echo ">>> [Step 2] Running Installer (Full Power)..."
+	@# Run a script inside an already running container
+	$(COMPOSE_CMD) exec comfyui bash /app/install.sh
+
+	@echo ">>> [Step 3] Restarting Runtime (Apply Changes)..."
+	$(COMPOSE_CMD) restart comfyui
 	@echo "✅ Installation Complete. ComfyUI is starting at http://localhost:8188"
 
 # [Run]
@@ -130,25 +126,6 @@ shell-oss:
 # 3. Maintenance
 # ==============================================================================
 
-# [Emergency] Fix OOM (Exit Code 137)
-# [Why] To prevent the kernel from killing the installer when RAM + Swap is full.
-# [What] Creates a temporary 16GB swap file in the Host Linux (WSL2).
-fix-memory:
-	@echo ">>> 🧠 Allocating Emergency Swap (16GB)..."
-	@# 既存のswapがあれば無効化して削除（エラーは無視）
-	@-sudo swapoff /swapfile 2>/dev/null || true
-	@-sudo rm -f /swapfile
-	
-	@# 16GB確保 (fallocateは高速です)
-	@sudo fallocate -l 16G /swapfile
-	@sudo chmod 600 /swapfile
-	@sudo mkswap /swapfile
-	@sudo swapon /swapfile
-	
-	@echo ">>> ✅ Memory expanded."
-	@# 結果を表示 (Total Swapが増えていることを確認)
-	@free -h
-
 # [Update] Host System Security
 # [Why] To keep the underlying OS (WSL2) and Docker Engine secure and up-to-date.
 update-oss:
@@ -168,7 +145,7 @@ cache-oss:
 	@docker builder prune -af
 	@docker image prune -f
 	
-	@echo ">>> 🏗️  [Step 2] Rebuilding Image (Fresh)..."
+	@echo ">>> 🏗️ [Step 2] Rebuilding Image (Fresh)..."
 	$(COMPOSE_CMD) build --no-cache
 	
 	@echo "✅ Build cache purged and image renewed."
