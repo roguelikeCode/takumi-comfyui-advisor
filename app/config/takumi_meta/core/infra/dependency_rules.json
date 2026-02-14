@@ -1,0 +1,45 @@
+{
+  "_comment": "Takumi Dependency Knowledge Base v2.1",
+  
+  "strategies": {
+    "dictator_mode": {
+      "enabled": true,
+      "description": "Packages that must adhere to Takumi's environment constraints, ignoring custom node requirements.",
+      "override_packages": [
+        "torch", "torchvision", "torchaudio", 
+        "diffusers", "transformers", "accelerate", 
+        "numpy", "protobuf", "sentencepiece", 
+        "huggingface-hub", "tokenizers", "safetensors",
+        "scipy", "pillow", "onnxruntime", "onnxruntime-gpu",
+        "opencv-python", "opencv-contrib-python", "opencv-python-headless"
+      ],
+      "modern_constraints": [
+        "numpy<2.0",
+        "torch>=2.4.0",
+        "torchvision>=0.19.0",
+        "diffusers>=0.30.0",
+        "transformers>=4.44.2",
+        "accelerate>=0.33.0"
+      ]
+    }
+  },
+  "conflict_matrix": [
+    {
+      "description": "OpenCV Civil War: If Contrib exists, it supersedes standard versions.",
+      "trigger": ["opencv-contrib-python", "opencv-contrib-python-headless"],
+      "ban": ["opencv-python", "opencv-python-headless"]
+    },
+    {
+      "description": "TensorFlow Conflict: If GPU version exists, ban CPU version.",
+      "trigger": ["tensorflow-gpu"],
+      "ban": ["tensorflow"]
+    }
+  ],
+  "node_specific_rules": {
+    "ComfyUI-Frame-Interpolation": {
+      "description": "Requires specific CuPy version based on CUDA and non-standard req file.",
+      "extra_files": ["requirements-no-cupy.txt"],
+      "inject": ["cupy-cuda12x"]
+    }
+  }
+}

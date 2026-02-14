@@ -167,6 +167,11 @@
       "type": "pip",
       "source": "pydantic-settings",
       "version": "~=2.0"
+    },
+    {
+      "type": "pip",
+      "source": "opencv-python-headless", 
+      "version": "" 
     }
   ]
 }

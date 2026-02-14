@@ -1,7 +1,7 @@
 {
   "asset_id": "takumi-use-case-wan-video-infinitetalk-001",
   "asset_version": "1.0.0",
-  "asset_recipe": "",
+  "asset_recipe": "assets/create_video_wan2.2_i2v",
   "base_recipe": "foundation/comfyui/v0.12.3.json",
   "display_name": "WanVideo MV Studio (Wan2.1/2.2 + InfiniteTalk)",
   "description": "Advanced MV creation workflow using WanVideo for V2V/I2V and InfiniteTalk for high-quality lip-sync. Includes Audio Separation and SAM2 masking.",
@@ -19,7 +19,7 @@
       "type": "custom-node",
       "source": "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git",
       "version": "main",
-      "description": ""
+      "description": "Wan2.2 V2V preprocessor for subject centering, auto-masking, and smart resizing."
     },
     {
       "type": "custom-node",
@@ -44,12 +44,6 @@
       "source": "https://github.com/Kijai/ComfyUI-MelBandRoFormer.git",
       "version": "main",
       "description": "Required for vocal separation (MelBandRoFormer nodes)."
-    },
-    {
-      "type": "custom-node",
-      "source": "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git",
-      "version": "main",
-      "description": "Required for Pose estimation and preprocessing (DrawViTPose, etc.)."
     },
     {
       "type": "custom-node",
@@ -87,16 +81,837 @@
       "version": "main",
       "description": "Required for 'Audio Duration (mtb)' node."
     },
-    { 
-      "type": "pip", 
-      "source": "numpy", 
-      "version": "<2.0" 
+    {
+      "type": "custom-node",
+      "source": "https://github.com/GACLove/ComfyUI-VFI.git",
+      "version": "main",
+      "description": "Video Frame Interpolation nodes to smooth out animations and increase framerate using AI models."
+    },
+    {
+      "type": "custom-node",
+      "source": "https://github.com/chflame163/ComfyUI_LayerStyle.git",
+      "version": "main",
+      "description": "Photoshop-like layer effects (Shadow, Glow, Stroke) and advanced image compositing tools."
+    },
+    {
+      "type": "pip",
+      "source": "accelerate",
+      "version": "==1.12.0"
+    },
+    {
+      "type": "pip",
+      "source": "aiofiles",
+      "version": "==24.1.0"
+    },
+    {
+      "type": "pip",
+      "source": "aiohappyeyeballs",
+      "version": "==2.6.1"
+    },
+    {
+      "type": "pip",
+      "source": "aiohttp",
+      "version": "==3.13.3"
+    },
+    {
+      "type": "pip",
+      "source": "aiohttp_socks",
+      "version": "==0.11.0"
+    },
+    {
+      "type": "pip",
+      "source": "aiosignal",
+      "version": "==1.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "albucore",
+      "version": "==0.0.24"
+    },
+    {
+      "type": "pip",
+      "source": "albumentations",
+      "version": "==2.0.8"
+    },
+    {
+      "type": "pip",
+      "source": "annotated-doc",
+      "version": "==0.0.4"
+    },
+    {
+      "type": "pip",
+      "source": "annotated-types",
+      "version": "==0.7.0"
+    },
+    {
+      "type": "pip",
+      "source": "anyio",
+      "version": "==4.12.1"
+    },
+    {
+      "type": "pip",
+      "source": "attrs",
+      "version": "==25.4.0"
+    },
+    {
+      "type": "pip",
+      "source": "audioread",
+      "version": "==3.1.0"
+    },
+    {
+      "type": "pip",
+      "source": "bandit",
+      "version": "==1.9.3"
+    },
+    {
+      "type": "pip",
+      "source": "blend_modes",
+      "version": "==2.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "cachetools",
+      "version": "==7.0.1"
+    },
+    {
+      "type": "pip",
+      "source": "chardet",
+      "version": "==5.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "click",
+      "version": "==8.3.1"
+    },
+    {
+      "type": "pip",
+      "source": "clip-interrogator",
+      "version": "==0.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "color-matcher",
+      "version": "==0.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "colour-science",
+      "version": "==0.4.7"
+    },
+    {
+      "type": "pip",
+      "source": "contourpy",
+      "version": "==1.3.3"
+    },
+    {
+      "type": "pip",
+      "source": "cryptography",
+      "version": "==46.0.5"
+    },
+    {
+      "type": "pip",
+      "source": "cuda-bindings",
+      "version": "==12.9.4"
+    },
+    {
+      "type": "pip",
+      "source": "cuda-pathfinder",
+      "version": "==1.3.4"
+    },
+    {
+      "type": "pip",
+      "source": "cycler",
+      "version": "==0.12.1"
+    },
+    {
+      "type": "pip",
+      "source": "Cython",
+      "version": "==3.2.4"
+    },
+    {
+      "type": "pip",
+      "source": "ddt",
+      "version": "==1.7.2"
+    },
+    {
+      "type": "pip",
+      "source": "decorator",
+      "version": "==5.2.1"
+    },
+    {
+      "type": "pip",
+      "source": "diffusers",
+      "version": "==0.36.0"
+    },
+    {
+      "type": "pip",
+      "source": "docutils",
+      "version": "==0.22.4"
+    },
+    {
+      "type": "pip",
+      "source": "easydict",
+      "version": "==1.13"
+    },
+    {
+      "type": "pip",
+      "source": "einops",
+      "version": "==0.8.2"
+    },
+    {
+      "type": "pip",
+      "source": "filelock",
+      "version": "==3.20.3"
+    },
+    {
+      "type": "pip",
+      "source": "flatbuffers",
+      "version": "==25.12.19"
+    },
+    {
+      "type": "pip",
+      "source": "fonttools",
+      "version": "==4.61.1"
+    },
+    {
+      "type": "pip",
+      "source": "frozenlist",
+      "version": "==1.8.0"
+    },
+    {
+      "type": "pip",
+      "source": "fsspec",
+      "version": "==2026.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "ftfy",
+      "version": "==6.3.1"
+    },
+    {
+      "type": "pip",
+      "source": "gguf",
+      "version": "==0.17.1"
+    },
+    {
+      "type": "pip",
+      "source": "gitdb",
+      "version": "==4.0.12"
+    },
+    {
+      "type": "pip",
+      "source": "GitPython",
+      "version": "==3.1.46"
+    },
+    {
+      "type": "pip",
+      "source": "h11",
+      "version": "==0.16.0"
+    },
+    {
+      "type": "pip",
+      "source": "hf-xet",
+      "version": "==1.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "httpcore",
+      "version": "==1.0.9"
+    },
+    {
+      "type": "pip",
+      "source": "httpx",
+      "version": "==0.28.1"
+    },
+    {
+      "type": "pip",
+      "source": "huggingface_hub",
+      "version": "==1.4.1"
+    },
+    {
+      "type": "pip",
+      "source": "ImageIO",
+      "version": "==2.37.2"
+    },
+    {
+      "type": "pip",
+      "source": "imageio-ffmpeg",
+      "version": "==0.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "importlib_metadata",
+      "version": "==8.7.1"
+    },
+    {
+      "type": "pip",
+      "source": "insightface",
+      "version": "==0.7.3"
+    },
+    {
+      "type": "pip",
+      "source": "Jinja2",
+      "version": "==3.1.6"
+    },
+    {
+      "type": "pip",
+      "source": "joblib",
+      "version": "==1.5.3"
+    },
+    {
+      "type": "pip",
+      "source": "jsonschema",
+      "version": "==4.26.0"
+    },
+    {
+      "type": "pip",
+      "source": "jsonschema-specifications",
+      "version": "==2025.9.1"
+    },
+    {
+      "type": "pip",
+      "source": "kiwisolver",
+      "version": "==1.4.9"
+    },
+    {
+      "type": "pip",
+      "source": "lark",
+      "version": "==1.3.1"
+    },
+    {
+      "type": "pip",
+      "source": "lazy_loader",
+      "version": "==0.4"
     },
     {
       "type": "pip",
       "source": "librosa",
-      "version": "",
-      "description": "Often required for audio processing nodes."
+      "version": "==0.10.2"
+    },
+    {
+      "type": "pip",
+      "source": "llvmlite",
+      "version": "==0.46.0"
+    },
+    {
+      "type": "pip",
+      "source": "loguru",
+      "version": "==0.7.3"
+    },
+    {
+      "type": "pip",
+      "source": "markdown-it-py",
+      "version": "==4.0.0"
+    },
+    {
+      "type": "pip",
+      "source": "MarkupSafe",
+      "version": "==3.0.3"
+    },
+    {
+      "type": "pip",
+      "source": "matplotlib",
+      "version": "==3.10.8"
+    },
+    {
+      "type": "pip",
+      "source": "matrix-nio",
+      "version": "==0.25.2"
+    },
+    {
+      "type": "pip",
+      "source": "mdurl",
+      "version": "==0.1.2"
+    },
+    {
+      "type": "pip",
+      "source": "ml_dtypes",
+      "version": "==0.5.4"
+    },
+    {
+      "type": "pip",
+      "source": "moviepy",
+      "version": "==2.2.1"
+    },
+    {
+      "type": "pip",
+      "source": "mpmath",
+      "version": "==1.3.0"
+    },
+    {
+      "type": "pip",
+      "source": "mss",
+      "version": "==10.1.0"
+    },
+    {
+      "type": "pip",
+      "source": "multidict",
+      "version": "==6.7.1"
+    },
+    {
+      "type": "pip",
+      "source": "networkx",
+      "version": "==3.6.1"
+    },
+    {
+      "type": "pip",
+      "source": "numba",
+      "version": "==0.63.1"
+    },
+    {
+      "type": "pip",
+      "source": "numpy",
+      "version": "==2.3.5"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cublas-cu12",
+      "version": "==12.8.4.1"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cuda-cupti-cu12",
+      "version": "==12.8.90"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cuda-nvrtc-cu12",
+      "version": "==12.8.93"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cuda-runtime-cu12",
+      "version": "==12.8.90"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cudnn-cu12",
+      "version": "==9.10.2.21"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cufft-cu12",
+      "version": "==11.3.3.83"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cufile-cu12",
+      "version": "==1.13.1.3"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-curand-cu12",
+      "version": "==10.3.9.90"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cusolver-cu12",
+      "version": "==11.7.3.90"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cusparse-cu12",
+      "version": "==12.5.8.93"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-cusparselt-cu12",
+      "version": "==0.7.1"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-nccl-cu12",
+      "version": "==2.27.5"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-nvjitlink-cu12",
+      "version": "==12.8.93"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-nvshmem-cu12",
+      "version": "==3.4.5"
+    },
+    {
+      "type": "pip",
+      "source": "nvidia-nvtx-cu12",
+      "version": "==12.8.90"
+    },
+    {
+      "type": "pip",
+      "source": "onnx",
+      "version": "==1.20.1"
+    },
+    {
+      "type": "pip",
+      "source": "onnxruntime",
+      "version": "==1.24.1"
+    },
+    {
+      "type": "pip",
+      "source": "onnxruntime-gpu",
+      "version": "==1.24.1"
+    },
+    {
+      "type": "pip",
+      "source": "open_clip_torch",
+      "version": "==3.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "opencv-contrib-python",
+      "version": "==4.13.0.92"
+    },
+    {
+      "type": "pip",
+      "source": "opencv-python",
+      "version": "==4.13.0.92"
+    },
+    {
+      "type": "pip",
+      "source": "opencv-python-headless",
+      "version": "==4.13.0.92"
+    },
+    {
+      "type": "pip",
+      "source": "peft",
+      "version": "==0.18.1"
+    },
+    {
+      "type": "pip",
+      "source": "pillow",
+      "version": "==11.3.0"
+    },
+    {
+      "type": "pip",
+      "source": "pooch",
+      "version": "==1.9.0"
+    },
+    {
+      "type": "pip",
+      "source": "prettytable",
+      "version": "==3.17.0"
+    },
+    {
+      "type": "pip",
+      "source": "proglog",
+      "version": "==0.1.12"
+    },
+    {
+      "type": "pip",
+      "source": "propcache",
+      "version": "==0.4.1"
+    },
+    {
+      "type": "pip",
+      "source": "protobuf",
+      "version": "==6.33.5"
+    },
+    {
+      "type": "pip",
+      "source": "psutil",
+      "version": "==7.2.2"
+    },
+    {
+      "type": "pip",
+      "source": "pycryptodome",
+      "version": "==3.23.0"
+    },
+    {
+      "type": "pip",
+      "source": "pydantic",
+      "version": "==2.12.5"
+    },
+    {
+      "type": "pip",
+      "source": "pydantic_core",
+      "version": "==2.41.5"
+    },
+    {
+      "type": "pip",
+      "source": "PyGithub",
+      "version": "==2.8.1"
+    },
+    {
+      "type": "pip",
+      "source": "Pygments",
+      "version": "==2.19.2"
+    },
+    {
+      "type": "pip",
+      "source": "PyJWT",
+      "version": "==2.11.0"
+    },
+    {
+      "type": "pip",
+      "source": "pyloudnorm",
+      "version": "==0.2.0"
+    },
+    {
+      "type": "pip",
+      "source": "PyMatting",
+      "version": "==1.1.15"
+    },
+    {
+      "type": "pip",
+      "source": "PyNaCl",
+      "version": "==1.6.2"
+    },
+    {
+      "type": "pip",
+      "source": "pyparsing",
+      "version": "==3.3.2"
+    },
+    {
+      "type": "pip",
+      "source": "python-dateutil",
+      "version": "==2.9.0.post0"
+    },
+    {
+      "type": "pip",
+      "source": "python-dotenv",
+      "version": "==1.2.1"
+    },
+    {
+      "type": "pip",
+      "source": "python-socks",
+      "version": "==2.8.0"
+    },
+    {
+      "type": "pip",
+      "source": "PyYAML",
+      "version": "==6.0.3"
+    },
+    {
+      "type": "pip",
+      "source": "qrcode",
+      "version": "==8.2"
+    },
+    {
+      "type": "pip",
+      "source": "referencing",
+      "version": "==0.37.0"
+    },
+    {
+      "type": "pip",
+      "source": "regex",
+      "version": "==2026.1.15"
+    },
+    {
+      "type": "pip",
+      "source": "rembg",
+      "version": "==2.0.69"
+    },
+    {
+      "type": "pip",
+      "source": "requirements-parser",
+      "version": "==0.13.0"
+    },
+    {
+      "type": "pip",
+      "source": "rich",
+      "version": "==14.3.2"
+    },
+    {
+      "type": "pip",
+      "source": "rich-argparse",
+      "version": "==1.7.2"
+    },
+    {
+      "type": "pip",
+      "source": "rotary-embedding-torch",
+      "version": "==0.8.9"
+    },
+    {
+      "type": "pip",
+      "source": "rpds-py",
+      "version": "==0.30.0"
+    },
+    {
+      "type": "pip",
+      "source": "safetensors",
+      "version": "==0.7.0"
+    },
+    {
+      "type": "pip",
+      "source": "scikit-image",
+      "version": "==0.26.0"
+    },
+    {
+      "type": "pip",
+      "source": "scikit-learn",
+      "version": "==1.8.0"
+    },
+    {
+      "type": "pip",
+      "source": "scipy",
+      "version": "==1.17.0"
+    },
+    {
+      "type": "pip",
+      "source": "sentencepiece",
+      "version": "==0.2.1"
+    },
+    {
+      "type": "pip",
+      "source": "setuptools",
+      "version": "==80.9.0"
+    },
+    {
+      "type": "pip",
+      "source": "shellingham",
+      "version": "==1.5.4"
+    },
+    {
+      "type": "pip",
+      "source": "simsimd",
+      "version": "==6.5.12"
+    },
+    {
+      "type": "pip",
+      "source": "six",
+      "version": "==1.17.0"
+    },
+    {
+      "type": "pip",
+      "source": "smmap",
+      "version": "==5.0.2"
+    },
+    {
+      "type": "pip",
+      "source": "soundfile",
+      "version": "==0.13.1"
+    },
+    {
+      "type": "pip",
+      "source": "soxr",
+      "version": "==1.0.0"
+    },
+    {
+      "type": "pip",
+      "source": "spandrel",
+      "version": "==0.4.1"
+    },
+    {
+      "type": "pip",
+      "source": "stevedore",
+      "version": "==5.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "stringzilla",
+      "version": "==4.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "sympy",
+      "version": "==1.14.0"
+    },
+    {
+      "type": "pip",
+      "source": "threadpoolctl",
+      "version": "==3.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "tifffile",
+      "version": "==2026.1.28"
+    },
+    {
+      "type": "pip",
+      "source": "timm",
+      "version": "==1.0.24"
+    },
+    {
+      "type": "pip",
+      "source": "tokenizers",
+      "version": "==0.22.2"
+    },
+    {
+      "type": "pip",
+      "source": "toml",
+      "version": "==0.10.2"
+    },
+    {
+      "type": "pip",
+      "source": "torch",
+      "version": "==2.10.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchaudio",
+      "version": "==2.10.0"
+    },
+    {
+      "type": "pip",
+      "source": "torchvision",
+      "version": "==0.25.0"
+    },
+    {
+      "type": "pip",
+      "source": "transformers",
+      "version": "==5.1.0"
+    },
+    {
+      "type": "pip",
+      "source": "triton",
+      "version": "==3.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "typer",
+      "version": "==0.23.0"
+    },
+    {
+      "type": "pip",
+      "source": "typer-slim",
+      "version": "==0.23.0"
+    },
+    {
+      "type": "pip",
+      "source": "typing-inspection",
+      "version": "==0.4.2"
+    },
+    {
+      "type": "pip",
+      "source": "typing_extensions",
+      "version": "==4.15.0"
+    },
+    {
+      "type": "pip",
+      "source": "unpaddedbase64",
+      "version": "==2.1.0"
+    },
+    {
+      "type": "pip",
+      "source": "uv",
+      "version": "==0.10.2"
+    },
+    {
+      "type": "pip",
+      "source": "wcwidth",
+      "version": "==0.6.0"
+    },
+    {
+      "type": "pip",
+      "source": "wheel",
+      "version": "==0.45.1"
+    },
+    {
+      "type": "pip",
+      "source": "yarl",
+      "version": "==1.22.0"
+    },
+    {
+      "type": "pip",
+      "source": "zipp",
+      "version": "==3.23.0"
+    },
+    {
+      "type": "pip",
+      "source": "zstandard",
+      "version": "==0.25.0"
     }
   ]
 }
