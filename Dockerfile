@@ -65,15 +65,13 @@ COPY ./app/config/takumi_meta/core/infra/architectures.json /tmp/architectures.j
 
 # --- Ollama (The Brain) ---
 # [Why] To run local LLMs (Gemma) for the Chat UI.
-# [Note] install.sh uses systemd which fails in docker build. We download the binary directly.
-RUN echo ">>> Installing Ollama binary..." && \
-    case ${TARGETARCH} in \
-        "amd64") OLLAMA_ARCH="amd64" ;; \
-        "arm64") OLLAMA_ARCH="arm64" ;; \
-        *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
-    esac && \
-    curl -L "https://ollama.com/download/ollama-linux-${OLLAMA_ARCH}" -o /usr/bin/ollama && \
-    chmod +x /usr/bin/ollama
+# [Note] Official install.sh fails due to systemd dependencies in Docker.
+# [Note] We download the script, patch 'systemctl' to 'echo' (bypass), and run it.
+RUN echo ">>> Installing Ollama..." && \
+    curl -fsSL https://ollama.com/install.sh -o install_ollama.sh && \
+    sed -i 's/systemctl/echo/g' install_ollama.sh && \
+    sh install_ollama.sh && \
+    rm install_ollama.sh
 
 # --- uv (The Fast Installer) ---
 # [Why] To speed up pip package installations.
