@@ -1,0 +1,9 @@
+# ==============================================================================
+# Trivy Vulnerability Suppression List
+# ==============================================================================
+
+# [Ollama]
+# Reason: Upstream binary built with vulnerable Go version.
+# Impact is low as Ollama runs within internal Docker network without public TLS exposure.
+# Status: Waiting for upstream fix.
+CVE-2025-68121
