@@ -40,43 +40,43 @@
     },
     {
       "type": "huggingface",
-      "repo_id": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
-      "filename": "split_files/loras/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+      "repo_id": "Kijai/WanVideo_comfy",
+      "filename": "Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
       "target_dir": "/app/ComfyUI/models/loras"
     },
     {
       "type": "huggingface",
       "repo_id": "Kijai/WanVideo_comfy",
-      "filename": "WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors",
+      "filename": "LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16_resized_from_128_to_dynamic_22.safetensors",
       "target_dir": "/app/ComfyUI/models/loras"
     },
     {
       "type": "huggingface",
-      "repo_id": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
-      "filename": "split_files/controlnet/Wan21_Uni3C_controlnet_fp16.safetensors",
+      "repo_id": "Kijai/WanVideo_comfy",
+      "filename": "Wan21_Uni3C_controlnet_fp16.safetensors",
       "target_dir": "/app/ComfyUI/models/controlnet"
     },
     {
       "type": "huggingface",
-      "repo_id": "Kijai/assets",
-      "filename": "vitpose-l-wholebody.onnx",
+      "repo_id": "JunkyByte/easy_ViTPose",
+      "filename": "onnx/wholebody/vitpose-l-wholebody.onnx",
       "target_dir": "/app/ComfyUI/models/onnx"
     },
     {
       "type": "huggingface",
-      "repo_id": "Kijai/assets",
-      "filename": "yolov10m.onnx",
+      "repo_id": "Wan-AI/Wan2.2-Animate-14B",
+      "filename": "process_checkpoint/det/yolov10m.onnx",
       "target_dir": "/app/ComfyUI/models/onnx"
     },
     {
       "type": "huggingface",
-      "repo_id": "Kijai/MelBandRoFormer",
+      "repo_id": "Kijai/MelBandRoFormer_comfy",
       "filename": "MelBandRoformer_fp16.safetensors",
       "target_dir": "/app/ComfyUI/models/mel_band_roformer"
     },
     {
       "type": "huggingface",
-      "repo_id": "ai-forever/Real-ESRGAN",
+      "repo_id": "dtarnow/UPscaler",
       "filename": "RealESRGAN_x2plus.pth",
       "target_dir": "/app/ComfyUI/models/upscale_models"
     }
