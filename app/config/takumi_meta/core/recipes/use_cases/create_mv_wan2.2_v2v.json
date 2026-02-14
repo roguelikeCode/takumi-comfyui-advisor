@@ -1,7 +1,7 @@
 {
   "asset_id": "takumi-use-case-wan-video-infinitetalk-001",
   "asset_version": "1.0.0",
-  "asset_recipe": "assets/create_video_wan2.2_i2v.json",
+  "asset_recipe": "assets/create_mv_wan2.2_v2v.json",
   "base_recipe": "foundation/comfyui/v0.12.3.json",
   "display_name": "WanVideo MV Studio (Wan2.1/2.2 + InfiniteTalk) *Over 30GB",
   "description": "Advanced MV creation workflow using WanVideo for V2V/I2V and InfiniteTalk for high-quality lip-sync. Includes Audio Separation and SAM2 masking.",
