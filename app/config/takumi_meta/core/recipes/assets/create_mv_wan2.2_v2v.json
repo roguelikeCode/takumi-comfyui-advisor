@@ -8,13 +8,13 @@
   "downloads": [
     {
       "type": "huggingface",
-      "repo_id": "Kijai/WanVideo_comfy",
+      "repo_id": "Kijai/WanVideo_comfy_fp8_scaled",
       "filename": "Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors",
       "target_dir": "/app/ComfyUI/models/diffusion_models"
     },
     {
       "type": "huggingface",
-      "repo_id": "vrgamedevgirl84/Wan14BT2VFusioniX ",
+      "repo_id": "vrgamedevgirl84/Wan14BT2VFusioniX",
       "filename": "Wan14Bi2vFusioniX.safetensors",
       "target_dir": "/app/ComfyUI/models/diffusion_models"
     },
