@@ -88,7 +88,7 @@ install-oss: build-oss
 
 	@echo ">>> [Step 2] Running Installer (Full Power)..."
 	@# Run a script inside an already running container
-	$(COMPOSE_CMD) exec comfyui bash /app/install.sh
+	$(COMPOSE_CMD) exec --user takumi comfyui bash /app/install.sh
 
 	@echo ">>> [Step 3] Restarting Runtime (Apply Changes)..."
 	$(COMPOSE_CMD) restart comfyui

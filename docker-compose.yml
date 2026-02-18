@@ -1,67 +1,128 @@
 services:
-  # --- Service A: The Studio (ComfyUI) ---
+  # ============================================================================
+  # Service A: The Gatekeeper (Sidecar Proxy)
+  # [Role] Filters egress traffic and isolates the network.
+  # ============================================================================
+  proxy:
+    image: kalaksi/tinyproxy:latest
+    container_name: takumi-proxy
+    restart: unless-stopped
+    volumes:
+      # [Config] Read-Only security configuration
+      - ./security/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+    networks:
+      - takumi-network
+
+  # ============================================================================
+  # Service B: The Studio (ComfyUI Application)
+  # [Role] The main runtime environment.
+  # ============================================================================
   comfyui:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
-    container_name: takumi-comfyui-oss
+    container_name: takumi-comfyui
+    
+    # --- Security Hardening (The Ironclad) ---
+    read_only: true
     security_opt:
-      - no-new-privileges:true
+      # [Note] gosu requires SETUID, so we cannot use no-new-privileges here.
+      # - no-new-privileges:true 
+      []
     cap_drop:
       - ALL
     cap_add:
-      - SYS_NICE
-      - DAC_OVERRIDE
-      - CHOWN
-      - FOWNER
-    command: ["bash", "/app/scripts/run.sh"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    ports:
-      - "8188:8188"
-    volumes:
-      # 1. Python/Conda Core
-      - conda-envs:/root/.conda/envs
-      - conda-pkgs:/root/.conda/pkgs
-      # 2. Takumi System
-      - takumi-cache:/app/cache
-      - takumi-logs:/app/logs
-      - takumi-receipts:/app/storage/receipts
-      # 3. ComfyUI Data
-      - comfyui-external:/app/external
-      - comfyui-output:/app/ComfyUI/output
-      - comfyui-input:/app/ComfyUI/input
-      - comfyui-models:/app/ComfyUI/models
-      - comfyui-user:/app/ComfyUI/user
-      - pip-cache:/root/.cache/pip
+      - CHOWN         # For entrypoint permissions fix
+      - SETUID        # For gosu (user switching)
+      - SETGID        # For gosu
+      - DAC_OVERRIDE  # Fallback for strict file permissions
+      - FOWNER        # Fallback for strict ownership
+      - SYS_NICE      # For PyTorch optimizations
+
+    # --- Runtime Environment ---
     environment:
+      # [Storage] Unified paths (Persisted in takumi-storage)
+      - CONDA_ENVS_DIRS=/app/storage/envs
+      - CONDA_PKGS_DIRS=/app/storage/pkgs
+      - CONDARC=/app/temp/.condarc    
+      # [Network] Route traffic through Sidecar Proxy
+      - http_proxy=http://takumi-proxy:8888
+      - https_proxy=http://takumi-proxy:8888
+      - no_proxy=localhost,127.0.0.1,ollama
+      # [App Config]
       - CLI_ARGS=--listen 0.0.0.0 --port 8188 --preview-method auto
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTHONDONTWRITEBYTECODE=1
+      # [External Services]
       - OLLAMA_HOST=http://ollama:11434
       - HF_TOKEN=${HF_TOKEN}
+      # [Hardware]
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+    # --- Volume Mounts ---
+    volumes:
+      # [System] Ephemeral areas (Write allowed in Read-Only Root)
+      - type: tmpfs
+        target: /tmp
+      - type: tmpfs
+        target: /run
+      - type: tmpfs
+        target: /app/temp
+      - type: tmpfs
+        target: /home/takumi
+      # [Persistence] Unified Storage (System State & Conda)
+      - takumi-storage:/app/storage
+      # [Persistence] Application Root (ComfyUI & Models)
+      - takumi-external:/app/external
+      # [Cache] Installer History & Catalogs
+      - takumi-cache:/app/cache
+      # [Cache] Pip Cache (Optimization)
+      - pip-cache:/home/takumi/.cache/pip
+      # [Logs] App Logs
+      - takumi-logs:/app/logs
+      
+    # --- Orchestration ---
     depends_on:
+      proxy:
+        condition: service_started
       ollama:
         condition: service_healthy
     networks:
       - takumi-network
+    ports:
+      - "8188:8188"
+    
+    # --- Hardware Resources ---
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
     tty: true
 
-  # --- Service B: The Brain (Ollama) ---
+  # ============================================================================
+  # Service C: The Brain (Local LLM)
+  # [Role] Provides intelligence for dependency resolution.
+  # ============================================================================
   ollama:
     image: ollama/ollama:latest
     container_name: takumi-ollama
+    restart: always
+
+    # [Network]
     ports:
       - "11434:11434"
+    networks:
+      - takumi-network
+    
+    # [Persistence]
     volumes:
       - ollama-models:/root/.ollama
+    
+    # [Hardware] GPU Offloading
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -72,27 +133,31 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    networks:
-      - takumi-network
+    
+    # [Healthcheck] Essential for depends_on
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 5s
       timeout: 10s
       retries: 5
-    restart: always
+
+# ==============================================================================
+# Global Definitions
+# ==============================================================================
 networks:
   takumi-network:
     driver: bridge
+
 volumes:
-  conda-envs:
-  conda-pkgs:
+  # System Data
+  takumi-storage:
+  takumi-external:
   takumi-cache:
   takumi-logs:
-  takumi-receipts:
-  comfyui-external:
-  comfyui-output:
-  comfyui-input:
-  comfyui-models:
-  comfyui-user:
+  
+  # Caches
   pip-cache:
   ollama-models:
+  
+  # Note: 'takumi-cache' and 'conda-envs' are removed 
+  # as they are now consolidated into 'takumi-storage'.

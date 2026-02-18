@@ -29,6 +29,7 @@ RUN apt-get update && \
     bzip2 \
     zstd \
     sudo \
+    gosu \
     # --- Build Essentials (For compiling C++ extensions) ---
     build-essential \
     cmake \
@@ -106,28 +107,34 @@ RUN echo ">>> Installing Miniforge ${MINIFORGE_VERSION} for arch: ${TARGETARCH}.
 # ------------------------------------------------------------------------------
 WORKDIR /app
 
-# Creating a "receptacle" to prevent mount errors (mkdirat read-only) in Rootless Docker
+# [Security] 1. Create Writable Directories (Takumi Owned)
 RUN mkdir -p \
     /app/scripts \
     /app/cache \
     /app/external \
     /app/logs \
-    /app/storage
+    /app/storage \
+    /app/temp && \
+    chown -R takumi:takumi /app
 
-# Copy Application Code (Source)
+# [Security] 2. Immutable Application Core (Root Owned)
 COPY app/ .
-# Copy Scripts (Tools)
 COPY scripts/ ./scripts/
 
-# [Why] Ensure the takumi user owns the application code.
-RUN chown -R takumi:takumi /app
+# [Security] 3. Script Permissions
+RUN chmod 755 \
+    /app/scripts/entrypoint.sh \
+    /app/scripts/run.sh \
+    /app/install.sh
 
 # ------------------------------------------------------------------------------
 # 5. Finalization
 # ------------------------------------------------------------------------------
-# Drop to user level (handled by docker run --user usually, but good practice)
-# USER takumi 
-# (Commented out because install.sh might need root for some initial setup, 
-#  we control user via Makefile)
+# [Optimization] Prevent .pyc generation (Essential for Read-Only roots)
+ENV PYTHONDONTWRITEBYTECODE=1
 
-CMD [ "bash" ]
+# [Gatekeeper] Initialize as Root to fix permissions, then drop to User
+ENTRYPOINT [ "/app/scripts/entrypoint.sh" ]
+
+# [Engine] Default launch command
+CMD [ "bash", "/app/scripts/run.sh" ]

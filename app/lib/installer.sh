@@ -260,6 +260,19 @@ setup_ollama_model() {
     fi
 }
 
+# [Why] To determine the target path for a new Conda environment.
+# [What] Uses the first path in CONDA_ENVS_DIRS or falls back to a default.
+# [Input] $1: env_name
+# [Output] Full path (string)
+resolve_env_path() {
+    local name="$1"
+    # Extract first path from colon-separated list (standard path format)
+    local root="${CONDA_ENVS_DIRS%%:*}"
+    # Fallback to default if empty
+    local base="${root:-/app/storage/envs}"
+    echo "${base}/${name}"
+}
+
 # --- Main Flow ---
 
 # [Why] To orchestrate the entire installation process based on the selected recipe.
@@ -355,21 +368,21 @@ run_install_flow() {
         done < <(jq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
 
         # [3] Create Environment
+        local env_path
+        env_path=$(resolve_env_path "$env_name")
+        
+        log_info "Materializing Conda environment at: $env_path"
+        
         enhance_conda_network
         
-        # Force path to ensure persistence in Rootless Docker
-        local env_path="/root/.conda/envs/${env_name}"
-        
-        log_info "Creating env at: $env_path" # Debug log
-
         if ! conda create -p "$env_path" "${channels[@]}" "${conda_pkgs[@]}" -y; then
-             restore_conda_network
-             consult_ai_on_complex_failure \
+            restore_conda_network
+            consult_ai_on_complex_failure \
                 "Failed to create Conda environment at '$env_path'." \
                 "Packages: ${conda_pkgs[*]}"
             return 1
         fi
-
+        
         restore_conda_network
         log_success "Conda environment '${env_name}' materialized."
     fi
