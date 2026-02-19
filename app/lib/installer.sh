@@ -74,38 +74,60 @@ restore_conda_network() {
     conda config --remove-key remote_max_retries > /dev/null 2>&1 || true
 }
 
-# [Why] To clone repositories safely without overwriting mounted data.
-# [What] Checks for existing .git or non-empty directories (mounts) before cloning.
-# [Input] $1: source_url, $2: target_path, $3: branch (optional)
+# [Why] To clone repositories safely into directories that might contain mounts.
+# [What] Uses 'git init' pattern to bypass 'directory not empty' errors.
+#        Accurately fetches specific tags or branches if requested.
+# [Input] $1: source_url, $2: target_path, $3: version_or_branch (optional)
 git_clone_safely() {
     local source="$1"
     local path="$2"
-    local branch="$3"
+    local version="${3:-}"
 
-    # Case 1: Valid Repo exists (Idempotency)
+    # 1. Idempotency Check (Does .git exist?)
     if [ -d "$path/.git" ]; then
         log_info "  -> Valid repository exists at ${path}. Skipping clone."
         return 0
     fi
 
-    # Case 2: Directory exists and is NOT empty (Likely a Volume Mount)
-    # [Note] `ls -A` returns contents including hidden files. If content exists, we protect it.
-    if [ -d "$path" ] && [ "$(ls -A "$path")" ]; then
-        log_warn "  -> Target '${path}' is not empty (likely mounted data)."
-        log_warn "     Skipping clone to protect your data."
-        return 0
-    fi
-
-    # Case 3: Pristine or Empty Directory (Safe to Clone)
-    log_info "  -> Cloning into pristine directory: ${path}..."
+    log_info "  -> Materializing repository into: ${path}"
+    
+    # 2. Preparation
     mkdir -p "$path"
     
-    local git_args=("--recursive")
-    if [ -n "$branch" ] && [ "$branch" != "main" ] && [ "$branch" != "master" ] && [ "$branch" != "null" ]; then
-        git_args+=("--branch" "$branch")
-    fi
-    
-    git clone "${git_args[@]}" "$source" "$path"
+    # 3. Hybrid Clone Strategy (Isolated in subshell)
+    # サブシェル ( ... ) 内で実行することで、ディレクトリ移動の影響を局所化し、
+    # エラー時にメインプロセスを巻き込まずに制御する
+    (
+        # エラーが発生したら即座にサブシェルを終了
+        set -e
+        
+        cd "$path"
+        
+        # Initialize
+        git init -q
+        git remote add origin "$source"
+        
+        # 4. Version Targeting
+        # versionが "空" または "null" (JSON由来) の場合はデフォルト最新を取得
+        if [ -z "$version" ] || [ "$version" = "null" ]; then
+            # Default branch (HEAD)
+            git fetch origin --depth 1 -q
+            git checkout -qf FETCH_HEAD
+        else
+            # Specific tag or branch
+            log_info "     Targeting specific version/tag: ${version}"
+            git fetch origin "$version" --depth 1 -q
+            git checkout -qf FETCH_HEAD
+        fi
+        
+        # 5. Resolve Submodules
+        git submodule update --init --recursive -q
+        
+    ) || {
+        # サブシェルがエラー(exit != 0)で終わった場合
+        log_error "  -> Git materialization failed for ${source}."
+        return 1
+    }
 }
 
 # Bandit (SAST)
@@ -286,15 +308,6 @@ run_install_flow() {
     
     log_info "Starting asset materialization for use-case: '${use_case_name}'..."
 
-    # 0. Install System Foundation (ComfyUI)
-    log_info "Materializing system foundation (ComfyUI)..."
-    if [ ! -d "${COMFYUI_ROOT_DIR}/.git" ]; then
-        log_info "  -> Cloning ComfyUI repository to ${COMFYUI_ROOT_DIR}..."
-        git clone "https://github.com/Comfy-Org/ComfyUI.git" "${COMFYUI_ROOT_DIR}"
-    else
-        log_info "  -> ComfyUI repository already exists. Skipping clone."
-    fi
-    
     # Use a function in 'utils.sh' to search for 'Core' or 'Ent'
     local raw_recipe_path
     raw_recipe_path=$(find_use_case_recipe_path "$use_case_name")

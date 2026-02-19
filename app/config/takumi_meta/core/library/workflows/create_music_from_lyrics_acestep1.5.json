@@ -5,135 +5,6 @@
   "last_link_id": 276,
   "nodes": [
     {
-      "id": 104,
-      "type": "UNETLoader",
-      "pos": [
-        -170,
-        -790
-      ],
-      "size": [
-        380,
-        82
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            260
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.11.1",
-        "Node name for S&R": "UNETLoader",
-        "models": [
-          {
-            "name": "acestep_v1.5_turbo.safetensors",
-            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
-            "directory": "diffusion_models"
-          }
-        ]
-      },
-      "widgets_values": [
-        "acestep_v1.5_turbo.safetensors",
-        "default"
-      ]
-    },
-    {
-      "id": 105,
-      "type": "DualCLIPLoader",
-      "pos": [
-        -165,
-        -660
-      ],
-      "size": [
-        380,
-        130
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            261
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.11.1",
-        "Node name for S&R": "DualCLIPLoader",
-        "models": [
-          {
-            "name": "qwen_0.6b_ace15.safetensors",
-            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",
-            "directory": "text_encoders"
-          },
-          {
-            "name": "qwen_1.7b_ace15.safetensors",
-            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors",
-            "directory": "text_encoders"
-          }
-        ]
-      },
-      "widgets_values": [
-        "qwen_0.6b_ace15.safetensors",
-        "qwen_1.7b_ace15.safetensors",
-        "ace",
-        "default"
-      ]
-    },
-    {
-      "id": 106,
-      "type": "VAELoader",
-      "pos": [
-        -165,
-        -470
-      ],
-      "size": [
-        380,
-        58
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            262
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.11.1",
-        "Node name for S&R": "VAELoader",
-        "models": [
-          {
-            "name": "ace_1.5_vae.safetensors",
-            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors",
-            "directory": "vae"
-          }
-        ]
-      },
-      "widgets_values": [
-        "ace_1.5_vae.safetensors"
-      ]
-    },
-    {
       "id": 99,
       "type": "PrimitiveNode",
       "pos": [
@@ -145,7 +16,7 @@
         82
       ],
       "flags": {},
-      "order": 3,
+      "order": 0,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -288,7 +159,7 @@
         60
       ],
       "flags": {},
-      "order": 6,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -369,7 +240,7 @@
         82
       ],
       "flags": {},
-      "order": 4,
+      "order": 1,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -406,7 +277,7 @@
         82
       ],
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -449,7 +320,7 @@
         88
       ],
       "flags": {},
-      "order": 11,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -467,10 +338,10 @@
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-easy-use",
+        "aux_id": "yolain/ComfyUI-Easy-Use",
         "ver": "7c470c67d6df44498e52c902173c1ac77cd5bdfd",
         "Node name for S&R": "easy showAnything",
-        "aux_id": "yolain/ComfyUI-Easy-Use"
+        "cnr_id": "comfyui-easy-use"
       },
       "widgets_values": [
         "125"
@@ -520,7 +391,7 @@
         88
       ],
       "flags": {},
-      "order": 12,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -538,10 +409,10 @@
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-easy-use",
+        "aux_id": "yolain/ComfyUI-Easy-Use",
         "ver": "7c470c67d6df44498e52c902173c1ac77cd5bdfd",
         "Node name for S&R": "easy showAnything",
-        "aux_id": "yolain/ComfyUI-Easy-Use"
+        "cnr_id": "comfyui-easy-use"
       },
       "widgets_values": [
         "C major"
@@ -561,7 +432,7 @@
       "flags": {
         "collapsed": false
       },
-      "order": 5,
+      "order": 2,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -621,7 +492,7 @@
         161.68230724935069
       ],
       "flags": {},
-      "order": 9,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -639,13 +510,13 @@
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-custom-scripts",
+        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts",
         "ver": "26a13291c8081135b9a80794daf818793c37ef24",
         "Node name for S&R": "ShowText|pysssss",
-        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
+        "cnr_id": "comfyui-custom-scripts"
       },
       "widgets_values": [
-        "\"A playful and high-confidence nu-disco track driven by a funky bassline and whisper vocals, boasting a catchy hook and witty lyrics about self-love and unbothered vibes – highly addictive!\""
+        "\"A nu-disco track built around a highly addictive main phrase, driven by a funky bassline and whisper vocals. It’s playfully confident and full of witty lyrics about self-love and unbothered vibes, creating a minimalist aesthetic with a catchy hook and an overall groove-driven feel.\""
       ]
     },
     {
@@ -660,7 +531,7 @@
         438.21438723948484
       ],
       "flags": {},
-      "order": 10,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -678,13 +549,13 @@
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-custom-scripts",
+        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts",
         "ver": "26a13291c8081135b9a80794daf818793c37ef24",
         "Node name for S&R": "ShowText|pysssss",
-        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts"
+        "cnr_id": "comfyui-custom-scripts"
       },
       "widgets_values": [
-        "[Intro]\n(Subtle synth pads and hi-hats build)\n\n[Verse 1]\nSilk dress shimmerin', mood is golden\nDon't need no validation, story told in\nDiamond eyes reflectin’ all the light\nFeelin’ like a queen, feelin’ alright\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Verse 2]\nAesthetic dreams in a neon glow\nLeaving all the worries far below\nWitty lyrics dancin' in my head\nSmiling at the world, unapologetically led\n\n[Pre-Chorus]\nLittle whispers sayin' \"Let it flow\"\nDon't chase reflections, let your confidence grow\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Bridge]\n(Beat softens, synth pads become more prominent)\nMinimalist soul, shining from within\nSelf-love’s the rhythm, let the journey begin\n\n[Instrumental]\n(Funky bass and driving beat take center stage - brief breakdown)\n\n[Chorus]\n(Full instrumentation drops - funky bass, driving beat)\nUnbothered, unbothered, yeah, that's my vibe\nHigh confidence, feelin' alive\nCatchy hook, repeat it loud and free\nThis is my anthem, just for me\n\n[Outro]\n(Music fades out with synth pads and hi-hats, repeating the hook subtly)\nUnbothered... yeah... oh..."
+        "[Intro]\n(Synth pad swells, subtle hi-hats)\n\n[Verse 1]\nSunrise creeping, mirror’s gleaming\nAnother day, a new esteeming\nDon’t need your judgment, don’t chase the show\nJust letting go, letting my confidence grow\n\n[Pre-Chorus]\n(Bassline subtly increases)\nLittle worries fade away\nLost in the rhythm of today\n\n[Chorus]\n(Full instrumentation, driving beat)\nUnbothered, yeah, that's the key\nHigh confidence, just let it be\nCatchy hook, repeat it slow\nSelf-love’s the only place to go\n\n[Verse 2]\nAesthetic moments, shining bright\nLost in the feeling, bathed in light\nWitty lyrics, a playful art\nPlaying my own beat, a joyful start\n\n[Pre-Chorus]\n(Bassline subtly increases)\nLittle worries fade away\nLost in the rhythm of today\n\n[Chorus]\n(Full instrumentation, driving beat)\nUnbothered, yeah, that’s the key\nHigh confidence, just let it be\nCatchy hook, repeat it slow\nSelf-love’s the only place to go\n\n[Bridge]\n(Instrumental breakdown - synth arpeggio, subtle shaker)\n(Whisper vocals layered over synth)\n“Don’t need it, no, don’t need the show”\n\n[Chorus]\n(Full instrumentation, driving beat - slightly more intense)\nUnbothered, yeah, that’s the key\nHigh confidence, just let it be\nCatchy hook, repeat it slow\nSelf-love’s the only place to go\n\n[Outro]\n(Beat fades out with echo and reverb)\nUnbothered... Unbothered... (repeating quietly) \n(Synth pad sustains)"
       ]
     },
     {
@@ -699,7 +570,7 @@
         679.7643386829468
       ],
       "flags": {},
-      "order": 8,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -754,6 +625,135 @@
         0.85,
         0.9,
         0
+      ]
+    },
+    {
+      "id": 104,
+      "type": "UNETLoader",
+      "pos": [
+        -170,
+        -790
+      ],
+      "size": [
+        380,
+        82
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            260
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.11.1",
+        "Node name for S&R": "UNETLoader",
+        "models": [
+          {
+            "name": "acestep_v1.5_turbo.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+            "directory": "diffusion_models"
+          }
+        ]
+      },
+      "widgets_values": [
+        "split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+        "default"
+      ]
+    },
+    {
+      "id": 105,
+      "type": "DualCLIPLoader",
+      "pos": [
+        -165,
+        -660
+      ],
+      "size": [
+        380,
+        130
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            261
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.11.1",
+        "Node name for S&R": "DualCLIPLoader",
+        "models": [
+          {
+            "name": "qwen_0.6b_ace15.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+            "directory": "text_encoders"
+          },
+          {
+            "name": "qwen_1.7b_ace15.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors",
+            "directory": "text_encoders"
+          }
+        ]
+      },
+      "widgets_values": [
+        "split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+        "split_files/text_encoders/qwen_1.7b_ace15.safetensors",
+        "ace",
+        "default"
+      ]
+    },
+    {
+      "id": 106,
+      "type": "VAELoader",
+      "pos": [
+        -165,
+        -470
+      ],
+      "size": [
+        380,
+        58
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            262
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.11.1",
+        "Node name for S&R": "VAELoader",
+        "models": [
+          {
+            "name": "ace_1.5_vae.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors",
+            "directory": "vae"
+          }
+        ]
+      },
+      "widgets_values": [
+        "split_files/vae/ace_1.5_vae.safetensors"
       ]
     }
   ],
@@ -947,10 +947,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5816168647737713,
+      "scale": 0.5287426043397923,
       "offset": [
-        978.3794769186015,
-        1231.8060683924566
+        674.616133947392,
+        1344.547919841333
       ]
     },
     "frontendVersion": "1.38.13",

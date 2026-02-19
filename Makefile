@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 # ==============================================================================
-#  Takumi ComfyUI Advisor (OSS Edition)
+# Configuration & Targets
 # ==============================================================================
 
 # [Config] Launcher (Secure Env Injection)
@@ -10,6 +10,18 @@ LAUNCHER := $(shell command -v dotenvx >/dev/null 2>&1 && echo "dotenvx run --" 
 # [Core] The Unified Command Wrapper
 # [Note] For Rootless Docker, the container runs as 'root' inside, which maps to the host user outside.
 COMPOSE_CMD := $(LAUNCHER) docker compose
+
+# [Why] Containers to sweep during reset
+CORE_CONTAINERS := takumi-comfyui-oss takumi-proxy takumi-ollama
+
+# [Why] Directories to vaporize during Factory Reset
+# [Note] 'storage/ollama' is intentionally EXCLUDED to prevent re-downloading LLM models.
+PURGE_DIRS := \
+	external/ComfyUI \
+	storage/envs \
+	storage/pkgs \
+	storage/cache \
+	storage/receipts
 
 # Targets
 .DEFAULT_GOAL := help
@@ -129,7 +141,7 @@ shell-oss:
 # [Update] Host System Security
 # [Why] To keep the underlying OS (WSL2) and Docker Engine secure and up-to-date.
 update-oss:
-	@echo ">>> 🛡️  [Step 1] Updating Host System (apt)..."
+	@echo ">>> 🛡️ [Step 1] Updating Host System (apt)..."
 	@sudo apt-get update && sudo apt-get upgrade -y
 	@echo ">>> 🐳 [Step 2] Cleaning Docker System Garbage..."
 	@# Removes stopped containers, unused networks, and dangling images to free disk space
@@ -139,23 +151,25 @@ update-oss:
 # [Cache] Deep Clean & Rebuild
 # [Why] To resolve build-time dependency issues by purging ALL caches.
 cache-oss:
-	@echo ">>> 🧹 [Step 1] Aggressive Cache Cleanup..."
+	@echo ">>> 🧹 Aggressive Cache Cleanup..."
 	@# -a: Remove all unused build cache, not just dangling ones.
 	@# -f: Force without prompt.
 	@docker builder prune -af
 	@docker image prune -f
 	
-	@echo ">>> 🏗️ [Step 2] Rebuilding Image (Fresh)..."
-	$(COMPOSE_CMD) build --no-cache
-	
-	@echo "✅ Build cache purged and image renewed."
+	@echo "✅ Build cache purged. Run 'make build-oss' to rebuild."
 
 # [Clean] Factory Reset
 # [Warning] This deletes ALL persistent volumes (Conda envs, models, output).
 clean-oss:
-	@echo ">>> ☢️  INITIATING FACTORY RESET..."
-	@echo "   -> Stopping containers..."
+	@echo ">>> ☢️ INITIATING FACTORY RESET..."
+	@echo "   -> Stopping containers and removing Docker volumes..."
 	$(COMPOSE_CMD) down --remove-orphans --volumes
-	@echo "   -> Sweeping artifacts..."
-	@docker rm -f takumi-comfyui-oss takumi-ollama 2>/dev/null || true
+	
+	@echo "   -> Sweeping Docker artifacts..."
+	@docker rm -f $(CORE_CONTAINERS) 2>/dev/null || true
+	
+	@echo "   -> Vaporizing Host Data (excluding LLM models)..."
+	@sudo rm -rf $(PURGE_DIRS)
+	
 	@echo "✅ System restored to factory settings."
