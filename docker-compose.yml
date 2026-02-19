@@ -10,6 +10,7 @@ services:
     volumes:
       # [Config] Read-Only security configuration
       - ./security/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+      - ./security/allow.list:/etc/tinyproxy/allow.list:ro
     networks:
       - takumi-network
 

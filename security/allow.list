@@ -1,0 +1,26 @@
+# --- AI Assets ---
+github.com
+raw.githubusercontent.com
+huggingface.co
+cdn-lfs.huggingface.co
+civitai.com
+
+# --- Python / Conda ---
+pypi.org
+files.pythonhosted.org
+conda.anaconda.org
+repo.anaconda.com
+
+# --- System ---
+google.com
+docker.com
+
+# --- ComfyUI Official ---
+api.comfy.org
+
+# --- Takumi Telemetry (AWS API Gateway) ---
+execute-api.ap-northeast-1.amazonaws.com
+
+# --- Hugging Face (Short Domain & XetHub) ---
+hf.co
+cas-server.xethub.hf.co
