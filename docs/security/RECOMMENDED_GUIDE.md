@@ -1,3 +1,13 @@
+## 0. The Three Shields Architecture
+
+To ensure ultimate safety in the age of generative AI, Takumi operates under a strict "Zero Trust" philosophy, protected by three physical and logical shields:
+
+1. **The Identity Shield (Rootless Docker):** Protects the Host OS. By running without root privileges, even if an attacker breaks out of the container, they remain a powerless user on your machine.
+2. **The File Shield (Immutable Root):** Protects the container's internal state. The root filesystem is strictly `read_only`, meaning malicious scripts literally have nowhere to install or hide.
+3. **The Network Shield (Egress Filtering):** Protects against data exfiltration. A dedicated proxy gatekeeper blocks all outbound traffic, allowing connections only to explicitly whitelisted domains (e.g., Hugging Face, GitHub).
+
+---
+
 ## 1. Automated Node Scanner (Bandit)
 
 ComfyUI allows Custom Nodes to execute arbitrary Python code, which creates a risk of supply chain attacks.
@@ -72,4 +82,6 @@ We have implemented a multi-layered security strategy:
 
 *   **Secret Encryption:** `dotenvx` encrypts sensitive environment variables (API Keys).
 *   **CI/CD Scanning:** Automated vulnerability scanning with **Trivy** during build and push.
-*   **Privilege Drop:** We strictly disable root privileges. The container runs with `no-new-privileges` and `--cap-drop=ALL`, preventing attackers from gaining control of your host system.
+*   **Principle of Least Privilege (最小権限の原則):** The container starts, fixes permissions, and immediately drops to a non-root user via `gosu`. We apply `--cap-drop=ALL` to strip Linux kernel privileges, adding back only what is strictly necessary.
+*   **Egress Filtering (Network Isolation):** We use a Sidecar Proxy (`tinyproxy`) to enforce strict domain whitelisting. Even if a malicious custom node tries to steal your API keys or Discord tokens, the proxy will block the outbound connection to unauthorized servers.
+*   **Ephemeral Workspaces (`tmpfs`):** For directories that absolutely require write access during runtime (e.g., `/tmp`, `/run`), we use `tmpfs` mounts. This means data is stored only in RAM. If an attacker manages to hide a malicious payload in these temporary folders, it will be physically and permanently wiped out the moment the container is restarted.

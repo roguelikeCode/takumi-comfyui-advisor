@@ -48,7 +48,6 @@ By stripping root privileges from the Docker Daemon, we construct a double layer
     *   Even if an attacker gains `root` access inside the container, they map to a **powerless user** (e.g., UID 1001) on your Host OS.
     *   They cannot modify system files (`/usr`, `/etc`) or install system-wide malware on your Windows/Linux machine.
 
-2. **Write Protection (Read-Only):**
-    *   Core directories like `/app` and `/scripts` are **NOT mounted** from the host.
-    *   The code is baked into the Docker image during the build process.
-    *   This ensures that even if an attacker modifies files on the host, the running container remains unaffected (and vice versa).
+2. **Write Protection (Immutable Infrastructure):**
+    *   Core directories like `/app` and `/scripts` are **NOT mounted** from the host. The code is baked into the Docker image during the build process.
+    *   Furthermore, the container runs with a **Read-Only root filesystem** (`read_only: true`). This ensures that even if an attacker breaches the container, they literally cannot download or save malware to the system.
