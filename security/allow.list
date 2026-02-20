@@ -19,7 +19,7 @@ docker.com
 api.comfy.org
 
 # --- Takumi Telemetry (AWS API Gateway) ---
-execute-api.ap-northeast-1.amazonaws.com
+h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com
 
 # --- Hugging Face (Short Domain & XetHub) ---
 hf.co
