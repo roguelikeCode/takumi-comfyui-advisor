@@ -64,28 +64,56 @@ RUN echo ">>> Creating 'takumi' user with UID=${TAKUMI_UID} GID=${TAKUMI_GID}...
 ARG TARGETARCH
 COPY ./app/config/takumi_meta/core/infra/architectures.json /tmp/architectures.json
 
+ENV OLLAMA_VERSION="0.17.4"
+ENV UV_VERSION="0.10.7"
+ENV MINIFORGE_VERSION="26.1.0-0"
+ENV CONDA_DIR="/opt/conda"
+ENV PATH="${CONDA_DIR}/bin:${PATH}"
+
+# Architecture Decision Logic
+RUN echo '#!/bin/sh' > /usr/local/bin/detect_arch && \
+    echo 'ARCH=$(uname -m)' >> /usr/local/bin/detect_arch && \
+    echo 'if [ "$ARCH" = "x86_64" ]; then echo "amd64";' >> /usr/local/bin/detect_arch && \
+    echo 'elif [ "$ARCH" = "aarch64" ]; then echo "arm64";' >> /usr/local/bin/detect_arch && \
+    echo 'else echo "$ARCH"; fi' >> /usr/local/bin/detect_arch && \
+    chmod +x /usr/local/bin/detect_arch
+
 # --- Ollama (The Brain) ---
 # [Why] To run local LLMs (Gemma) for the Chat UI.
 # [Note] Official install.sh fails due to systemd dependencies in Docker.
 # [Note] We download the script, patch 'systemctl' to 'echo' (bypass), and run it.
-RUN echo ">>> Installing Ollama..." && \
-    curl -fsSL https://ollama.com/install.sh -o install_ollama.sh && \
-    sed -i 's/systemctl/echo/g' install_ollama.sh && \
-    sh install_ollama.sh && \
-    rm install_ollama.sh
+RUN TARGETARCH=$(detect_arch) && \
+    echo ">>> Installing Ollama v${OLLAMA_VERSION} for ${TARGETARCH}..." && \
+    # 1. Parse architecture specific binary/checksum from JSON
+    OLLAMA_BINARY=$(jq -r ".ollama[\"${OLLAMA_VERSION}\"][\"${TARGETARCH}\"].binary" /tmp/architectures.json) && \
+    OLLAMA_CHECKSUM=$(jq -r ".ollama[\"${OLLAMA_VERSION}\"][\"${TARGETARCH}\"].checksum" /tmp/architectures.json) && \
+    # 2. Download and Verify
+    wget "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/${OLLAMA_BINARY}" -O /tmp/${OLLAMA_BINARY} && \
+    echo "${OLLAMA_CHECKSUM}  /tmp/${OLLAMA_BINARY}" | sha256sum -c - && \
+    # 3. Install (Extracting the `.tar.zst`)
+    tar -I zstd -C /usr/local -xf /tmp/${OLLAMA_BINARY} && \
+    # 4. Cleanup
+    rm /tmp/${OLLAMA_BINARY}
 
 # --- uv (The Fast Installer) ---
 # [Why] To speed up pip package installations.
-RUN echo ">>> Installing uv..." && \
-    pip install uv --break-system-packages
+RUN TARGETARCH=$(detect_arch) && \
+    echo ">>> Installing uv v${UV_VERSION} for ${TARGETARCH}..." && \
+    # 1. Parse architecture specific binary/checksum from JSON
+    UV_BINARY=$(jq -r ".uv[\"${UV_VERSION}\"][\"${TARGETARCH}\"].binary" /tmp/architectures.json) && \
+    UV_CHECKSUM=$(jq -r ".uv[\"${UV_VERSION}\"][\"${TARGETARCH}\"].checksum" /tmp/architectures.json) && \
+    # 2. Download and Verify
+    wget "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${UV_BINARY}" -O /tmp/${UV_BINARY} && \
+    echo "${UV_CHECKSUM}  /tmp/${UV_BINARY}" | sha256sum -c - && \
+    # 3. Install (Extracting the `.tar.zst`)
+    tar -C /usr/local/bin --strip-components=1 --wildcards -xzf /tmp/${UV_BINARY} "*/uv" "*/uvx" && \
+    # 4. Cleanup
+    rm /tmp/${UV_BINARY}
 
 # --- Miniforge (The Environment Manager) ---
 # [Why] To manage Python versions and CUDA dependencies without licensing issues (unlike Anaconda).
-ENV MINIFORGE_VERSION=25.11.0-1
-ENV CONDA_DIR=/opt/conda
-ENV PATH="${CONDA_DIR}/bin:${PATH}"
-
-RUN echo ">>> Installing Miniforge ${MINIFORGE_VERSION} for arch: ${TARGETARCH}..." && \
+RUN TARGETARCH=$(detect_arch) && \
+    echo ">>> Installing Miniforge ${MINIFORGE_VERSION} for ${TARGETARCH}..." && \
     # 1. Parse architecture specific binary/checksum from JSON
     MINIFORGE_BINARY=$(jq -r ".miniforge[\"${MINIFORGE_VERSION}\"][\"${TARGETARCH}\"].binary" /tmp/architectures.json) && \
     MINIFORGE_CHECKSUM=$(jq -r ".miniforge[\"${MINIFORGE_VERSION}\"][\"${TARGETARCH}\"].checksum" /tmp/architectures.json) && \
@@ -99,8 +127,9 @@ RUN echo ">>> Installing Miniforge ${MINIFORGE_VERSION} for arch: ${TARGETARCH}.
     . ${CONDA_DIR}/etc/profile.d/conda.sh && \
     conda init bash && \
     conda config --set auto_activate false && \
+    # 5. Cleanup
     conda clean -afy && \
-    rm /tmp/architectures.json
+    rm /tmp/architectures.json /usr/local/bin/detect_arch
 
 # ------------------------------------------------------------------------------
 # 4. Application Setup

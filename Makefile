@@ -4,7 +4,9 @@ SHELL := /bin/bash
 # Configuration & Targets
 # ==============================================================================
 
-# [Config] Launcher (Secure Env Injection)
+# [Versions]
+DOTENVX_VERSION := v1.51.1
+# [Launcher] Secure Env Injection
 LAUNCHER := $(shell command -v dotenvx >/dev/null 2>&1 && echo "dotenvx run --" || echo "")
 
 # [Core] The Unified Command Wrapper
@@ -63,7 +65,7 @@ setup-env:
 	@echo ">>> Checking for dotenvx (Encryption tool)..."
 	@if ! command -v dotenvx >/dev/null 2>&1; then \
 		echo "  -> dotenvx not found. Installing $(DOTENVX_VERSION)..."; \
-		curl -sfS https://dotenvx.sh/install.sh | sh -s -- --version $(DOTENVX_VERSION); \
+		curl -sfS https://dotenvx.sh/install.sh | sudo bash -s -- --version $(DOTENVX_VERSION); \
 		echo "  ✅ dotenvx installed successfully."; \
 	else \
 		echo "  ✅ dotenvx is already installed."; \
