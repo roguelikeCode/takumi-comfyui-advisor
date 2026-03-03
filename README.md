@@ -65,8 +65,7 @@ Performance and Security settings are critical for a smooth experience.
 (*⚠️ Please run all commands inside the `Ubuntu` terminal, NOT in `PowerShell`.*)
 
 *   **System Requirements:**
-    *   **Windows Users:** WSL2 (Ubuntu) is strictly required. *Run all commands in Ubuntu terminal.*
-    *   **Docker Desktop:** Configured with WSL2 backend.
+    *   **Windows Users:** WSL2 (Ubuntu) is strictly required. (Enter `wsl --install` in `PowerShell`.)
     *   **NVIDIA GPU:** Drivers installed.
 *   **Essential Configuration:**
     *   **[Security Guide](docs/security/RECOMMENDED_GUIDE.md):** Best practices for keeping your environment safe.
