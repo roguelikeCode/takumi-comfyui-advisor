@@ -32,7 +32,7 @@
     "mapping": {}
   },
   "takumi-flow-qwen3-tts-001": {
-    "name": "Qwen3-TTS Voice Studio",
+    "name": "Qwen3-ASR & TTS Studio Voice Studio",
     "creator": "Takumi OSS",
     "description": "Generate high-fidelity voice cloning using Alibaba's Qwen3-TTS.",
     "tags": ["audio", "tts", "qwen3", "voice-cloning", "trend"],
