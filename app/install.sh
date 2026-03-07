@@ -79,14 +79,19 @@ main() {
     # --- Phase 4: Smart Dependency Resolver ---
     # [Why] To consolidate requirements and install them safely (Low Memory).
     local resolver_script="/app/scripts/smart_resolver.py"
-    
     if [ -f "$resolver_script" ]; then
         log_info "🛡️  Running Takumi Smart Resolver..."
-        
         # Script handles resolution AND installation.
-        if ! python3 "$resolver_script"; then
-            log_warn "Smart Resolver finished with warnings."
-        fi
+        (
+            source /opt/conda/etc/profile.d/conda.sh
+            set +u
+            conda activate "${state[use_case_env]}"
+            set -u
+            # Use 'python' instead of 'python3' to strictly use conda's shim
+            if ! python "$resolver_script"; then
+                log_warn "Smart Resolver finished with warnings."
+            fi
+        )
     fi
 
     # --- Phase 5: Extensions --- 

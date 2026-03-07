@@ -113,10 +113,25 @@ class AssetProcessor:
     @staticmethod
     def _download_huggingface(item: Dict[str, str]) -> None:
         repo_id = item["repo_id"]
-        filename = item["filename"]
         target_dir = AssetProcessor._resolve_path(item["target_dir"])
-        
-        # Target file path calculation
+
+        # Snapshot Download (Get the entire repository at once)
+        filename = item.get("filename")
+        if not filename or filename == "*":
+            print(f"  ⬇️  Downloading repository snapshot: {repo_id}...")
+            try:
+                from huggingface_hub import snapshot_download
+                snapshot_download(
+                    repo_id=repo_id,
+                    local_dir=target_dir,
+                    local_dir_use_symlinks=False
+                )
+                print(f"    ✅ Saved snapshot to {target_dir}")
+            except Exception as e:
+                print(f"    ❌ Snapshot Download Failed: {e}")
+            return
+
+        # Target file path calculation (Existing Single File Processing)
         final_name = item.get("rename_to", filename)
         final_path = target_dir / final_name
 

@@ -40,6 +40,10 @@
       "description": "Requires specific CuPy version based on CUDA and non-standard req file.",
       "extra_files": ["requirements-no-cupy.txt"],
       "inject": ["cupy-cuda12x"]
+    },
+    "ComfyUI-Qwen3-ASR": {
+      "description": "Resolves version conflict with Qwen3-TTS by overriding transformers version.",
+      "uv_overrides": ["transformers==4.57.6"]
     }
   }
 }

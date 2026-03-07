@@ -93,7 +93,8 @@ class DependencyAgent:
         self.session_id = str(uuid.uuid4())
         self.timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
         self.kb = KnowledgeBase()
-        self.input_manifest = {} 
+        self.input_manifest = {}
+        self.uv_overrides_manifest = []
         self.trials = []
         self.status = "pending"
 
@@ -120,6 +121,8 @@ class DependencyAgent:
                     target_files.extend(rule["extra_files"])
                 if "inject" in rule:
                     node_deps.extend(rule["inject"])
+                if "uv_overrides" in rule:
+                    self.uv_overrides_manifest.extend(rule["uv_overrides"])
 
             # 2. File Scan
             for filename in target_files:
@@ -137,17 +140,13 @@ class DependencyAgent:
 
         print(f"   -> Found {len(self.input_manifest)} nodes with dependencies.")
 
-    def execute_strategy(self, strategy_name, constraints=None, override_packages=None):
+    def execute_strategy(self, strategy_name, constraints=None, override_packages=None, uv_overrides=None):
         """Attempts an installation strategy using uv."""
         print(f"\n🤖 [Agent] Executing Strategy: {strategy_name}")
-        
         env = os.environ.copy()
         env["UV_LINK_MODE"] = "copy"
         
-        # Build Requirements List
-        final_reqs = []
-        
-        # Prepare Override Set
+        final_reqs =[]
         normalized_overrides = set()
         if override_packages:
             normalized_overrides = {Utils.normalize_name(p) for p in override_packages}
@@ -163,40 +162,47 @@ class DependencyAgent:
 
         # Apply Conflict Matrix
         final_reqs = self.apply_conflict_matrix(final_reqs)
-            
+        
         # Add Constraints
         if constraints:
             print(f"   -> Applying constraints ({len(constraints)} packages)")
             final_reqs.extend(constraints)
 
-        # Write temp file
         temp_req = f"/tmp/req_{self.session_id}.txt"
         with open(temp_req, 'w') as f:
             f.write("\n".join(final_reqs))
 
+        # Target Python executable (Force strictly into Conda environment)
+        conda_prefix = os.environ.get("CONDA_PREFIX")
+        target_python = os.path.join(conda_prefix, "bin", "python") if conda_prefix else sys.executable
+
+        # Generate Overrides File (sys.executable を target_python に変更)
+        cmd =["uv", "pip", "install", "--python", target_python, "-r", temp_req]
+        if uv_overrides:
+            print(f"   -> 👑 Applying Absolute Overrides ({len(uv_overrides)} packages)")
+            temp_override = f"/tmp/override_{self.session_id}.txt"
+            with open(temp_override, 'w') as f:
+                f.write("\n".join(uv_overrides))
+            cmd.extend(["--override", temp_override])
+
         # Execute uv
         start_time = datetime.datetime.now()
-        cmd = ["uv", "pip", "install", "--python", sys.executable, "-r", temp_req]
-        
         process = subprocess.run(cmd, capture_output=True, text=True, env=env)
-        
         duration = (datetime.datetime.now() - start_time).total_seconds()
         success = (process.returncode == 0)
-        
-        # Logging & Recording
+
         self.trials.append({
             "strategy": strategy_name,
             "success": success,
             "duration": duration,
             "log_snippet": process.stderr[-1000:] if process.stderr else process.stdout[-200:]
         })
-
+        
         if success:
             print("   ✅ Success!")
             return True
         else:
             print("   ❌ Failed.")
-            # Show Debug Log
             lines = process.stderr.splitlines()
             if lines:
                 print("\n   [DEBUG] Error Log (Last 5 lines):")
@@ -249,9 +255,10 @@ class DependencyAgent:
         """Exports the frozen environment as a Takumi Recipe JSON."""
         print("💾 [Agent] Freezing successful environment...")
         os.makedirs(Config.RECIPE_OUTPUT_PATH, exist_ok=True)
-        
         # Freeze pip
-        freeze = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
+        conda_prefix = os.environ.get("CONDA_PREFIX")
+        target_python = os.path.join(conda_prefix, "bin", "python") if conda_prefix else sys.executable
+        freeze = subprocess.check_output([target_python, "-m", "pip", "freeze"], text=True)
         components = []
         for line in freeze.splitlines():
             if "==" in line:
@@ -283,10 +290,16 @@ class DependencyAgent:
         dictator_config = self.kb.strategies.get("dictator_mode", {})
         if dictator_config.get("enabled"):
             print("   -> ⚡ Activating Dictator Mode (Loaded from KB)")
+            
+            # Merging global and node-specific rules
+            global_overrides = dictator_config.get("uv_overrides",[])
+            combined_overrides = list(set(global_overrides + self.uv_overrides_manifest))
+            
             if self.execute_strategy(
                 "dictator_mode", 
                 constraints=dictator_config.get("modern_constraints"),
-                override_packages=dictator_config.get("override_packages")
+                override_packages=dictator_config.get("override_packages"),
+                uv_overrides=combined_overrides if combined_overrides else None  # [MODIFIED] 結合したものを渡す
             ):
                 self.status = "success"
                 return True
@@ -311,6 +324,7 @@ class DependencyAgent:
             sys.exit(1)
 
 if __name__ == "__main__":
-    DependencyAgent().scan_environment()
-    DependencyAgent().solve()
-    DependencyAgent().finalize()
+    agent = DependencyAgent()
+    agent.scan_environment()
+    agent.solve()
+    agent.finalize()

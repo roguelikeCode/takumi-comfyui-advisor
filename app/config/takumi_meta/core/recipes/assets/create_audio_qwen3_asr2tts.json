@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "adr": "docs/adr/create_audio_qwen3_asr2tts.md",
+    "strategy": "Qwen3-ASR + Qwen3-TTS"
+  },
+  "id": "qwen3-asr-tts-assets",
+  "description": "Full snapshot downloads for Qwen3 ASR and TTS models.",
+  "downloads":[
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-ASR-0.6B",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/ASR/Qwen3-ASR/Qwen/Qwen3-ASR-0.6B"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-ASR-1.7B",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/ASR/Qwen3-ASR/Qwen/Qwen3-ASR-1.7B"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-0.6B-Base"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "type": "huggingface",
+      "repo_id": "Qwen/Qwen3-TTS-Tokenizer-12Hz",
+      "filename": "*",
+      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-Tokenizer-12Hz"
+    }
+  ]
+}

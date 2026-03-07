@@ -30,5 +30,15 @@
     "recommended_checkpoint": null,
     "requires_asset": "takumi-use-case-wan-video-infinitetalk-001",
     "mapping": {}
+  },
+  "takumi-flow-qwen3-tts-001": {
+    "name": "Qwen3-TTS Voice Studio",
+    "creator": "Takumi OSS",
+    "description": "Generate high-fidelity voice cloning using Alibaba's Qwen3-TTS.",
+    "tags": ["audio", "tts", "qwen3", "voice-cloning", "trend"],
+    "path": "/app/config/takumi_meta/core/library/workflows/create_audio_qwen3_asr2tts.json",
+    "recommended_checkpoint": "Qwen3-TTS-12Hz-1.7B-Base",
+    "requires_asset": "takumi-use-case-audio-qwen3-tts-001",
+    "mapping": {}
   }
 }

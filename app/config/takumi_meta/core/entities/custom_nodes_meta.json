@@ -42,5 +42,15 @@
     "url": "https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet",
     "takumi_tags": ["controlnet", "advanced", "animation"],
     "takumi_note": "Required for precise control in video generation."
+  },
+  "ComfyUI-Qwen3-TTS": {
+    "url": "https://github.com/DarioFT/ComfyUI-Qwen3-TTS",
+    "takumi_tags":["audio", "tts", "qwen3", "voice-cloning", "trend"],
+    "takumi_note": "A powerful Qwen3-TTS custom node suite for Voice Cloning and Generation."
+  },
+  "ComfyUI-Qwen3-ASR": {
+    "url": "https://github.com/DarioFT/ComfyUI-Qwen3-ASR",
+    "takumi_tags":["audio", "asr", "qwen3", "voice-recognition"],
+    "takumi_note": "A powerful Qwen3-ASR custom node suite for Automatic Speech Recognition."
   }
 }
