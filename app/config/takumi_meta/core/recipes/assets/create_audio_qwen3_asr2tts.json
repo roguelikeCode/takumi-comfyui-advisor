@@ -47,12 +47,6 @@
       "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
       "filename": "*",
       "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-    },
-    {
-      "type": "huggingface",
-      "repo_id": "Qwen/Qwen3-TTS-Tokenizer-12Hz",
-      "filename": "*",
-      "target_dir": "/app/ComfyUI/models/TTS/Qwen3-TTS/Qwen/Qwen3-TTS-Tokenizer-12Hz"
     }
   ]
 }
