@@ -1,8 +1,8 @@
 """
-Takumi Bridge Server API (v3.0 Refactored)
+Takumi Bridge Server API (v3.2 Elegant Edition)
 
 [Why] To act as the intelligent interface between the User and ComfyUI.
-[What] Handles chat requests, resolves intents (Fast Path/AI), and orchestrates workflow loading.
+[What] Handles chat requests, resolves intents via Fast Path or AI, and orchestrates workflow deployments.
 """
 
 import server
@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import subprocess
+import asyncio
 from typing import Dict, Any, Optional
 
 # ==============================================================================
@@ -24,29 +25,26 @@ class TakumiConfig:
     """
     
     # --- AI Service Settings (Ollama) ---
-    # [Logic] Retrieve host from env, strip '/v1' suffix to ensure raw API access.
-    _raw_host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
-    _sanitized_host = _raw_host.replace("/v1", "").rstrip("/")
+    # [Logic] Retrieve host from environment, strip '/v1' suffix to ensure raw API access.
+    _raw_host: str = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+    _sanitized_host: str = _raw_host.replace("/v1", "").rstrip("/")
     
-    OLLAMA_API_URL = f"{_sanitized_host}/api/generate"
-    MODEL_NAME = "gemma3:4b"
+    OLLAMA_API_URL: str = f"{_sanitized_host}/api/generate"
+    MODEL_NAME: str = "gemma3:4b"
     
     # --- File System Paths ---
-    BASE_CONFIG_DIR = "/app/config/takumi_meta"
-    COMFY_ROOT = "/app/external/ComfyUI"
-    CUSTOM_NODES_DIR = os.path.join(COMFY_ROOT, "custom_nodes")
+    BASE_CONFIG_DIR: str = "/app/config/takumi_meta"
+    COMFY_ROOT: str = "/app/external/ComfyUI"
+    CUSTOM_NODES_DIR: str = os.path.join(COMFY_ROOT, "custom_nodes")
 
-    @staticmethod
-    def get_asset_path(rel_path: str) -> str:
+    @classmethod
+    def get_asset_path(cls, rel_path: str) -> str:
         """
         [Why] To resolve file paths with Enterprise priority.
-        [What] Checks 'enterprise' namespace first, falls back to 'core'.
+        [What] Checks the 'enterprise' namespace first, then falls back to 'core'.
         """
-        ent_path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, "enterprise", rel_path)
-        if os.path.exists(ent_path):
-            return ent_path
-        
-        return os.path.join(TakumiConfig.BASE_CONFIG_DIR, "core", rel_path)
+        ent_path = os.path.join(cls.BASE_CONFIG_DIR, "enterprise", rel_path)
+        return ent_path if os.path.exists(ent_path) else os.path.join(cls.BASE_CONFIG_DIR, "core", rel_path)
 
 # ==============================================================================
 # [2] Catalog Manager (The Librarian)
@@ -57,11 +55,11 @@ class CatalogManager:
     @staticmethod
     def load_validated_catalog() -> Dict[str, Any]:
         """
-        [Why] Loads metadata and filters out unavailable workflows.
-        [What] Checks for 'Installation Receipts' in storage to validate availability.
+        [Why] To load metadata and filter out unavailable workflows.
+        [What] Verifies the existence of 'Installation Receipts' in storage to confirm availability.
         """
-        raw_catalog = {}
-        namespaces = ["core", "enterprise"]
+        raw_catalog: Dict[str, Any] = {}
+        namespaces =["core", "enterprise"]
         
         # 1. Load Raw JSONs
         for ns in namespaces:
@@ -71,24 +69,21 @@ class CatalogManager:
                     with open(path, 'r', encoding='utf-8') as f:
                         raw_catalog.update(json.load(f))
                 except Exception as e:
-                    print(f"[Takumi] Error loading {ns} catalog: {e}", file=sys.stderr)
+                    print(f">>> [Takumi] Error loading {ns} catalog: {e}", file=sys.stderr)
 
         # 2. Validate Availability (Receipt Check)
-        valid_catalog = {}
+        valid_catalog: Dict[str, Any] = {}
         receipts_dir = "/app/storage/receipts"
 
         for key, val in raw_catalog.items():
-            # Get "requires_asset" (Recipe ID)
             required_asset_id = val.get("requires_asset")
             
             if required_asset_id:
-                # Check if you have a receipt
                 receipt_path = os.path.join(receipts_dir, required_asset_id)
+                # Skip if the required receipt (proof of installation) is missing
                 if not os.path.exists(receipt_path):
-                    # No receipt = Not installed -> Excluded
                     continue
             
-            # Only those that pass verification are registered
             valid_catalog[key] = val
             
         return valid_catalog
@@ -96,29 +91,25 @@ class CatalogManager:
     @staticmethod
     def build_system_prompt() -> str:
         """
-        [Why] Constructs the AI context with the current catalog.
-        [What] Injects both 'Logic Data' (for AI) and 'Menu Data' (for Display).
+        [Why] To construct the AI context using the current catalog state.
+        [What] Injects both logic definitions (for AI) and menu formatting (for UI).
         """
-        # Load Base Prompt
         prompt_path = TakumiConfig.get_asset_path("prompts/capabilities.txt")
         if not os.path.exists(prompt_path):
-            return "You are a Router. Output JSON only."
+            return "You are a smart router. Output valid JSON only."
         
         with open(prompt_path, 'r', encoding='utf-8') as f:
             base_prompt = f.read()
 
-        # Load Persona (Optional)
         persona_path = TakumiConfig.get_asset_path("prompts/persona.txt")
         persona = ""
-        # Skip persona for very small models if needed, but keeping simple for now
         if os.path.exists(persona_path):
              with open(persona_path, 'r', encoding='utf-8') as f:
                 persona = f.read()
 
-        # Format Catalog
         catalog = CatalogManager.load_validated_catalog()
-        logic_lines = [] # [ID] Name | Tags
-        menu_lines = []  # 🔹 Name
+        logic_lines = []
+        menu_lines =[]
 
         for key, val in catalog.items():
             name = val.get("name", "Unknown")
@@ -126,7 +117,6 @@ class CatalogManager:
             logic_lines.append(f"[{key}] {name} | Tags: {tags}")
             menu_lines.append(f"🔹 {name}")
 
-        # Injection
         full_prompt = base_prompt.replace("{{WORKFLOW_CATALOG}}", "\n".join(logic_lines))
         full_prompt = full_prompt.replace("{{WORKFLOW_MENU}}", "\n".join(menu_lines))
 
@@ -136,20 +126,20 @@ class CatalogManager:
 # [3] Intent Resolver (The Brain)
 # ==============================================================================
 class IntentResolver:
-    """Decides whether to use Fast Path (Regex/Match) or AI Inference."""
+    """Decides whether to route the request via Fast Path (Regex/Match) or AI Inference."""
 
     @staticmethod
     async def resolve(user_input: str) -> Dict[str, Any]:
-        
-        # Strategy A: Fast Path (Direct Name Match)
-        # [Why] Bypass AI for deterministic menu selections (Speed & Accuracy).
+        """
+        [Why] To determine the fastest and most accurate response mechanism.
+        """
+        # Strategy A: Fast Path (Deterministic Match)
         catalog = CatalogManager.load_validated_catalog()
-        clean_input = user_input.replace("🔹", "").strip().lower()
+        clean_input = user_input.replace("🔹", "").replace("▶", "").strip().lower()
 
         for wf_id, meta in catalog.items():
-            wf_name = meta.get("name", "").strip().lower()
-            if clean_input == wf_name:
-                print(f">>> [Takumi] Fast Path Triggered: {wf_id}")
+            if clean_input == meta.get("name", "").strip().lower():
+                print(f">>> [Takumi] Fast Path Triggered: {wf_id}", file=sys.stderr)
                 return {
                     "action": "load_workflow",
                     "target_id": wf_id,
@@ -157,49 +147,85 @@ class IntentResolver:
                 }
 
         # Strategy B: AI Inference (Ollama)
-        # [Why] Handle vague requests or complex parameters.
-        return await IntentResolver._query_ollama(user_input)
+        result = await IntentResolver._query_ollama(user_input)
+        
+        # Guard against NoneType parsing failures
+        if result is None:
+            return {"type": "text", "response": "🧠 Inference interrupted. Please try again."}
+        return result
 
     @staticmethod
-    async def _query_ollama(user_input: str) -> Dict[str, Any]:
+    async def _query_ollama(user_input: str) -> Optional[Dict[str, Any]]:
+        """
+        [Why] To execute semantic routing and handle AI lifecycle states.
+        """
         system_prompt = CatalogManager.build_system_prompt()
         payload = {
             "model": TakumiConfig.MODEL_NAME,
             "prompt": user_input,
             "system": system_prompt,
             "stream": False,
-            "format": "json"
+            "format": "json",
+            # [Optimization] Unload from VRAM aggressively after 20 seconds
+            "keep_alive": "20s" 
         }
 
-        print(f">>> [Takumi] AI Query: {user_input}", file=sys.stderr)
+        print(f">>>[Takumi] AI Query Initiated: {user_input}", file=sys.stderr)
         
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(TakumiConfig.OLLAMA_API_URL, json=payload) as resp:
+                    # Handle uninitialized model state
                     if resp.status == 404:
-                        # Model missing?
-                        print(f">>> [Takumi] Model {TakumiConfig.MODEL_NAME} missing (404).", file=sys.stderr)
-                        return {"response": f"AI Error: Model {TakumiConfig.MODEL_NAME} not found on server."}
+                        model_name = TakumiConfig.MODEL_NAME
+                        asyncio.create_task(IntentResolver._simple_pull_bg(model_name))
+                        return {
+                            "type": "downloading",
+                            "response": f"🧠 Initializing AI Model ({model_name}).\n\nDue to the large data size, this process will take a few minutes.\n\nThe interface may temporarily appear unresponsive, but processing continues in the background. Please wait a moment before trying again.",
+                        }
                     
                     if resp.status != 200:
-                        return {"response": f"AI Error: {resp.status}"}
+                        return {"type": "text", "response": f"AI Error: HTTP {resp.status}"}
                     
                     data = await resp.json()
                     return IntentResolver._parse_ai_response(data.get("response", ""))
-                    
         except Exception as e:
-            return {"response": f"Connection Error: {e}"}
+            return {"type": "text", "response": f"Connection Error: {str(e)}"}
+        
+    @staticmethod
+    async def _simple_pull_bg(model_name: str) -> None:
+        """[Why] To reliably and silently download the model using the CLI in the background.
+        """
+        print(f"\n>>> [Takumi] 📥 Downloading model '{model_name}' in background...", file=sys.stderr)
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "ollama", "pull", model_name,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await proc.wait()
+            if proc.returncode == 0:
+                print(f">>> [Takumi] ✅ Model '{model_name}' downloaded successfully.", file=sys.stderr)
+            else:
+                print(f">>> [Takumi] ❌ Failed to download model (exit code: {proc.returncode}).", file=sys.stderr)
+        except Exception as e:
+            print(f">>>[Takumi] ❌ Error pulling model: {str(e)}", file=sys.stderr)
 
     @staticmethod
     def _parse_ai_response(raw_text: str) -> Dict[str, Any]:
+        """[What] Cleans markdown wrappers and parses the JSON response."""
+        if not raw_text: 
+            return {"type": "text", "response": "..."}
+            
         try:
-            # Clean markdown code blocks
             clean_text = raw_text.strip()
-            if clean_text.startswith("```json"): clean_text = clean_text[7:]
-            if clean_text.endswith("```"): clean_text = clean_text[:-3]
+            if clean_text.startswith("```json"): 
+                clean_text = clean_text[7:]
+            if clean_text.endswith("```"): 
+                clean_text = clean_text[:-3]
             return json.loads(clean_text)
         except json.JSONDecodeError:
-            return {"response": raw_text}
+            return {"type": "text", "response": raw_text}
 
 # ==============================================================================
 # [4] Workflow Executor (The Worker)
@@ -218,7 +244,6 @@ class WorkflowExecutor:
         meta = catalog[target_id]
         path = meta.get("path")
         
-        # Load JSON File
         if not os.path.exists(path):
             return {"type": "text", "response": f"File not found: {path}"}
             
@@ -226,12 +251,12 @@ class WorkflowExecutor:
             with open(path, 'r', encoding='utf-8') as f:
                 workflow = json.load(f)
         except Exception as e:
-            return {"type": "text", "response": f"Invalid JSON: {e}"}
+            return {"type": "text", "response": f"Invalid JSON format: {str(e)}"}
 
-        # Inject Parameters (e.g., Prompt replacement)
+        # Inject dynamic parameters (e.g., prompt replacements)
         params = action_data.get("params", {})
         mapping = meta.get("mapping", {})
-        injected = []
+        injected =[]
 
         if "prompt" in params and "prompt" in mapping:
             node_id = mapping["prompt"]["node_id"]
@@ -245,9 +270,10 @@ class WorkflowExecutor:
                         injected.append("Prompt updated")
                         break
 
-        # Response Construction
-        msg = f"Loaded: **{meta.get('name')}**"
-        if injected: msg += f"\n({', '.join(injected)})"
+        # Construct final response
+        msg = f"Loaded: {meta.get('name')}"
+        if injected: 
+            msg += f"\n({', '.join(injected)})"
 
         return {
             "type": "action",
@@ -258,8 +284,19 @@ class WorkflowExecutor:
 # ==============================================================================
 # [5] Route Handler (The Controller)
 # ==============================================================================
+@server.PromptServer.instance.routes.get("/takumi/catalog")
+async def get_catalog(request) -> web.Response:
+    """
+    [Why] API endpoint for the frontend to render the Zero-Compute Menu.
+    """
+    catalog = CatalogManager.load_validated_catalog()
+    return web.json_response(catalog)
+
 @server.PromptServer.instance.routes.post("/takumi/chat")
-async def chat_handler(request):
+async def chat_handler(request) -> web.Response:
+    """
+    [Why] Primary entry point for user interactions from the Takumi UI.
+    """
     try:
         req_data = await request.json()
         user_prompt = req_data.get("prompt", "").strip()
@@ -267,18 +304,17 @@ async def chat_handler(request):
         if not user_prompt:
             return web.json_response({"type": "text", "response": "..."})
 
-        # 1. Resolve Intent (Fast Path or AI)
+        # 1. Resolve Intent
         ai_result = await IntentResolver.resolve(user_prompt)
 
-        # 2. Execute Action if present
+        # 2. Execute Action
         if ai_result.get("action") == "load_workflow":
             response_payload = WorkflowExecutor.execute(ai_result)
             return web.json_response(response_payload)
 
         # 3. Return Text Response
-        response_text = ai_result.get("response", str(ai_result))
-        return web.json_response({"type": "text", "response": response_text})
-
+        return web.json_response(ai_result)
+        
     except Exception as e:
-        print(f"[Takumi] Critical Error: {e}", file=sys.stderr)
-        return web.json_response({"type": "text", "response": f"Internal Server Error: {e}"})
+        print(f">>> [Takumi] Critical Error: {str(e)}", file=sys.stderr)
+        return web.json_response({"type": "text", "response": f"Internal Server Error: {str(e)}"})

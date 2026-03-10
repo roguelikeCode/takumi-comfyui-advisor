@@ -14,7 +14,7 @@ const CONFIG = {
         SEND_BTN: "takumi-send"
     },
     ASSETS: {
-        // [Note] Ensure this path matches your folder structure in custom_nodes
+        // [Note] Ensure this path strictly matches the folder structure in custom_nodes.
         AVATAR: "/extensions/ComfyUI-Takumi-Bridge/assets/yamato_watase.png"
     },
     API: {
@@ -35,7 +35,7 @@ class TakumiUI {
     }
 
     // [Why] To inject necessary CSS styles dynamically into the document head.
-    // [What] Defines scoped CSS for the chat interface.
+    // [What] Defines strictly scoped CSS for the chat interface.
     injectStyles() {
         const style = document.createElement("style");
         style.textContent = `
@@ -73,7 +73,7 @@ class TakumiUI {
                 user-select: text !important; cursor: text !important;
             }
 
-            .takumi-msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; }
+            .takumi-msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; line-height: 1.4; }
             .takumi-msg-user { background: #3a0ca3; color: #fff; align-self: flex-end; }
             .takumi-msg-takumi { background: #333; color: #eee; align-self: flex-start; }
 
@@ -96,30 +96,27 @@ class TakumiUI {
     }
 
     // [Why] To construct the DOM elements for the chat interface.
-    // [What] Creates Launcher, Window, Input areas and appends them to body.
+    // [What] Creates the Launcher, Window, and Input areas, appending them to the document body.
     buildDOM() {
-        // Launcher
         this.launcher = document.createElement("div");
         this.launcher.id = CONFIG.ID.LAUNCHER;
-        this.launcher.title = "Chat with Yamato Watase";
+        this.launcher.title = "Access The Nexus";
 
-        // Window
         this.window = document.createElement("div");
         this.window.id = CONFIG.ID.WINDOW;
         this.window.innerHTML = `
             <div id="${CONFIG.ID.HEADER}">
-                <span>Yamato_Watase</span>
+                <span>Yamato Watase</span>
             </div>
             <div id="${CONFIG.ID.MESSAGES}">
-                <div class="takumi-msg takumi-msg-takumi">こんにちは。Yamatoです。<br>何かお手伝いしましょうか？</div>
+                <div class="takumi-msg takumi-msg-takumi">Greetings. I am Yamato.<br>How may I optimize your workflow today?</div>
             </div>
             <div id="${CONFIG.ID.INPUT_AREA}">
-                <input id="${CONFIG.ID.INPUT}" type="text" placeholder="Ask me anything..." />
+                <input id="${CONFIG.ID.INPUT}" type="text" placeholder="Initiate sequence..." />
                 <button id="${CONFIG.ID.SEND_BTN}">Send</button>
             </div>
         `;
 
-        // References
         this.messagesArea = this.window.querySelector(`#${CONFIG.ID.MESSAGES}`);
         this.inputField = this.window.querySelector(`#${CONFIG.ID.INPUT}`);
         this.sendBtn = this.window.querySelector(`#${CONFIG.ID.SEND_BTN}`);
@@ -128,19 +125,21 @@ class TakumiUI {
         document.body.appendChild(this.window);
     }
 
-    // [Why] To display a new message in the chat history.
-    // [What] Creates a div, sets class based on sender, and scrolls to bottom.
+    // [Why] To seamlessly append new messages to the chat history.
+    // [What] Creates a styled div based on the sender ('user' or 'takumi') and scrolls into view.
     addMessage(text, sender) {
         const msgDiv = document.createElement("div");
-        msgDiv.className = `takumi-msg takumi-msg-${sender}`; // sender: 'user' or 'takumi'
+        msgDiv.className = `takumi-msg takumi-msg-${sender}`;
         msgDiv.id = "msg-" + Date.now();
         msgDiv.innerHTML = text.replace(/\n/g, "<br>");
+        
         this.messagesArea.appendChild(msgDiv);
         this.messagesArea.scrollTop = this.messagesArea.scrollHeight;
+        
         return msgDiv.id;
     }
 
-    // [Why] To show/hide the chat window.
+    // [Why] To toggle the visibility of the Nexus command center.
     toggleWindow() {
         const isVisible = this.window.style.display === "flex";
         this.window.style.display = isVisible ? "none" : "flex";
@@ -153,70 +152,110 @@ class TakumiUI {
 class TakumiBridge {
     constructor() {
         this.ui = new TakumiUI();
+        this.vramTimer = null;
     }
 
-    // [Why] To initialize the bridge, setup UI, and bind events.
+    // [Why] To orchestrate the initialization sequence of the interface.
     init() {
-        console.log(">>> [TakumiBridge] Initializing...");
+        console.log(">>> [TakumiBridge] Initializing Nexus Interface...");
         this.ui.injectStyles();
         this.ui.buildDOM();
         this.bindEvents();
+        this.loadCatalog();
     }
 
-    // [Why] To handle user interactions while isolating them from ComfyUI's global shortcuts.
-    // [What] Binds click and keydown events, stopping propagation where necessary.
+    // [Why] To handle user interactions while strictly isolating them from ComfyUI's global events.
+    // [What] Binds click and keydown events, stopping event propagation where necessary.
     bindEvents() {
-        // --- 1. Basic Controls ---
-        // Toggle Window Visibility
         this.ui.launcher.onclick = () => this.ui.toggleWindow();
 
-        // Send Message Trigger
         const handleSend = () => this.sendMessage();
+        
         this.ui.sendBtn.onclick = (e) => { 
-            // Prevent ComfyUI from detecting a click on the canvas
             e.stopPropagation(); 
             handleSend(); 
         };
 
-        // --- 2. Input Field Handling (The Critical Part) ---
         this.ui.inputField.addEventListener("keydown", (e) => {
-            // [Fix] Allow IME (Japanese Input) composition without triggering send
             if (e.isComposing) return;
 
-            // Handle Enter Key for submission
             if (e.key === "Enter") {
-                e.preventDefault(); // Prevent newline insertion
+                e.preventDefault();
                 handleSend();
             }
-
-            // [Important] Stop Propagation Barrier
-            // This prevents ComfyUI from intercepting keys (like 'Delete' or 'Backspace'),
-            // while still allowing browser native behaviors (like Copy/Paste) to work within this input.
             e.stopPropagation();
         });
 
-        // --- 3. Global Event Shield ---
-        // [Why] To prevent accidental interactions with nodes behind the chat window.
-        // [What] Stops all mouse/keyboard events originating inside the chat window.
-        
+        // The Event Shield: Prevents accidental interactions with underlying ComfyUI nodes.
         const stopPropagation = (e) => e.stopPropagation();
-
-        // Protect against clicks and scrolling
         this.ui.window.addEventListener('mousedown', stopPropagation);
         this.ui.window.addEventListener('mouseup', stopPropagation);
         this.ui.window.addEventListener('click', stopPropagation);
         this.ui.window.addEventListener('wheel', stopPropagation);
     }
 
-    // [Why] To communicate with the backend Python server.
-    // [What] Sends prompt to /takumi/chat and handles the response (text or workflow action).
+    // [Why] To dynamically fetch available workflows to construct the Zero-Compute Menu.
+    async loadCatalog() {
+        try {
+            const res = await fetch("/takumi/catalog");
+            const catalog = await res.json();
+            if (Object.keys(catalog).length > 0) {
+                this.renderCatalogMenu(catalog);
+            }
+        } catch (e) {
+            console.error(">>> [TakumiBridge] Failed to load workflow catalog:", e);
+        }
+    }
+
+    // [Why] To provide instant access to workflows without invoking LLM inference.
+    renderCatalogMenu(catalog) {
+        const menuDiv = document.createElement("div");
+        menuDiv.className = "takumi-msg takumi-msg-takumi";
+        menuDiv.style.marginTop = "10px";
+        menuDiv.innerHTML = `<span style="font-size:12px; color:#aaa;">🔻 Available Workflows:</span><br><br>`;
+        
+        Object.entries(catalog).forEach(([id, meta]) => {
+            const btn = document.createElement("button");
+            btn.textContent = `▶ ${meta.name}`;
+            btn.style.cssText = `
+                display: block; width: 100%; margin-bottom: 8px; padding: 10px;
+                background: #2b2b2b; color: #4cc9f0; border: 1px solid #4cc9f0;
+                border-radius: 6px; cursor: pointer; font-weight: bold;
+                text-align: left; transition: background 0.2s;
+            `;
+            
+            btn.onmouseover = () => {
+                btn.style.background = "#4cc9f0";
+                btn.style.color = "#000";
+            };
+            btn.onmouseout = () => {
+                btn.style.background = "#2b2b2b";
+                btn.style.color = "#4cc9f0";
+            };
+            
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                this.ui.inputField.value = meta.name;
+                this.sendMessage();
+            };
+            menuDiv.appendChild(btn);
+        });
+        
+        this.ui.messagesArea.appendChild(menuDiv);
+        this.ui.messagesArea.scrollTop = this.ui.messagesArea.scrollHeight;
+    }
+
+    // [Why] To communicate with the backend API and orchestrate response actions.
     async sendMessage() {
         const text = this.ui.inputField.value.trim();
         if (!text) return;
 
-        // UI Update
+        // Reset the VRAM unload timer to prevent premature teardown
+        this.clearVramTimer();
+
         this.ui.addMessage(text, "user");
         this.ui.inputField.value = "";
+        
         const loadingId = this.ui.addMessage("Thinking...", "takumi");
 
         try {
@@ -227,25 +266,57 @@ class TakumiBridge {
             });
             const data = await res.json();
             
-            // Remove loading indicator
             const loadingMsg = document.getElementById(loadingId);
             if (loadingMsg) loadingMsg.remove();
 
-            // Handle Response
+            // 1. Initializing / Downloading State
+            if (data.type === "downloading") {
+                this.ui.addMessage(data.response, "takumi");
+                return;
+            }
+
+            // 2. Fast Path (Workflow Deployment)
             if (data.type === "action") {
                 this.ui.addMessage(data.message, "takumi");
                 if (data.workflow) {
                      app.loadGraphData(data.workflow);
-                     this.ui.addMessage("✅ キャンバスを更新しました。", "takumi");
+                     this.ui.addMessage("✅ Canvas updated successfully.", "takumi");
                 }
-            } else {
-                this.ui.addMessage(data.response, "takumi");
-            }
+                return; // Bypass the VRAM timer since LLM was not utilized
+            } 
+            
+            // 3. Standard AI Inference (Text Response)
+            this.ui.addMessage(data.response, "takumi");
+            
+            // Initiate the VRAM unload sequence post-inference
+            this.startVramTimer();
 
         } catch (e) {
             const loadingMsg = document.getElementById(loadingId);
             if (loadingMsg) loadingMsg.textContent = "Error: " + e;
         }
+    }
+
+    // [Why] To manage the lifecycle of the VRAM unload countdown.
+    clearVramTimer() {
+        if (this.vramTimer) {
+            clearTimeout(this.vramTimer);
+            this.vramTimer = null;
+        }
+    }
+
+    // [Why] To enforce hardware resource limits by notifying the user of VRAM release.
+    startVramTimer() {
+        this.clearVramTimer();
+        this.vramTimer = setTimeout(() => {
+            const msg = `
+                🔌 <b>[System]</b><br>
+                The AI model has been automatically unloaded from VRAM due to 20 seconds of inactivity.<br>
+                <span style='font-size:12px; color:#888;'>* Compute resources for image/video generation are now maximized.</span>
+            `;
+            this.ui.addMessage(msg, "takumi");
+            this.vramTimer = null;
+        }, 20000);
     }
 }
 
