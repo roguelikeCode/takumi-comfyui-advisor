@@ -121,7 +121,7 @@ make run-oss
 **How to use:**
 1.  Open your browser at `http://localhost:8188`
 2.  Click the chat icon (bottom right)
-3.  Type `Workflow` to open the menu
+3.  Click the button (Workflow)
 
 *(To stop the application, press `make stop-oss` in the terminal)*
 
@@ -131,10 +131,8 @@ make run-oss
 
 ### Takumi Chat UI
 Click the icon in the bottom right corner of ComfyUI.
-You can ask Takumi to:
-*   "Load the MagicClothing workflow." -> **Takumi loads the JSON automatically.**
-*   "Change the prompt to a red dress." -> **Takumi updates the node settings.**
-*   "What does this error mean?" -> **Takumi explains the log.**
+
+*(Currently under development)*
 
 ### The Black Box (Automated Diagnostics)
 Installation failed? Don't worry. Takumi automatically captures the error log and environment info (anonymized) and reports it to our development team. We use this data to improve the recipes continuously.
