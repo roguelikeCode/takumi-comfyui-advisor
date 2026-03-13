@@ -4,10 +4,8 @@ SHELL := /bin/bash
 # Configuration & Targets
 # ==============================================================================
 
-# [Versions]
-DOTENVX_VERSION := v1.51.1
-# [Launcher] Secure Env Injection
-LAUNCHER := $(shell command -v dotenvx >/dev/null 2>&1 && echo "dotenvx run --" || echo "")
+# [Launcher] Zero-Trust Env Injection
+LAUNCHER := $(shell command -v doppler >/dev/null 2>&1 && echo "doppler run --" || echo "")
 
 # [Core] The Unified Command Wrapper
 # [Note] For Rootless Docker, the container runs as 'root' inside, which maps to the host user outside.
@@ -50,39 +48,13 @@ help:
 # ==============================================================================
 # 1. Setup & Security
 # ==============================================================================
-.PHONY: setup-env encrypt
+.PHONY: setup-oss
 
 # [Setup]
-setup-env:
-	@echo ">>> Setting up environment..."
-	@if [ ! -f .env ]; then \
-		echo "  -> Creating .env from .env.example..."; \
-		cp .env.example .env; \
-		echo "  ✅ .env created. Please open it and set your HF_TOKEN."; \
-	else \
-		echo "  -> .env already exists. Skipping."; \
-	fi
-	@echo ">>> Checking for dotenvx (Encryption tool)..."
-	@if ! command -v dotenvx >/dev/null 2>&1; then \
-		echo "  -> dotenvx not found. Installing $(DOTENVX_VERSION)..."; \
-		curl -sfS https://dotenvx.sh/install.sh | sudo bash -s -- --version $(DOTENVX_VERSION); \
-		echo "  ✅ dotenvx installed successfully."; \
-	else \
-		echo "  ✅ dotenvx is already installed."; \
-	fi
-# [Encryption]
-encrypt:
-	@if [ ! -f .env ]; then \
-		echo "❌ .env file not found. Please run 'make setup-env' first."; \
-		exit 1; \
-	fi
-	@if command -v dotenvx >/dev/null 2>&1; then \
-		echo ">>> Encrypting .env..."; \
-		dotenvx encrypt; \
-		echo "✅ Secrets encrypted. Keys generated in .env.keys"; \
-	else \
-		echo "❌ dotenvx not found. Please run 'make setup-env' first."; \
-	fi
+setup-oss:
+	@echo ">>> Verifying Doppler Connection..."
+	@doppler whoami >/dev/null 2>&1 || (echo "❌ Please run 'doppler login' first." && exit 1)
+	@echo "✅ Doppler is ready."
 
 # ==============================================================================
 # 1. Lifecycle Management
@@ -106,7 +78,7 @@ install-oss: build-oss
 
 	@echo ">>> [Step 3] Restarting Runtime (Apply Changes)..."
 	$(COMPOSE_CMD) restart comfyui
-	@echo "✅ Installation Complete. ComfyUI is starting at http://localhost:8188"
+	@echo "✅ Installation Complete. Next, run `make run-oss`."
 
 # [Run]
 # Just start the services. 'run.sh' inside the container handles the rest.

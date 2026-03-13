@@ -60,9 +60,9 @@ build_merged_catalog() {
 # [What] Temporarily boosts Conda's timeout and retry settings.
 enhance_conda_network() {
     log_info "  -> 🛡️  Activating network resilience patch..."
-    conda config --set remote_read_timeout_secs 600.0
-    conda config --set remote_connect_timeout_secs 60.0
-    conda config --set remote_max_retries 10
+    conda config --set remote_read_timeout_secs 1800.0
+    conda config --set remote_connect_timeout_secs 120.0
+    conda config --set remote_max_retries 20
 }
 
 # [Why] To restore default Conda settings after operations.
@@ -380,23 +380,40 @@ run_install_flow() {
             fi
         done < <(jq -r '.environment.components[] | [.type, .source, .version, .channel] | @tsv' "$use_case_path")
 
-        # [3] Create Environment
+        # [3] Create Environment (The Retry Protocol)
         local env_path
         env_path=$(resolve_env_path "$env_name")
-        
         log_info "Materializing Conda environment at: $env_path"
         
         enhance_conda_network
         
-        if ! conda create -p "$env_path" "${channels[@]}" "${conda_pkgs[@]}" -y; then
-            restore_conda_network
+        # [Self-Healing] 3 retry loops
+        local max_create_retries=3
+        local retry_count=0
+        local create_success=false
+
+        while [ $retry_count -lt $max_create_retries ]; do
+            log_info "  -> Attempt $((retry_count + 1))/$max_create_retries..."
+            
+            if conda create -p "$env_path" "${channels[@]}" "${conda_pkgs[@]}" -y; then
+                create_success=true
+                break
+            else
+                log_warn "  ⚠️ Conda creation interrupted (likely network drop). Retrying in 10s..."
+                ((retry_count++))
+                sleep 10
+            fi
+        done
+
+        restore_conda_network
+
+        if [ "$create_success" = false ]; then
             consult_ai_on_complex_failure \
-                "Failed to create Conda environment at '$env_path'." \
+                "Failed to create Conda environment at '$env_path' after $max_create_retries attempts." \
                 "Packages: ${conda_pkgs[*]}"
             return 1
         fi
         
-        restore_conda_network
         log_success "Conda environment '${env_name}' materialized."
     fi
 
