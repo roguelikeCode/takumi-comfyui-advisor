@@ -83,25 +83,42 @@ git clone https://github.com/roguelikeCode/takumi-comfyui-advisor.git
 cd takumi-comfyui-advisor
 ```
 
-**Step 2: Setup Environment & Secrets**
+**Step 2: Setup Environment & Secrets (Zero-Trust)**
 
-Generates the configuration files. You must set your Hugging Face Token to download models.
-
-```bash
-make setup-env
-```
+Takumi uses **Doppler** to inject secret keys securely into the memory at runtime, without leaving any plaintext `.env` files on your local environment.
 
 **Action Required:**
 
-Open the generated `takumi-comfyui-advisor/.env` and paste your Hugging Face Token.
+**1. Generate Hugging Face Token**
+You must create a token to download AI models.
+1. Go to https://huggingface.co/settings/tokens
+2. Click `Create new token` -> Token type: `Read` -> Token name: `Takumi-ComfyUI-Advisor`
+3. Copy the generated token (`hf_...`).
 
-1. https://huggingface.co/settings/tokens
-2. Create new token -> Token type: `Read` -> Token name: `Takumi`
-3. Copy the token (hf_...)
-4. Paste it into `takumi-comfyui-advisor/.env` (HF_TOKEN=hf_...)
-5. Encrypt your secrets (secure your token)
+**2. Setup Doppler (Cloud Dashboard)**
+1. Register for a free account at [Doppler](https://www.doppler.com/).
+2. Click `projects` -> Click `+ (Create Project)` -> Named `takumi-comfyui-advisor`
+3. Click **`dev`** environment and add the following Secrets:
+   * `HF_TOKEN` = (`hf_...`)
+   * `TAKUMI_PRIVACY_LEVEL` = 2
+   * `TAKUMI_LICENSE_KEY` = unlicensed
+
+**3. Bind Your Local Environment**
+Open your terminal in the project root and link your local machine to Doppler:
+
 ```bash
-make encrypt
+# 1. Install Doppler CLI (Ubuntu/WSL2/Linux)
+(curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
+
+# 2. Login to Doppler (Browser will open)
+doppler login
+
+# 3. Bind this folder to the Doppler project
+doppler setup
+# (Select 'takumi-comfyui-advisor' -> 'dev')
+
+# 4. Verify the Zero-Trust connection
+make setup-oss
 ```
 
 **Step 3: Build**
