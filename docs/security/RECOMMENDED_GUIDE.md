@@ -80,8 +80,6 @@ You may see a `CRITICAL` vulnerability flagged in `pkg:golang/stdlib` (related t
 
 We have implemented a multi-layered security strategy:
 
-*   **Secret Encryption:** `dotenvx` encrypts sensitive environment variables (API Keys).
 *   **CI/CD Scanning:** Automated vulnerability scanning with **Trivy** during build and push.
 *   **Principle of Least Privilege (最小権限の原則):** The container starts, fixes permissions, and immediately drops to a non-root user via `gosu`. We apply `--cap-drop=ALL` to strip Linux kernel privileges, adding back only what is strictly necessary.
-*   **Egress Filtering (Network Isolation):** We use a Sidecar Proxy (`tinyproxy`) to enforce strict domain whitelisting. Even if a malicious custom node tries to steal your API keys or Discord tokens, the proxy will block the outbound connection to unauthorized servers.
 *   **Ephemeral Workspaces (`tmpfs`):** For directories that absolutely require write access during runtime (e.g., `/tmp`, `/run`), we use `tmpfs` mounts. This means data is stored only in RAM. If an attacker manages to hide a malicious payload in these temporary folders, it will be physically and permanently wiped out the moment the container is restarted.

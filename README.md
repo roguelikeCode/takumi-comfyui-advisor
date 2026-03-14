@@ -85,25 +85,41 @@ cd takumi-comfyui-advisor
 
 **Step 2: Setup Environment & Secrets (Zero-Trust)**
 
-Takumi uses **Doppler** to inject secret keys securely into the memory at runtime, without leaving any plaintext `.env` files on your local environment.
+Takumi achieves a Zero-Trust architecture through the following layered structure:
+1. **Doppler**  : Manages secret keys in a secure cloud environment (eliminates `.env` files).
+2. **Tailscale**: Isolates containers into a private network.
+3. **Tinyproxy**: Controls outbound communication by routing traffic through a strict whitelist.
 
 **Action Required:**
 
 **1. Generate Hugging Face Token**
 You must create a token to download AI models.
-1. Go to https://huggingface.co/settings/tokens
+1. Register for a free account at[Hugging Face](https://huggingface.co/settings/tokens)
 2. Click `Create new token` -> Token type: `Read` -> Token name: `Takumi-ComfyUI-Advisor`
 3. Copy the generated token (`hf_...`).
 
-**2. Setup Doppler (Cloud Dashboard)**
-1. Register for a free account at [Doppler](https://www.doppler.com/).
-2. Click `projects` -> Click `+ (Create Project)` -> Named `takumi-comfyui-advisor`
-3. Click **`dev`** environment and add the following Secrets:
-   * `HF_TOKEN` = (`hf_...`)
-   * `TAKUMI_PRIVACY_LEVEL` = 2
-   * `TAKUMI_LICENSE_KEY` = unlicensed
+**2. Setup Tailscale (VPN)**
+1. Register for a free account at [Tailscale](https://tailscale.com/)
+2. Click `Settings` -> `Keys` (Personal Settings) -> `Generate auth key` (Auth keys)
+3. Turn on the following options:
+   * `Reusable`
+   * `Ephemeral`
+   * `Pre-approved`
+4. Click `Generate key`
+5. Copy the generated token (`tskey-...`).
 
-**3. Bind Your Local Environment**
+(*⚠️ `Tailscale` authentication keys **expire after 90 days**. When the system alerts you, please generate a new key and update it in `Doppler`.*)
+
+**3. Setup Doppler (Cloud API Manager)**
+1. Register for a free account at[Doppler](https://www.doppler.com/).
+2. Click `Projects` -> Click `+` (Create Project) -> Name it `takumi-comfyui-advisor`
+3. Click the **`dev`** environment and add the following Secrets:
+   * `HF_TOKEN` = (`hf_...`)
+   * `TAKUMI_LICENSE_KEY` = unlicensed
+   * `TAKUMI_PRIVACY_LEVEL` = 2
+   * `TS_AUTHKEY` = (`tskey-...`)
+
+**4. Bind Your Local Environment**
 Open your terminal in the project root and link your local machine to Doppler:
 
 ```bash
