@@ -85,6 +85,30 @@ install-oss: build-oss
 run-oss:
 	@echo ">>> Starting Full Stack..."
 	$(COMPOSE_CMD) up -d
+	@echo ">>> 🛡️  Verifying Zero-Trust Network (Tailscale)..."
+	@connected=0; \
+	for i in 1 2 3 4 5; do \
+		if $(LAUNCHER) docker exec takumi-tailscale tailscale status 2>/dev/null | grep -q "takumi-vpn"; then \
+			connected=1; \
+			break; \
+		fi; \
+		echo -n "."; \
+		sleep 1; \
+	done; \
+	echo ""; \
+	if [ $$connected -eq 0 ]; then \
+		echo -e "\033[0;31m====================================================================\033[0m"; \
+		echo -e "\033[0;31m❌[Security Alert] Tailscale VPN Authentication Failed!\033[0m"; \
+		echo -e "\033[0;31m   -> Your Tailscale Auth Key (TS_AUTHKEY) has expired (90-day limit) or is invalid.\033[0m"; \
+		echo -e ""; \
+		echo -e "\033[0;31m[Action Required]\033[0m"; \
+		echo -e "\033[0;31m1. Generate a new Auth Key in the Tailscale Admin Console.\033[0m"; \
+		echo -e "\033[0;31m2. Update the 'TS_AUTHKEY' secret in your Doppler dashboard.\033[0m"; \
+		echo -e "\033[0;31m3. See README.md for detailed instructions.\033[0m"; \
+		echo -e "\033[0;31m====================================================================\033[0m"; \
+		$(COMPOSE_CMD) down; \
+		exit 1; \
+	fi
 	@echo "✅ Stack is running."
 	@echo "   - ComfyUI: http://localhost:8188"
 

@@ -144,21 +144,22 @@ services:
       retries: 5
 
 # ============================================================================
-# Service T: The Secure Tunnel (Tailscale Sidecar)
+# Service D: The Secure Tunnel (Tailscale Sidecar)
 # [Role] Zero-Trust Network Isolation and Secure API Tunneling
 # ============================================================================
   tailscale:
     image: tailscale/tailscale:latest
     container_name: takumi-tailscale
-    hostname: takumi-nexus
+    hostname: takumi-vpn
     environment:
-      # Dopplerからメモリ上に直接注入される認証鍵
+      # Authentication key injected directly into memory (Doppler)
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_EXTRA_ARGS=--accept-dns=false
     volumes:
-      - takumi-tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
+      - type: tmpfs
+        target: /var/lib/tailscale
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -187,7 +188,6 @@ volumes:
   # Caches
   pip-cache:
   ollama-models:
-  takumi-tailscale-state:
   
   # Note: 'takumi-cache' and 'conda-envs' are removed 
   # as they are now consolidated into 'takumi-storage'.
