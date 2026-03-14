@@ -94,7 +94,7 @@ Takumi achieves a Zero-Trust architecture through the following layered structur
 
 **1. Generate Hugging Face Token**
 You must create a token to download AI models.
-1. Register for a free account at[Hugging Face](https://huggingface.co/settings/tokens)
+1. Register for a free account at [Hugging Face](https://huggingface.co/settings/tokens)
 2. Click `Create new token` -> Token type: `Read` -> Token name: `Takumi-ComfyUI-Advisor`
 3. Copy the generated token (`hf_...`).
 
@@ -111,7 +111,7 @@ You must create a token to download AI models.
 (*⚠️ `Tailscale` authentication keys **expire after 90 days**. When the system alerts you, please generate a new key and update it in `Doppler`.*)
 
 **3. Setup Doppler (Cloud API Manager)**
-1. Register for a free account at[Doppler](https://www.doppler.com/).
+1. Register for a free account at [Doppler](https://www.doppler.com/).
 2. Click `Projects` -> Click `+` (Create Project) -> Name it `takumi-comfyui-advisor`
 3. Click the **`dev`** environment and add the following Secrets:
    * `HF_TOKEN` = (`hf_...`)
