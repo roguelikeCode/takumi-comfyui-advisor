@@ -12,7 +12,8 @@ services:
       - ./security/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ./security/allow.list:/etc/tinyproxy/allow.list:ro
     networks:
-      - takumi-network
+      - takumi-external
+      - takumi-internal
 
   # ============================================================================
   # Service B: The Studio (ComfyUI Application)
@@ -89,7 +90,7 @@ services:
       ollama:
         condition: service_healthy
     networks:
-      - takumi-network
+      - takumi-internal
     ports:
       - "8188:8188"
     
@@ -117,7 +118,7 @@ services:
     ports:
       - "11434:11434"
     networks:
-      - takumi-network
+      - takumi-internal
     
     # [Persistence]
     volumes:
@@ -142,12 +143,39 @@ services:
       timeout: 10s
       retries: 5
 
+# ============================================================================
+# Service T: The Secure Tunnel (Tailscale Sidecar)
+# [Role] Zero-Trust Network Isolation and Secure API Tunneling
+# ============================================================================
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: takumi-tailscale
+    hostname: takumi-nexus
+    environment:
+      # Dopplerからメモリ上に直接注入される認証鍵
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_EXTRA_ARGS=--accept-dns=false
+    volumes:
+      - takumi-tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      - takumi-external
+      - takumi-internal
+    restart: unless-stopped
+
 # ==============================================================================
 # Global Definitions
 # ==============================================================================
 networks:
-  takumi-network:
+  takumi-external:
     driver: bridge
+  takumi-internal:
+    driver: bridge
+    internal: true
 
 volumes:
   # System Data
@@ -159,6 +187,7 @@ volumes:
   # Caches
   pip-cache:
   ollama-models:
+  takumi-tailscale-state:
   
   # Note: 'takumi-cache' and 'conda-envs' are removed 
   # as they are now consolidated into 'takumi-storage'.

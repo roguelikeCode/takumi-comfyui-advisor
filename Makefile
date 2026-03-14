@@ -78,7 +78,7 @@ install-oss: build-oss
 
 	@echo ">>> [Step 3] Restarting Runtime (Apply Changes)..."
 	$(COMPOSE_CMD) restart comfyui
-	@echo "✅ Installation Complete. Next, run `make run-oss`."
+	@echo "✅ Installation Complete. Next, (make run-oss)."
 
 # [Run]
 # Just start the services. 'run.sh' inside the container handles the rest.
