@@ -95,7 +95,7 @@ Takumi achieves a Zero-Trust architecture through the following layered structur
 **1. Setup Hugging Face (AI Models Platform)**
 1. Register for a free account at [Hugging Face](https://huggingface.co/settings/tokens)
 2. Click `Create new token` -> Token type: `Read` -> Token name: `Takumi-ComfyUI-Advisor`
-3. Copy the generated token (`hf_...`).
+3. Copy the generated token (`hf_...`)
 
 **2. Setup Tailscale (VPN)**
 1. Register for a free account at [Tailscale](https://tailscale.com/)
@@ -105,7 +105,7 @@ Takumi achieves a Zero-Trust architecture through the following layered structur
    * `Ephemeral`
    * `Pre-approved`
 4. Click `Generate key`
-5. Copy the generated token (`tskey-...`).
+5. Copy the generated token (`tskey-...`)
 
 (*⚠️ `Tailscale` authentication keys **expire after 90 days**. When the system alerts you, please generate a new key and update it in `Doppler`.*)
 
