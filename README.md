@@ -92,8 +92,7 @@ Takumi achieves a Zero-Trust architecture through the following layered structur
 
 **Action Required:**
 
-**1. Setup Hugging Face (AI Platform)**
-You must create a token to download AI models.
+**1. Setup Hugging Face (AI Models Platform)**
 1. Register for a free account at [Hugging Face](https://huggingface.co/settings/tokens)
 2. Click `Create new token` -> Token type: `Read` -> Token name: `Takumi-ComfyUI-Advisor`
 3. Copy the generated token (`hf_...`).
