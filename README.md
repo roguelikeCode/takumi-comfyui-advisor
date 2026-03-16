@@ -114,8 +114,9 @@ Takumi achieves a Zero-Trust architecture through the following layered structur
 2. Click `Projects` -> Click `+` (Create Project) -> Name it `takumi-comfyui-advisor`
 3. Click the **`dev`** environment and add the following Secrets:
    * `HF_TOKEN` = (`hf_...`)
-   * `TAKUMI_LICENSE_KEY` = unlicensed
-   * `TAKUMI_PRIVACY_LEVEL` = 2
+   * `TAKUMI_LICENSE_KEY` = `unlicensed`
+   * `TAKUMI_PRIVACY_LEVEL` = `2`
+   * `TAKUMI_REGISTRY_URL` = `https://github.com/roguelikeCode/takumi-registry.git`
    * `TS_AUTHKEY` = (`tskey-...`)
 
 **4. Bind Your Local Environment**
