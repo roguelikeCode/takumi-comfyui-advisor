@@ -12,8 +12,10 @@ GEMINI_API_KEY: "..."                # Required for Tactical AI (Gemini CLI)
 HF_TOKEN: "hf_..."                   # Required for Hugging Face model downloads
 
 # --- Telemetry & Security ---
-TAKUMI_PRIVACY_LEVEL: "2"            # 0=None, 1=Masked, 2=Full
 TAKUMI_LICENSE_KEY: "unlicensed"     # Enterprise ID
+TAKUMI_PRIVACY_LEVEL: "2"            # 0=None, 1=Masked, 2=Full
+TAKUMI_REGISTRY_URL: "https://github.com/roguelikeCode/takumi-registry.git" # Workflow DB
+TS_AUTHKEY: "tskey-..." # VPN
 
 # --- Storage (Enterprise) ---
 TAKUMI_DATA_PATH: "./takumi_train_data"
