@@ -150,8 +150,8 @@ main() {
     ensure_provisioning
 
     # 2 Update Knowledge Base (Event Store)
-    if type takumi_registry &>/dev/null; then
-        takumi_registry
+    if type ensure_takumi_registry &>/dev/null; then
+        ensure_takumi_registry
     fi
 
     # --- ENTER STRICT MODE ---
