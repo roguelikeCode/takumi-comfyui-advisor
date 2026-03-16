@@ -516,7 +516,7 @@ run_install_flow() {
         log_info "Searching for Asset Recipe: ${asset_recipe_file}..."
         
         # [Local-First] Direct lookup from Hot-Reload mount
-        local base_meta_dir="/app/external/takumi-event-store"
+        local base_meta_dir="/app/external/takumi-registry"
         local asset_recipe_full_path="${base_meta_dir}/recipes/${asset_recipe_file}"
         
         if [ -f "$asset_recipe_full_path" ]; then

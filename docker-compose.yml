@@ -61,7 +61,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       # [Workflow]
-      - TAKUMI_EVENT_STORE_URL=${TAKUMI_EVENT_STORE_URL}
+      - TAKUMI_REGISTRY_URL=${TAKUMI_REGISTRY_URL}
 
     # --- Volume Mounts ---
     volumes:

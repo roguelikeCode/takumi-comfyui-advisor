@@ -52,7 +52,7 @@ cleanup_and_report() {
     # Resolve recipe path for the report
     local recipe_path=""
     if [ -n "${state[use_case]:-}" ]; then
-        recipe_path="/app/external/takumi-event-store/recipes/use_cases/${state[use_case]}.json"
+        recipe_path="/app/external/takumi-registry/recipes/use_cases/${state[use_case]}.json"
     fi
 
     # Trigger failure report

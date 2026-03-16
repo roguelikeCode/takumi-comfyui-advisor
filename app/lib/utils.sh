@@ -47,11 +47,11 @@ ensure_directories() {
 
 # [Why] To autonomously fetch and update the Event Store in the persistent external directory.
 ensure_event_store() {
-    local target_dir="${EXTERNAL_DIR}/takumi-event-store"
-    local store_url="${TAKUMI_EVENT_STORE_URL:-}"
+    local target_dir="${EXTERNAL_DIR}/takumi-registry"
+    local store_url="${TAKUMI_REGISTRY_URL:-}"
     
     if [ -z "$store_url" ]; then
-        log_error "TAKUMI_EVENT_STORE_URL is strictly required but undefined."
+        log_error "TAKUMI_REGISTRY_URL is strictly required but undefined."
         log_info "Please set it in Doppler or .env to ignite The Nexus."
         exit 1
     fi
@@ -71,7 +71,7 @@ ensure_event_store() {
 # [Output] Absolute path (empty if not found)
 resolve_meta_path() {
     local rel_path="$1"
-    local meta_path="${EXTERNAL_DIR}/takumi-event-store/$rel_path"
+    local meta_path="${EXTERNAL_DIR}/takumi-registry/$rel_path"
 
     if [ -f "$meta_path" ]; then
         echo "$meta_path"
@@ -85,7 +85,7 @@ resolve_meta_path() {
 # [Output] Absolute path to json file
 find_use_case_recipe_path() {
     local slug="$1"
-    local recipe_path="${EXTERNAL_DIR}/takumi-event-store/recipes/use_cases/${slug}.json"
+    local recipe_path="${EXTERNAL_DIR}/takumi-registry/recipes/use_cases/${slug}.json"
     
     if [ -f "$recipe_path" ]; then
         echo "$recipe_path"

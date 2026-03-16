@@ -9,7 +9,7 @@ run_concierge_use_case() {
     local slugs=() 
     local i=1
 
-    local search_dir="/app/external/takumi-event-store/recipes/use_cases"
+    local search_dir="/app/external/takumi-registry/recipes/use_cases"
     
     # --- 1. Scan Candidates ---
     if [ -d "$search_dir" ]; then

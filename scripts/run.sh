@@ -61,7 +61,7 @@ scan_recipe_environments() {
     log_info "Scanning for available environments..."
     
     # [Local-First] Direct mount
-    local recipes_dir="/app/external/takumi-event-store/recipes/use_cases"
+    local recipes_dir="/app/external/takumi-registry/recipes/use_cases"
     
     if [ -d "$recipes_dir" ]; then
         while IFS= read -r file; do

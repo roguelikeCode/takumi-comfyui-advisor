@@ -31,7 +31,7 @@ class BrainConfig:
     # Base Path Resolution
     BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # Base Path Resolution
-    META_ROOT: str = "/app/external/takumi-event-store"
+    META_ROOT: str = "/app/external/takumi-registry"
 
     @classmethod
     def get_prompt_path(cls, filename: str = "prompts/capabilities.txt") -> str:

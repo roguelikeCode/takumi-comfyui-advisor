@@ -60,7 +60,7 @@ def load_json(path):
         return json.load(open(path, 'r'))
     
     relative_path = path.split("recipes/")[-1]
-    candidate = os.path.join("/app/external/takumi-event-store", "recipes", relative_path)
+    candidate = os.path.join("/app/external/takumi-registry", "recipes", relative_path)
     
     if os.path.exists(candidate):
         print(f"  -> Found dependency: {relative_path}", file=sys.stderr)
@@ -93,7 +93,7 @@ def main():
     # [1] Dynamic Environment Injection
     if env_id:
         yaml_rel = f"infra/environments/{env_id}.yml"
-        candidate = os.path.join("/app/external/takumi-event-store", yaml_rel)
+        candidate = os.path.join("/app/external/takumi-registry", yaml_rel)
 
         if os.path.exists(candidate):
             yaml_path = candidate

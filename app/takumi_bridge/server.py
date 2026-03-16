@@ -25,7 +25,7 @@ class TakumiConfig:
     """
 
     # --- File System Paths ---
-    EVENT_STORE_DIR: str = "/app/external/takumi-event-store"
+    WORKFLOW_REGISTRY_DIR: str = "/app/external/takumi-registry"
     
     # --- AI Service Settings (Ollama) ---
     # [Logic] Retrieve host from environment, strip '/v1' suffix to ensure raw API access.
@@ -36,7 +36,7 @@ class TakumiConfig:
     MODEL_NAME: str = "gemma3:4b"
     
     # --- File System Paths ---
-    EVENT_STORE_DIR: str = "/app/external/takumi-event-store"
+    WORKFLOW_REGISTRY_DIR: str = "/app/external/takumi-registry"
     COMFY_ROOT: str = "/app/external/ComfyUI"
     CUSTOM_NODES_DIR: str = os.path.join(COMFY_ROOT, "custom_nodes")
 
@@ -45,7 +45,7 @@ class TakumiConfig:
         """
         [Why] To resolve file paths directly from the flat Event Store.
         """
-        return os.path.join(cls.EVENT_STORE_DIR, rel_path)
+        return os.path.join(cls.WORKFLOW_REGISTRY_DIR, rel_path)
 
 # ==============================================================================
 # [2] Catalog Manager (The Librarian)
@@ -61,7 +61,7 @@ class CatalogManager:
         raw_catalog: Dict[str, Any] = {}
         
         # 1. [Zero-State] Flat structure lookup
-        path = os.path.join(TakumiConfig.EVENT_STORE_DIR, "entities", "workflows_meta.json")
+        path = os.path.join(TakumiConfig.WORKFLOW_REGISTRY_DIR, "entities", "workflows_meta.json")
         if os.path.exists(path):
             try:
                 with open(path, 'r', encoding='utf-8') as f:
