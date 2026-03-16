@@ -1,9 +1,0 @@
-{
-  "sdxl_vae.safetensors": {
-    "entity_type": "vae",
-    "takumi_tags": ["essential", "sdxl"],
-    "description": "The standard VAE for SDXL 1.0 models.",
-    "download_url": "https://huggingface.co/...",
-    "target_path": "models/vae/"
-  }
-}
