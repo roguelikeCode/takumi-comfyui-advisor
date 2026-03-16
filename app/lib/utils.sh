@@ -46,7 +46,7 @@ ensure_directories() {
 }
 
 # [Why] To autonomously fetch and update the Event Store in the persistent external directory.
-ensure_event_store() {
+takumi_registry() {
     local target_dir="${EXTERNAL_DIR}/takumi-registry"
     local store_url="${TAKUMI_REGISTRY_URL:-}"
     

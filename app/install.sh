@@ -96,8 +96,8 @@ main() {
     fix_conda_permissions
 
     # --- Phase 1: Preparation ---
-    if type ensure_event_store &>/dev/null; then
-        ensure_event_store
+    if type takumi_registry &>/dev/null; then
+        takumi_registry
     fi
     
     if ! try_with_ai "fetch_external_catalogs" "Fetching external catalogs"; then
