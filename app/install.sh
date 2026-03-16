@@ -75,13 +75,9 @@ run_smart_resolver() {
 # [What] Resolves the exact recipe path used and sends an installation receipt via the telemetry script.
 finalize_installation() {
     local recipe_path=""
-    
     if [ -n "${state[use_case]:-}" ]; then
-        # Check Enterprise namespace first, then fallback to Core
-        recipe_path="${CONFIG_DIR}/takumi_meta/enterprise/recipes/use_cases/${state[use_case]}.json"
-        if [ ! -f "$recipe_path" ]; then
-             recipe_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${state[use_case]}.json"
-        fi
+        # [Zero-State] Direct lookup in volatile memory
+        recipe_path="/app/cache/takumi_meta/recipes/use_cases/${state[use_case]}.json"
     fi
 
     # Trigger success report
@@ -100,6 +96,10 @@ main() {
     fix_conda_permissions
 
     # --- Phase 1: Preparation ---
+    if type ensure_event_store &>/dev/null; then
+        ensure_event_store
+    fi
+    
     if ! try_with_ai "fetch_external_catalogs" "Fetching external catalogs"; then
         log_warn "Could not fetch external catalogs. Proceeding with local files if available."
     fi

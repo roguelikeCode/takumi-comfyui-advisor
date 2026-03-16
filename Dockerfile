@@ -62,7 +62,7 @@ RUN echo ">>> Creating 'takumi' user with UID=${TAKUMI_UID} GID=${TAKUMI_GID}...
 # 3. Universal Tools Installation
 # ------------------------------------------------------------------------------
 ARG TARGETARCH
-COPY ./app/config/takumi_meta/core/infra/architectures.json /tmp/architectures.json
+COPY ./app/config/infra/architectures.json /tmp/architectures.json
 
 ENV OLLAMA_VERSION="0.17.4"
 ENV UV_VERSION="0.10.7"
@@ -142,8 +142,7 @@ RUN mkdir -p \
     /app/cache \
     /app/external \
     /app/logs \
-    /app/storage \
-    /app/temp && \
+    /app/storage && \
     chown -R takumi:takumi /app
 
 # [Security] 2. Immutable Application Core (Root Owned)

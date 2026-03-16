@@ -20,7 +20,6 @@ readonly WRITABLE_TARGETS=(
     "/app/external"
     "/app/logs"
     "/app/storage"
-    "/app/temp"
     "/home/${APP_USER}"
 )
 

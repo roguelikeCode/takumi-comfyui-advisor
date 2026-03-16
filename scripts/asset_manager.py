@@ -30,8 +30,6 @@ os.environ["TQDM_DISABLE"] = "0"
 # [1] Configuration
 # ==============================================================================
 class AssetConfig:
-    # Default path inside Docker container
-    DEFAULT_RECIPE_PATH = "/app/config/takumi_meta/core/recipes/assets/magic_clothing.json"
     ENV_HF_TOKEN = "HF_TOKEN"
 
 # ==============================================================================
@@ -229,9 +227,12 @@ class AssetProcessor:
 # ==============================================================================
 
 def main():
-    # Use default recipe if no argument is provided
-    recipe_path = sys.argv[1] if len(sys.argv) > 1 else AssetConfig.DEFAULT_RECIPE_PATH
-    
+    if len(sys.argv) < 2:
+        print("❌ Error: Recipe path argument is required.")
+        print("Usage: python asset_manager.py <recipe_path>")
+        sys.exit(1)
+        
+    recipe_path = sys.argv[1]
     print(f"🚀 Starting Asset Manager")
     
     # 1. Load Recipe

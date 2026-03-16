@@ -58,19 +58,14 @@ def load_json(path):
     # Try direct path
     if os.path.exists(path):
         return json.load(open(path, 'r'))
-
-    # Try searching in namespaces
-    relative_path = path.split("recipes/")[-1] # Extract relative path if needed
-    base_dir = "/app/config/takumi_meta"
-    namespaces = ["enterprise", "core"]
     
-    for ns in namespaces:
-        # Candidate Path: /app/config/takumi_meta/{ns}/recipes/{relative_path}
-        candidate = os.path.join(base_dir, ns, "recipes", relative_path)
-        if os.path.exists(candidate):
-            print(f"  -> Found dependency in [{ns}]: {relative_path}", file=sys.stderr)
-            return json.load(open(candidate, 'r'))
-
+    relative_path = path.split("recipes/")[-1]
+    candidate = os.path.join("/app/external/takumi-event-store", "recipes", relative_path)
+    
+    if os.path.exists(candidate):
+        print(f"  -> Found dependency: {relative_path}", file=sys.stderr)
+        return json.load(open(candidate, 'r'))
+        
     # Give Up
     print(f"Error: Recipe file not found: {path}", file=sys.stderr)
     sys.exit(1)
@@ -98,15 +93,11 @@ def main():
     # [1] Dynamic Environment Injection
     if env_id:
         yaml_rel = f"infra/environments/{env_id}.yml"
-        yaml_path = None
-        
-        # Find YAML in namespaces
-        for ns in ["enterprise", "core"]:
-            candidate = os.path.join("/app/config/takumi_meta", ns, yaml_rel)
-            if os.path.exists(candidate):
-                yaml_path = candidate
-                break
-        
+        candidate = os.path.join("/app/external/takumi-event-store", yaml_rel)
+
+        if os.path.exists(candidate):
+            yaml_path = candidate
+            
         if yaml_path:
             yaml_name, yaml_comps, yaml_channels = parse_simple_yaml_deps(yaml_path)
             

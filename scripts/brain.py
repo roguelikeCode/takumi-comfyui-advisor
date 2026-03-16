@@ -30,15 +30,15 @@ class BrainConfig:
 
     # Base Path Resolution
     BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    META_ROOT: str = os.path.join(BASE_DIR, "config", "takumi_meta")
+    # Base Path Resolution
+    META_ROOT: str = "/app/external/takumi-event-store"
 
     @classmethod
     def get_prompt_path(cls, filename: str = "prompts/capabilities.txt") -> str:
         """
-        [Why] To resolve the absolute path of prompt definitions, prioritizing Enterprise.
+        [Why] To resolve the absolute path of prompt definitions from the flat Event Store.
         """
-        ent_path = os.path.join(cls.META_ROOT, "enterprise", filename)
-        return ent_path if os.path.exists(ent_path) else os.path.join(cls.META_ROOT, "core", filename)
+        return os.path.join(cls.META_ROOT, filename)
 
 # ==============================================================================
 # [2] Infrastructure Manager (Ollama Control)

@@ -34,17 +34,16 @@ fetch_external_catalogs() {
 build_merged_catalog() {
     local entity_name="$1"
     log_info "Building merged catalog for '${entity_name}'..."
-
     local merger_script="/app/scripts/merge_catalogs.py"
     local output_path="${CACHE_DIR}/catalogs/${entity_name}_merged.json"
     
     # Inputs
     local external_list="${EXTERNAL_DIR}/comfyui-manager/custom-node-list.json"
-    local core_meta="${CONFIG_DIR}/takumi_meta/core/entities/${entity_name}_meta.json"
-    local ent_meta="${CONFIG_DIR}/takumi_meta/enterprise/entities/${entity_name}_meta.json"
-
-    # Leaving it all to the Python script
-    python3 "$merger_script" "$output_path" "$external_list" "$core_meta" "$ent_meta"
+    
+    # [Zero-State] Flat structure in tmpfs
+    local meta="/app/cache/takumi_meta/entities/${entity_name}_meta.json"
+    
+    python3 "$merger_script" "$output_path" "$external_list" "$meta"
     
     if [ $? -eq 0 ]; then
         log_success "Catalog merged."
@@ -159,13 +158,13 @@ run_bandit_scan() {
     # Run Scan
     # Consider using '|| true' so that the script does not stop even if a failure (vulnerability) occurs.
     # Here, we will issue a warning and proceed if a vulnerability is detected.
-    if bandit $cmd_opts > /tmp/bandit_report.txt 2>&1; then
+    if bandit $cmd_opts > /app/cache/bandit_report.txt 2>&1; then
         log_success "  -> 🛡️  Security check passed."
     else
         log_warn "  ⚠️  Security risks detected by Bandit!"
         log_warn "     Review details in logs."
         # Display only important lines (false positive prevention)
-        grep -E "Test ID:|Severity:|Location:" /tmp/bandit_report.txt | head -n 10 | sed 's/^/     /'
+        grep -E "Test ID:|Severity:|Location:" /app/cache/bandit_report.txt | head -n 10 | sed 's/^/     /'
     fi
 }
 
@@ -323,7 +322,7 @@ run_install_flow() {
 
     # Recipe Integration with Python
     log_info "🧬 Fusing recipes with environment..."
-    local merged_recipe_path="/tmp/merged_recipe.json"
+    local merged_recipe_path="/app/cache/merged_recipe.json"
     
     if ! python3 /app/scripts/merge_recipes.py "$raw_recipe_path" "$env_id" > "$merged_recipe_path"; then
         log_error "Failed to merge recipes."
@@ -511,40 +510,19 @@ run_install_flow() {
 
     # 5. Asset Manager
     # [Why] Determine the correct asset recipe based on the selected use case
-
     local asset_recipe_file=""
     asset_recipe_file=$(jq -r '.asset_recipe // empty' "$use_case_path")
-    
     if [ -n "$asset_recipe_file" ]; then
         log_info "Searching for Asset Recipe: ${asset_recipe_file}..."
         
-        # Namespace Search Strategy (Enterprise -> Core)
-        local asset_recipe_full_path=""
-        local base_meta_dir="${CONFIG_DIR}/takumi_meta"
+        # [Local-First] Direct lookup from Hot-Reload mount
+        local base_meta_dir="/app/external/takumi-event-store"
+        local asset_recipe_full_path="${base_meta_dir}/recipes/${asset_recipe_file}"
         
-        # 1. Check Enterprise
-        local ent_candidate="${base_meta_dir}/enterprise/recipes/${asset_recipe_file}"
-        # 2. Check Core
-        local core_candidate="${base_meta_dir}/core/recipes/${asset_recipe_file}"
-
-        if [ -f "$ent_candidate" ]; then
-            asset_recipe_full_path="$ent_candidate"
-            log_info "  -> Found in [Enterprise]"
-        elif [ -f "$core_candidate" ]; then
-            asset_recipe_full_path="$core_candidate"
-            log_info "  -> Found in [Core]"
-        else
-            log_error "Asset Recipe defined but not found in directories."
-            log_warn "  Checked: $ent_candidate"
-            log_warn "  Checked: $core_candidate"
-            # Since it is not possible to continue, should I issue an error or skip? This time, I should issue an error instead of skipping, but I will continue for now.
-        fi
-        
-        if [ -n "$asset_recipe_full_path" ]; then
+        if [ -f "$asset_recipe_full_path" ]; then
+            log_info "  -> Found Asset Recipe"
             log_info "Launching Takumi Asset Manager..."
-            
             local manager_script="${APP_ROOT}/scripts/asset_manager.py"
-            
             if [ -f "$manager_script" ]; then
                 (
                     source /opt/conda/etc/profile.d/conda.sh
@@ -552,9 +530,7 @@ run_install_flow() {
                     conda activate "$env_name"
                     set -u
                     export COMFYUI_ROOT_DIR="${COMFYUI_ROOT_DIR}"
-                    export HF_TOKEN="${HF_TOKEN}" # Pass the token too
-                    
-                    # Execute Asset Manager
+                    export HF_TOKEN="${HF_TOKEN}"
                     python -u "$manager_script" "$asset_recipe_full_path"
                 )
                 if [ $? -ne 0 ]; then
@@ -564,6 +540,9 @@ run_install_flow() {
             else
                 log_warn "Asset Manager script not found."
             fi
+        else
+            log_error "Asset Recipe defined but not found at: $asset_recipe_full_path"
+            return 1
         fi
     else
         log_info "No asset recipe defined for this use case. Skipping Asset Manager."

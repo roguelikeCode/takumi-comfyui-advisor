@@ -23,6 +23,9 @@ class TakumiConfig:
     Central Configuration Registry.
     [Why] To unify path resolution and external service endpoints.
     """
+
+    # --- File System Paths ---
+    EVENT_STORE_DIR: str = "/app/external/takumi-event-store"
     
     # --- AI Service Settings (Ollama) ---
     # [Logic] Retrieve host from environment, strip '/v1' suffix to ensure raw API access.
@@ -33,18 +36,16 @@ class TakumiConfig:
     MODEL_NAME: str = "gemma3:4b"
     
     # --- File System Paths ---
-    BASE_CONFIG_DIR: str = "/app/config/takumi_meta"
+    EVENT_STORE_DIR: str = "/app/external/takumi-event-store"
     COMFY_ROOT: str = "/app/external/ComfyUI"
     CUSTOM_NODES_DIR: str = os.path.join(COMFY_ROOT, "custom_nodes")
 
     @classmethod
     def get_asset_path(cls, rel_path: str) -> str:
         """
-        [Why] To resolve file paths with Enterprise priority.
-        [What] Checks the 'enterprise' namespace first, then falls back to 'core'.
+        [Why] To resolve file paths directly from the flat Event Store.
         """
-        ent_path = os.path.join(cls.BASE_CONFIG_DIR, "enterprise", rel_path)
-        return ent_path if os.path.exists(ent_path) else os.path.join(cls.BASE_CONFIG_DIR, "core", rel_path)
+        return os.path.join(cls.EVENT_STORE_DIR, rel_path)
 
 # ==============================================================================
 # [2] Catalog Manager (The Librarian)
@@ -56,20 +57,17 @@ class CatalogManager:
     def load_validated_catalog() -> Dict[str, Any]:
         """
         [Why] To load metadata and filter out unavailable workflows.
-        [What] Verifies the existence of 'Installation Receipts' in storage to confirm availability.
         """
         raw_catalog: Dict[str, Any] = {}
-        namespaces =["core", "enterprise"]
         
-        # 1. Load Raw JSONs
-        for ns in namespaces:
-            path = os.path.join(TakumiConfig.BASE_CONFIG_DIR, ns, "entities", "workflows_meta.json")
-            if os.path.exists(path):
-                try:
-                    with open(path, 'r', encoding='utf-8') as f:
-                        raw_catalog.update(json.load(f))
-                except Exception as e:
-                    print(f">>> [Takumi] Error loading {ns} catalog: {e}", file=sys.stderr)
+        # 1. [Zero-State] Flat structure lookup
+        path = os.path.join(TakumiConfig.EVENT_STORE_DIR, "entities", "workflows_meta.json")
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    raw_catalog.update(json.load(f))
+            except Exception as e:
+                print(f">>> [Takumi] Error loading catalog: {e}", file=sys.stderr)
 
         # 2. Validate Availability (Receipt Check)
         valid_catalog: Dict[str, Any] = {}
@@ -200,8 +198,7 @@ class IntentResolver:
         try:
             proc = await asyncio.create_subprocess_exec(
                 "ollama", "pull", model_name,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL
+                env=os.environ.copy()  # [Zero-State] Ensure that parental environment variables are inherited.
             )
             await proc.wait()
             if proc.returncode == 0:

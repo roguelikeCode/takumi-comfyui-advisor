@@ -24,7 +24,7 @@ class Config:
     # Output path for the frozen recipe
     RECIPE_OUTPUT_PATH = "/app/cache/recipes"
     # Knowledge Base path
-    RULES_PATH = "/app/config/takumi_meta/core/infra/dependency_rules.json"
+    RULES_PATH = "/app/cache/config/infra/dependency_rules.json"
     # Telemetry Endpoint
     API_URL = "https://h9qf4nsc0i.execute-api.ap-northeast-1.amazonaws.com/logs"
     # User Agent

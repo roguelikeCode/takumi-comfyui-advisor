@@ -58,26 +58,23 @@ ensure_provisioning() {
 
 scan_recipe_environments() {
     local envs=()
-    local namespaces=("enterprise" "core")
-
     log_info "Scanning for available environments..."
-
-    for ns in "${namespaces[@]}"; do
-        local recipes_dir="${APP_ROOT}/config/takumi_meta/${ns}/recipes/use_cases"
-        
-        if [ -d "$recipes_dir" ]; then
-            while IFS= read -r file; do
-                if [ -f "$file" ]; then
-                    local env_name
-                    env_name=$(jq -r '.environment.name // empty' "$file" 2>/dev/null || true)
-                    if [ -n "$env_name" ]; then
-                        envs+=("$env_name")
-                    fi
+    
+    # [Local-First] Direct mount
+    local recipes_dir="/app/external/takumi-event-store/recipes/use_cases"
+    
+    if [ -d "$recipes_dir" ]; then
+        while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                local env_name
+                env_name=$(jq -r '.environment.name // empty' "$file" 2>/dev/null || true)
+                if [ -n "$env_name" ]; then
+                    envs+=("$env_name")
                 fi
-            done < <(find "$recipes_dir" -maxdepth 1 -name "*.json")
-        fi
-    done
-
+            fi
+        done < <(find "$recipes_dir" -maxdepth 1 -name "*.json")
+    fi
+    
     envs+=("takumi_standard" "foundation")
     echo "${envs[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '
 }
@@ -152,21 +149,26 @@ main() {
     # 1. Safety Net
     ensure_provisioning
 
+    # 2 Update Knowledge Base (Event Store)
+    if type ensure_event_store &>/dev/null; then
+        ensure_event_store
+    fi
+
     # --- ENTER STRICT MODE ---
     set -euo pipefail
-
     log_info "Takumi Engine igniting..."
 
-    # 2. Prepare Environment
+    # 3. Prepare Environment
     setup_conda
     link_bridge_extension
     connect_brain
 
-    # 3. Launch Application
+    # 4. Launch Application
     log_info "Launching ComfyUI at ${COMFYUI_ROOT_DIR}..."
     cd "$COMFYUI_ROOT_DIR"
     
-    exec python main.py ${CLI_ARGS:---listen 0.0.0.0 --port $COMFY_PORT}
+    # The `-u` option disables buffering and allows real-time transparency of the log.
+    exec python -u main.py ${CLI_ARGS:---listen 0.0.0.0 --port $COMFY_PORT}
 }
 
 main

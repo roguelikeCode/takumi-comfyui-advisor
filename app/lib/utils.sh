@@ -45,37 +45,50 @@ ensure_directories() {
     mkdir -p "$LOG_DIR" "$CACHE_DIR" "$EXTERNAL_DIR"
 }
 
-# [Why] Resolve the path of the configuration file (Enterprise preferred)
+# [Why] To autonomously fetch and update the Event Store in the persistent external directory.
+ensure_event_store() {
+    local target_dir="${EXTERNAL_DIR}/takumi-event-store"
+    local store_url="${TAKUMI_EVENT_STORE_URL:-}"
+    
+    if [ -z "$store_url" ]; then
+        log_error "TAKUMI_EVENT_STORE_URL is strictly required but undefined."
+        log_info "Please set it in Doppler or .env to ignite The Nexus."
+        exit 1
+    fi
+    
+    if [ ! -d "$target_dir/.git" ]; then
+        log_info "📡 Fetching Event Store to external volume..."
+        mkdir -p "$target_dir"
+        git clone --depth 1 -q "$store_url" "$target_dir" || { log_error "Failed to clone Event Store."; exit 1; }
+    else
+        log_info "📡 Updating Event Store..."
+        (cd "$target_dir" && git pull -q origin main) || log_warn "Failed to update Event Store."
+    fi
+}
+
+# [Why] Resolve the path of the configuration file
 # [Input] $1: Relative paths (e.g. infra/environments/cuda_12_4.yml)
 # [Output] Absolute path (empty if not found)
 resolve_meta_path() {
     local rel_path="$1"
-    local ent_path="/app/config/takumi_meta/enterprise/$rel_path"
-    local core_path="/app/config/takumi_meta/core/$rel_path"
+    local meta_path="${EXTERNAL_DIR}/takumi-event-store/$rel_path"
 
-    if [ -f "$ent_path" ]; then
-        echo "$ent_path"
-    elif [ -f "$core_path" ]; then
-        echo "$core_path"
+    if [ -f "$meta_path" ]; then
+        echo "$meta_path"
     else
         echo "" # Not found
     fi
 }
 
-# [Why] Resolve the actual file path from the recipe name (Ent -> Core)
+# [Why] Resolve the actual file path from the recipe name
 # [Input] $1: recipe_slug (e.g. "wan_video_2_2")
 # [Output] Absolute path to json file
 find_use_case_recipe_path() {
     local slug="$1"
-    local filename="${slug}.json"
+    local recipe_path="${EXTERNAL_DIR}/takumi-event-store/recipes/use_cases/${slug}.json"
     
-    local ent_path="${CONFIG_DIR}/takumi_meta/enterprise/recipes/use_cases/${filename}"
-    local core_path="${CONFIG_DIR}/takumi_meta/core/recipes/use_cases/${filename}"
-
-    if [ -f "$ent_path" ]; then
-        echo "$ent_path"
-    elif [ -f "$core_path" ]; then
-        echo "$core_path"
+    if [ -f "$recipe_path" ]; then
+        echo "$recipe_path"
     else
         return 1
     fi

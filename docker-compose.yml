@@ -12,8 +12,8 @@ services:
       - ./security/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ./security/allow.list:/etc/tinyproxy/allow.list:ro
     networks:
-      - takumi-external
       - takumi-internal
+      - takumi-external
 
   # ============================================================================
   # Service B: The Studio (ComfyUI Application)
@@ -46,7 +46,7 @@ services:
       # [Storage] Unified paths (Persisted in takumi-storage)
       - CONDA_ENVS_DIRS=/app/storage/envs
       - CONDA_PKGS_DIRS=/app/storage/pkgs
-      - CONDARC=/app/temp/.condarc    
+      - CONDARC=/app/cache/.condarc
       # [Network] Route traffic through Sidecar Proxy
       - http_proxy=http://takumi-proxy:8888
       - https_proxy=http://takumi-proxy:8888
@@ -60,6 +60,8 @@ services:
       # [Hardware]
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # [Workflow]
+      - TAKUMI_EVENT_STORE_URL=${TAKUMI_EVENT_STORE_URL}
 
     # --- Volume Mounts ---
     volumes:
@@ -68,8 +70,6 @@ services:
         target: /tmp
       - type: tmpfs
         target: /run
-      - type: tmpfs
-        target: /app/temp
       - type: tmpfs
         target: /home/takumi
       # [Persistence] Unified Storage (System State & Conda)
@@ -91,8 +91,6 @@ services:
         condition: service_healthy
     networks:
       - takumi-internal
-    ports:
-      - "8188:8188"
     
     # --- Hardware Resources ---
     deploy:
@@ -119,6 +117,7 @@ services:
       - "11434:11434"
     networks:
       - takumi-internal
+      - takumi-external
     
     # [Persistence]
     volumes:
@@ -164,9 +163,26 @@ services:
       - NET_ADMIN
       - NET_RAW
     networks:
-      - takumi-external
       - takumi-internal
+      - takumi-external
     restart: unless-stopped
+
+# ============================================================================
+# Service E: The Ingress UI Gateway
+# [Role] It receives access from the host and relays it to an isolated ComfyUI.
+# ============================================================================
+  ui-bridge:
+    image: alpine/socat
+    container_name: takumi-ui-gateway
+    command: tcp-listen:8188,fork,reuseaddr tcp-connect:comfyui:8188
+    ports:
+      - "127.0.0.1:8188:8188"
+    networks:
+      - takumi-internal
+      - takumi-external
+    restart: unless-stopped
+    depends_on:
+      - comfyui
 
 # ==============================================================================
 # Global Definitions
