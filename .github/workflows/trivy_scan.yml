@@ -12,6 +12,9 @@ jobs:
   build-and-scan:
     name: Build & Scan Docker Image
     runs-on: ubuntu-24.04
+    # [The Silence] Enforce all GitHub Actions to run on Node.js 24 and purge transitional warnings (noise).
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     
     steps:
       # Allocate disk space before building (to deal with large Docker images)
