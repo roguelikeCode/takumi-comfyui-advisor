@@ -52,7 +52,9 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v ${{ github.workspace }}:/workspace \
             aquasec/trivy:0.69.3 image \
+            --ignorefile /workspace/.trivyignore \
             --format table \
             --exit-code 0 \
             --severity HIGH \
@@ -66,7 +68,9 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v ${{ github.workspace }}:/workspace \
             aquasec/trivy:0.69.3 image \
+            --ignorefile /workspace/.trivyignore \
             --format table \
             --exit-code 1 \
             --severity CRITICAL \
