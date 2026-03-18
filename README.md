@@ -7,7 +7,7 @@
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Conda](https://img.shields.io/badge/conda-%2344A833.svg?style=flat&logo=anaconda&logoColor=white)](https://docs.conda.io/)
-[![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/security.yml)
+[![Security Scan](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/trivy_scan.yml/badge.svg)](https://github.com/roguelikeCode/takumi-comfyui-advisor/actions/workflows/trivy_scan.yml)
 
 ![Takumi Demo](docs/assets/demo.gif)
 
