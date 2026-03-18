@@ -1,0 +1,74 @@
+name: Security Scan (Trivy)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  build-and-scan:
+    name: Build & Scan Docker Image
+    runs-on: ubuntu-24.04
+    
+    steps:
+      # Allocate disk space before building (to deal with large Docker images)
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # Remove unnecessary pre-installed tools
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        # Build the image, but do not push it (load only).
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: takumi-comfyui:test
+          # Pass build arguments to prevent errors (a dummy ID is OK).
+          build-args: |
+            TAKUMI_UID=9000
+            TAKUMI_GID=9000
+
+      # [Step 1] HIGH Level: Detect but do not stop CI (exit-code: 0)
+      # [Monitoring Mode]  : To prevent CI from stopping due to uncontrollable HIGH vulnerabilities such as Ollama, monitor using reporting without setting a threshold.
+      - name: Scan for HIGH vulnerabilities (Monitor Only)
+        # Mount the Docker socket and directly inspect the pre-built local image (0.69.3)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image \
+            --format table \
+            --exit-code 0 \
+            --severity HIGH \
+            --ignore-unfixed \
+            takumi-comfyui:test
+
+      #[Step 2] CRITICAL level: Stop immediately upon detection (exit-code: 1)
+      #[Shutdown Mode]        : Adhering to Takumi's safety standards
+      - name: Scan for CRITICAL vulnerabilities (Blocker)
+        # When a CRITICAL event is detected, the pipeline is physically shut down (Fail-Fast)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image \
+            --format table \
+            --exit-code 1 \
+            --severity CRITICAL \
+            --ignore-unfixed \
+            takumi-comfyui:test
